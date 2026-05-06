@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Readable Hero Background</title>
+
+  <style>
+    @font-face {
+      font-family: "Poppins";
+      src: url("https://framerusercontent.com/third-party-assets/fontshare/wf/K4RHKGAGLQZBXEZQT2O2AGSLKJF2E4YC/JRUTXNFPWLFGIEVSSEYOW7EP7TYM3V6A/UCDYLFFGLZRGCFY5GYDYM5LDB52BAR5M.woff2");
+      font-display: swap;
+      font-style: normal;
+      font-weight: 500;
+    }
+
+    @font-face {
+      font-family: "Inter";
+      src: url("https://framerusercontent.com/assets/GrgcKwrN6d3Uz8EwcLHZxwEfC4.woff2");
+      font-display: swap;
+      font-style: normal;
+      font-weight: 400;
+    }
+
+    :root {
+      --black: #000;
+      --deep-blue: #031457;
+      --blue: #2934ff;
+      --soft-blue: #8aa5ff;
+      --white: #fff;
+      --muted-white: #e6ecffb3;
+      --border-white: #fff3;
+      --grid-opacity: 0.5;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--black);
+      font-family: sans-serif;
+    }
+
+    .page {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      min-height: 100vh;
+      padding: 160px 40px 100px;
+      overflow: hidden;
+      background: radial-gradient(
+        80% 25% at 50% 7.5%,
+        var(--deep-blue) 0%,
+        var(--black) 100%
+      );
+    }
+
+    .background {
+      position: absolute;
+      z-index: 1;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      width: 100%;
+      max-width: 720px;
+      text-align: center;
+    }
+
+    .customers-badge {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted-white);
+      animation: hero-appear-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+      will-change: opacity, transform;
+    }
+
+    .customers-avatars {
+      display: flex;
+      align-items: center;
+      padding-right: 22px;
+    }
+
+    .customers-avatar {
+      flex: 0 0 28px;
+      width: 28px;
+      height: 28px;
+      margin-left: -3px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #121426;
+    }
+
+    .customers-avatar:first-child {
+      margin-left: 0;
+    }
+
+    .customers-avatar img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .customers-text {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-family: "Inter", Arial, sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.6;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    .customers-number,
+    .customers-plus {
+      color: var(--white);
+    }
+
+    .hero-title {
+      max-width: 720px;
+      margin: 0;
+      font-family: "Poppins", Arial, sans-serif;
+      font-size: 64px;
+      font-weight: 500;
+      line-height: 1.1;
+      letter-spacing: 0;
+      background-image: linear-gradient(0deg, var(--muted-white) -74%, var(--white) 123%);
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      -webkit-background-clip: text;
+      animation: hero-appear-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both;
+      will-change: opacity, transform;
+    }
+
+    .hero-subtitle {
+      max-width: 540px;
+      margin: 0;
+      font-family: "Inter", Arial, sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.6;
+      letter-spacing: 0;
+      color: var(--muted-white);
+      animation: hero-appear-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both;
+      will-change: opacity, transform;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      width: 100%;
+      animation: hero-appear-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.6s both;
+      will-change: opacity, transform;
+    }
+
+    .button {
+      position: relative;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 46px;
+      padding: 10px 18px;
+      overflow: hidden;
+      border-radius: 10px;
+      color: var(--white);
+      font-family: "Inter", Arial, sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.6;
+      letter-spacing: 0;
+      text-align: center;
+      text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .button::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+    }
+
+    .button-primary {
+      background: var(--blue);
+      box-shadow:
+        0 8px 40px rgba(17, 0, 255, 0.5),
+        inset 0 0 10px 1px rgba(255, 255, 255, 0),
+        0 0 0 1px rgba(0, 85, 255, 0.12);
+    }
+
+    .button-primary::after {
+      border: 2px solid var(--border-white);
+    }
+
+    .button-secondary {
+      background: var(--deep-blue);
+      backdrop-filter: blur(2.5px);
+      -webkit-backdrop-filter: blur(2.5px);
+      box-shadow:
+        inset 0 0 10px 1px rgba(255, 255, 255, 0),
+        0 0 0 1px rgba(0, 85, 255, 0.12);
+    }
+
+    .logo-slider {
+      position: relative;
+      z-index: 5;
+      width: 100%;
+      max-width: 1100px;
+      height: 81px;
+      margin-top: 34px;
+      overflow: visible;
+      animation: hero-appear-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.7s both;
+      will-change: opacity, transform;
+    }
+
+    .logo-marquee {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      padding: 10px;
+      margin: 0;
+      overflow: hidden;
+      -webkit-mask-image: linear-gradient(
+        to right,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 1) 12.5%,
+        rgba(0, 0, 0, 1) 87.5%,
+        rgba(0, 0, 0, 0) 100%
+      );
+      mask-image: linear-gradient(
+        to right,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 1) 12.5%,
+        rgba(0, 0, 0, 1) 87.5%,
+        rgba(0, 0, 0, 0) 100%
+      );
+    }
+
+    .logo-track {
+      display: flex;
+      align-items: center;
+      width: max-content;
+      height: 100%;
+      gap: 100px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+      animation: logo-marquee 22s linear infinite;
+      will-change: transform;
+    }
+
+    .brand-logo {
+      flex: 0 0 auto;
+      width: var(--logo-width);
+      height: var(--logo-height, 27px);
+      opacity: 0.65;
+      filter: brightness(0.8);
+      overflow: hidden;
+    }
+
+    .brand-logo img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+    }
+
+    @keyframes logo-marquee {
+      from {
+        transform: translateX(0);
+      }
+
+      to {
+        transform: translateX(calc(-50% - 50px));
+      }
+    }
+
+    @keyframes hero-appear-up {
+      from {
+        opacity: 0.001;
+        transform: translateY(40px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes hero-light-appear {
+      from {
+        opacity: 0.001;
+        transform: rotate(-33deg);
+      }
+
+      to {
+        opacity: 1;
+        transform: rotate(-33deg);
+      }
+    }
+
+    .top-blue-light {
+      position: absolute;
+      z-index: 2;
+      top: -155px;
+      left: 50%;
+      width: 980px;
+      height: 360px;
+      transform: translateX(-50%);
+      filter: blur(26px);
+      background:
+        radial-gradient(60% 72% at 50% 0%, #2448ff8c 0%, #102cbb4d 36%, #0000 74%),
+        linear-gradient(180deg, #1237ff4d 0%, #0000 100%);
+    }
+
+    .top-fade {
+      position: absolute;
+      z-index: 3;
+      inset: 0;
+      background: radial-gradient(
+        73% 78% at 50% 0%,
+        #00020f00 0%,
+        var(--black) 75.28%
+      );
+    }
+
+    .grid {
+      position: absolute;
+      z-index: 1;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 426px;
+      opacity: var(--grid-opacity);
+      overflow: hidden;
+    }
+
+    .grid img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+
+    .left-rays {
+      position: absolute;
+      z-index: 4;
+      top: -571px;
+      left: -373px;
+      width: 1142px;
+      height: 179vh;
+      overflow: hidden;
+      filter: blur(16px);
+      transform: rotate(-33deg);
+      mask: radial-gradient(50% 109%, #000 0%, #000000f6 0%, #0000 96%);
+      -webkit-mask: radial-gradient(50% 109%, #000 0%, #000000f6 0%, #0000 96%);
+      animation: hero-light-appear 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.9s both;
+      will-change: opacity, transform;
+    }
+
+    .ray,
+    .light-source {
+      position: absolute;
+      transform-origin: 100% 0%;
+      background: radial-gradient(50% 50% at 50% 50%, var(--soft-blue) 0%, #ababab00 100%);
+    }
+
+    .ray {
+      top: var(--ray-top, -352px);
+      right: var(--ray-right, auto);
+      bottom: var(--ray-bottom, -920px);
+      left: var(--ray-left, 50%);
+      width: var(--ray-width, 35px);
+      height: var(--ray-height, auto);
+      translate: var(--ray-translate, -50% 0);
+      opacity: var(--ray-opacity, 0.3);
+      transform: rotate(var(--ray-rotation, 0deg));
+    }
+
+    .light-source {
+      left: 50%;
+      background: radial-gradient(50% 50% at 50% 50%, var(--blue) 0%, #ababab00 100%);
+      overflow: hidden;
+    }
+
+    .light-source.large {
+      width: 1198px;
+      top: -352px;
+      bottom: -46px;
+      translate: -50% 0;
+      opacity: 0.23;
+    }
+
+    .light-source.medium {
+      width: 865px;
+      height: 929px;
+      top: -252px;
+      translate: -50% 0;
+      opacity: 0.46;
+    }
+
+    .light-source.small {
+      width: 778px;
+      height: 639px;
+      top: -393px;
+      translate: -50% 0;
+      opacity: 0.72;
+    }
+
+    @media (max-width: 809.98px) {
+      .page {
+        padding: 120px 18px 80px;
+      }
+
+      .hero-title {
+        font-size: 36px;
+        line-height: 1.2;
+      }
+
+      .customers-badge {
+        flex-wrap: wrap;
+        padding: 0 18px;
+      }
+
+      .customers-text {
+        justify-content: center;
+        flex-wrap: wrap;
+        white-space: normal;
+        text-align: center;
+      }
+
+      .grid {
+        left: 4px;
+        right: 4px;
+      }
+
+      .top-blue-light {
+        top: -125px;
+        width: 520px;
+        height: 290px;
+      }
+
+      .left-rays {
+        opacity: 0.4;
+      }
+
+      .logo-slider {
+        margin-top: 28px;
+      }
+
+      .logo-track {
+        gap: 64px;
+        animation-duration: 18s;
+      }
+
+      @keyframes logo-marquee {
+        from {
+          transform: translateX(0);
+        }
+
+        to {
+          transform: translateX(calc(-50% - 32px));
+        }
+      }
+    }
+
+    @media (min-width: 810px) and (max-width: 1199.98px) {
+      .hero-title {
+        font-size: 51px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+    <div class="background" aria-hidden="true">
+      <div class="top-blue-light"></div>
+      <div class="top-fade"></div>
+
+      <div class="grid">
+        <img
+          src="https://framerusercontent.com/images/eVPQSYBoVqwchmpN78sjyYtovY.svg?width=513&amp;height=272"
+          srcset="
+            https://framerusercontent.com/images/eVPQSYBoVqwchmpN78sjyYtovY.svg?scale-down-to=512&amp;width=513&amp;height=272 512w,
+            https://framerusercontent.com/images/eVPQSYBoVqwchmpN78sjyYtovY.svg?width=513&amp;height=272 513w
+          "
+          sizes="100vw"
+          width="513"
+          height="272"
+          alt=""
+          decoding="async"
+        />
+      </div>
+
+      <div class="left-rays">
+        <div class="ray" style="--ray-width: 40px; --ray-height: 2072px; --ray-bottom: auto; --ray-opacity: 0.27"></div>
+        <div class="ray" style="--ray-opacity: 0.28; --ray-rotation: 25deg"></div>
+        <div class="ray" style="--ray-opacity: 0.57; --ray-rotation: 11deg"></div>
+        <div class="ray" style="--ray-opacity: 0.42; --ray-rotation: -12deg"></div>
+        <div class="ray" style="--ray-opacity: 0.32; --ray-rotation: -24deg"></div>
+        <div class="ray" style="--ray-width: 50px; --ray-rotation: -18deg"></div>
+        <div class="ray" style="--ray-width: 50px; --ray-height: 2704px; --ray-top: -342px; --ray-right: 446px; --ray-bottom: auto; --ray-left: auto; --ray-rotation: -18deg"></div>
+        <div class="ray" style="--ray-width: 50px; --ray-top: -362px; --ray-bottom: -910px; --ray-left: 69.2645%; --ray-rotation: -18deg"></div>
+        <div class="ray" style="--ray-width: 20px; --ray-rotation: -5deg"></div>
+        <div class="ray" style="--ray-width: 20px; --ray-top: -362px; --ray-bottom: -910px; --ray-left: 69.2645%; --ray-rotation: -5deg"></div>
+        <div class="ray" style="--ray-width: 15px; --ray-opacity: 0.5; --ray-rotation: -3deg"></div>
+        <div class="ray" style="--ray-width: 20px; --ray-opacity: 0.6; --ray-rotation: 18deg"></div>
+        <div class="ray" style="--ray-width: 20px; --ray-opacity: 0.18; --ray-rotation: 6deg"></div>
+
+        <div class="light-source large"></div>
+        <div class="light-source medium"></div>
+        <div class="light-source small"></div>
+      </div>
+    </div>
+
+    <section class="hero-content" id="hero">
+      <div class="customers-badge">
+        <div class="customers-avatars" aria-hidden="true">
+          <div class="customers-avatar">
+            <img src="https://framerusercontent.com/images/ETgoVdeITLLIYCHTFNeVuZDMyQY.png" alt="" />
+          </div>
+          <div class="customers-avatar">
+            <img src="https://framerusercontent.com/images/bnJJiW5Vfixlrz7M2pzoeyHBU.png" alt="" />
+          </div>
+          <div class="customers-avatar">
+            <img src="https://framerusercontent.com/images/rlizSNVuxrrqd6I5hGaSxwqn0Os.png" alt="" />
+          </div>
+          <div class="customers-avatar">
+            <img src="https://framerusercontent.com/images/X0pqhTmlK8gdYqPbljhuLXlyd0I.png" alt="" />
+          </div>
+        </div>
+
+        <div class="customers-text">
+          <span>Join</span>
+          <span class="customers-number">15,725</span>
+          <span class="customers-plus">+</span>
+          <span>other loving customers</span>
+        </div>
+      </div>
+
+      <h1 class="hero-title">The best platform to grow your business</h1>
+      <p class="hero-subtitle">
+        The most powerful tools to boost sales, hire the best people, and access exclusive market insights.
+      </p>
+      <div class="hero-actions">
+        <a class="button button-primary" href="https://framer.link/DX0edsv" target="_blank" rel="noopener">
+          Get Started Now
+        </a>
+        <a class="button button-secondary" href="contact.html">
+          Book a Demo
+        </a>
+      </div>
+    </section>
+
+    <section class="logo-slider" aria-label="Trusted by companies">
+      <div class="logo-marquee">
+        <ul class="logo-track">
+          <li class="brand-logo" style="--logo-width: 125px">
+            <img
+              src="https://framerusercontent.com/images/otv1rEDn2X7h8TFtKPCksQmAEKQ.svg?width=75&amp;height=17"
+              width="75"
+              height="17"
+              alt=""
+              decoding="async"
+            />
+          </li>
+          <li class="brand-logo" style="--logo-width: 79px">
+            <img
+              src="https://framerusercontent.com/images/rrRoFs4icQtustYbIGm5r5DXREI.svg?width=50&amp;height=17"
+              width="50"
+              height="17"
+              alt=""
+              decoding="async"
+            />
+          </li>
+          <li class="brand-logo" style="--logo-width: 86px">
+            <img
+              src="https://framerusercontent.com/images/hhTRf8RciR9bakkAgIckAkEiQM.svg?width=57&amp;height=18"
+              width="57"
+              height="18"
+              alt=""
+              decoding="async"
+            />
+          </li>
+          <li class="brand-logo" style="--logo-width: 82px; --logo-height: 30px">
+            <img
+              src="https://framerusercontent.com/images/1ph1389RD4RtUDEfqVhWbujyF7s.svg?width=56&amp;height=20"
+              width="56"
+              height="20"
+              alt=""
+              decoding="async"
+            />
+          </li>
+          <li class="brand-logo" style="--logo-width: 79px">
+            <img
+              src="https://framerusercontent.com/images/Yn3MOOL9rTXhK9U8MLvSnEoNP8.svg?width=45&amp;height=14"
+              width="45"
+              height="14"
+              alt=""
+              decoding="async"
+            />
+          </li>
+
+          <li class="brand-logo" style="--logo-width: 125px" aria-hidden="true">
+            <img
+              src="https://framerusercontent.com/images/otv1rEDn2X7h8TFtKPCksQmAEKQ.svg?width=75&amp;height=17"
+              width="75"
+              height="17"
+              alt=""
+              decoding="async"
+            />
+          </li>
+          <li class="brand-logo" style="--logo-width: 79px" aria-hidden="true">
+            <img
+              src="https://framerusercontent.com/images/rrRoFs4icQtustYbIGm5r5DXREI.svg?width=50&amp;height=17"
+              width="50"
+              height="17"
+              alt=""
+              decoding="async"
+            />
+          </li>
+          <li class="brand-logo" style="--logo-width: 86px" aria-hidden="true">
+            <img
+              src="https://framerusercontent.com/images/hhTRf8RciR9bakkAgIckAkEiQM.svg?width=57&amp;height=18"
+              width="57"
+              height="18"
+              alt=""
+              decoding="async"
+            />
+          </li>
+          <li class="brand-logo" style="--logo-width: 82px; --logo-height: 30px" aria-hidden="true">
+            <img
+              src="https://framerusercontent.com/images/1ph1389RD4RtUDEfqVhWbujyF7s.svg?width=56&amp;height=20"
+              width="56"
+              height="20"
+              alt=""
+              decoding="async"
+            />
+          </li>
+          <li class="brand-logo" style="--logo-width: 79px" aria-hidden="true">
+            <img
+              src="https://framerusercontent.com/images/Yn3MOOL9rTXhK9U8MLvSnEoNP8.svg?width=45&amp;height=14"
+              width="45"
+              height="14"
+              alt=""
+              decoding="async"
+            />
+          </li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,441 @@
+.page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  min-height: auto;
+  padding: 160px 40px 42px;
+  overflow: hidden;
+  background: radial-gradient(80% 25% at 50% 7.5%, var(--deep-blue) 0%, var(--black) 100%);
+}
+
+.background {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 720px;
+  text-align: center;
+}
+
+.customersBadge {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted-white);
+  animation: heroAppearUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+  will-change: opacity, transform;
+}
+
+.customersAvatars {
+  display: flex;
+  align-items: center;
+  padding-right: 8px;
+}
+
+.customersAvatar {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  margin-left: -3px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #121426;
+}
+
+.customersAvatar:first-child {
+  margin-left: 0;
+}
+
+.customersAvatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.customersText {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.customersNumber,
+.customersPlus {
+  color: var(--white);
+}
+
+.heroTitle {
+  max-width: 720px;
+  margin: 0;
+  font-family: "Poppins", Arial, sans-serif;
+  font-size: 64px;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: 0;
+  background-image: linear-gradient(0deg, var(--muted-white) -74%, var(--white) 123%);
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: heroAppearUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both;
+  will-change: opacity, transform;
+}
+
+.heroSubtitle {
+  max-width: 540px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: 0;
+  color: var(--muted-white);
+  animation: heroAppearUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both;
+  will-change: opacity, transform;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  animation: heroAppearUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.6s both;
+  will-change: opacity, transform;
+}
+
+.button {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 46px;
+  padding: 10px 18px;
+  overflow: hidden;
+  border-radius: 10px;
+  color: var(--white);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: 0;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.buttonPrimary {
+  background: var(--blue);
+  box-shadow:
+    0 8px 40px rgba(17, 0, 255, 0.5),
+    inset 0 0 10px 1px rgba(255, 255, 255, 0),
+    0 0 0 1px rgba(0, 85, 255, 0.12);
+}
+
+.buttonPrimary::after {
+  border: 2px solid var(--border-white);
+}
+
+.buttonSecondary {
+  background: var(--deep-blue);
+  backdrop-filter: blur(2.5px);
+  -webkit-backdrop-filter: blur(2.5px);
+  box-shadow:
+    inset 0 0 10px 1px rgba(255, 255, 255, 0),
+    0 0 0 1px rgba(0, 85, 255, 0.12);
+}
+
+.logoSlider {
+  position: relative;
+  z-index: 5;
+  width: 100%;
+  max-width: 1100px;
+  height: 81px;
+  margin-top: 34px;
+  overflow: visible;
+  animation: heroAppearUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.7s both;
+  will-change: opacity, transform;
+}
+
+.logoMarquee {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 10px;
+  margin: 0;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 1) 12.5%,
+    rgba(0, 0, 0, 1) 87.5%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 1) 12.5%,
+    rgba(0, 0, 0, 1) 87.5%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+.logoTrack {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  height: 100%;
+  gap: 100px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  animation: logoMarquee 22s linear infinite;
+  will-change: transform;
+}
+
+.brandLogo {
+  flex: 0 0 auto;
+  width: var(--logo-width);
+  height: var(--logo-height, 27px);
+  opacity: 0.65;
+  filter: brightness(0.8);
+  overflow: hidden;
+}
+
+.brandLogo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+.topBlueLight {
+  position: absolute;
+  z-index: 2;
+  top: -155px;
+  left: 50%;
+  width: 980px;
+  height: 360px;
+  transform: translateX(-50%);
+  filter: blur(26px);
+  background:
+    radial-gradient(60% 72% at 50% 0%, #2448ff8c 0%, #102cbb4d 36%, #0000 74%),
+    linear-gradient(180deg, #1237ff4d 0%, #0000 100%);
+}
+
+.topFade {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  background: radial-gradient(73% 78% at 50% 0%, #00020f00 0%, var(--black) 75.28%);
+}
+
+.grid {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 426px;
+  opacity: var(--grid-opacity);
+  overflow: hidden;
+}
+
+.grid img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.leftRays {
+  position: absolute;
+  z-index: 4;
+  top: -571px;
+  left: -373px;
+  width: 1142px;
+  height: 179vh;
+  overflow: hidden;
+  filter: blur(16px);
+  transform: rotate(-33deg);
+  mask: radial-gradient(50% 109%, #000 0%, #000000f6 0%, #0000 96%);
+  -webkit-mask: radial-gradient(50% 109%, #000 0%, #000000f6 0%, #0000 96%);
+  animation: heroLightAppear 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.9s both;
+  will-change: opacity, transform;
+}
+
+.ray,
+.lightSource {
+  position: absolute;
+  transform-origin: 100% 0%;
+  background: radial-gradient(50% 50% at 50% 50%, var(--soft-blue) 0%, #ababab00 100%);
+}
+
+.ray {
+  top: var(--ray-top, -352px);
+  right: var(--ray-right, auto);
+  bottom: var(--ray-bottom, -920px);
+  left: var(--ray-left, 50%);
+  width: var(--ray-width, 35px);
+  height: var(--ray-height, auto);
+  translate: var(--ray-translate, -50% 0);
+  opacity: var(--ray-opacity, 0.3);
+  transform: rotate(var(--ray-rotation, 0deg));
+}
+
+.lightSource {
+  left: 50%;
+  overflow: hidden;
+  background: radial-gradient(50% 50% at 50% 50%, var(--blue) 0%, #ababab00 100%);
+}
+
+.lightSourceLarge {
+  top: -352px;
+  bottom: -46px;
+  width: 1198px;
+  translate: -50% 0;
+  opacity: 0.23;
+}
+
+.lightSourceMedium {
+  top: -252px;
+  width: 865px;
+  height: 929px;
+  translate: -50% 0;
+  opacity: 0.46;
+}
+
+.lightSourceSmall {
+  top: -393px;
+  width: 778px;
+  height: 639px;
+  translate: -50% 0;
+  opacity: 0.72;
+}
+
+@keyframes logoMarquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(calc(-50% - 50px));
+  }
+}
+
+@keyframes heroAppearUp {
+  from {
+    opacity: 0.001;
+    transform: translateY(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroLightAppear {
+  from {
+    opacity: 0.001;
+    transform: rotate(-33deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: rotate(-33deg);
+  }
+}
+
+@media (max-width: 809.98px) {
+  .page {
+    padding: 120px 18px 34px;
+  }
+
+  .heroTitle {
+    font-size: 36px;
+    line-height: 1.2;
+  }
+
+  .customersBadge {
+    flex-wrap: wrap;
+    padding: 0 18px;
+  }
+
+  .customersText {
+    justify-content: center;
+    flex-wrap: wrap;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .grid {
+    left: 4px;
+    right: 4px;
+  }
+
+  .topBlueLight {
+    top: -125px;
+    width: 520px;
+    height: 290px;
+  }
+
+  .leftRays {
+    opacity: 0.4;
+  }
+
+  .logoSlider {
+    margin-top: 28px;
+  }
+
+  .logoTrack {
+    gap: 64px;
+    animation-duration: 18s;
+  }
+
+  @keyframes logoMarquee {
+    from {
+      transform: translateX(0);
+    }
+
+    to {
+      transform: translateX(calc(-50% - 32px));
+    }
+  }
+}
+
+@media (min-width: 810px) and (max-width: 1199.98px) {
+  .heroTitle {
+    font-size: 51px;
+  }
+}

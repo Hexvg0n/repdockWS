@@ -1,0 +1,67 @@
+@font-face {
+  font-family: "Poppins";
+  src: url("https://framerusercontent.com/third-party-assets/fontshare/wf/K4RHKGAGLQZBXEZQT2O2AGSLKJF2E4YC/JRUTXNFPWLFGIEVSSEYOW7EP7TYM3V6A/UCDYLFFGLZRGCFY5GYDYM5LDB52BAR5M.woff2");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("https://framerusercontent.com/assets/GrgcKwrN6d3Uz8EwcLHZxwEfC4.woff2");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --black: #000;
+  --deep-blue: #031457;
+  --blue: #2934ff;
+  --soft-blue: #8aa5ff;
+  --white: #fff;
+  --muted-white: #e6ecffb3;
+  --border-white: #fff3;
+  --grid-opacity: 0.5;
+
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --border: 225 18% 22%;
+  --input: 225 18% 22%;
+  --ring: 233 100% 58%;
+  --primary: 237 100% 58%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 225 92% 18%;
+  --secondary-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --muted: 230 25% 12%;
+  --muted-foreground: 226 100% 95%;
+  --accent: 230 25% 14%;
+  --accent-foreground: 0 0% 100%;
+  --radius: 0.5rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--black);
+  font-family: "Inter", Arial, sans-serif;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+}

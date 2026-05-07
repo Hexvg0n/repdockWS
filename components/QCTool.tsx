@@ -4,9 +4,12 @@ import {
   IconAlertCircle,
   IconArrowRight,
   IconCameraSearch,
+  IconChevronLeft,
+  IconChevronRight,
   IconCheck,
   IconExternalLink,
   IconFilter,
+  IconLayoutGrid,
   IconLoader2,
   IconPhoto,
   IconRefresh,
@@ -27,6 +30,14 @@ type QCImage = {
   createTime: string | number | null;
   skuId: string | null;
   source: SourceName;
+};
+
+type QCGroup = {
+  dateLabel: string;
+  id: string;
+  images: QCImage[];
+  source: SourceName;
+  title: string;
 };
 
 type QCSourceMeta = {
@@ -77,15 +88,14 @@ export function QCTool() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeSource, setActiveSource] = useState<(typeof sourceOrder)[number]>("All");
-  const [preview, setPreview] = useState<QCImage | null>(null);
+  const [viewer, setViewer] = useState<{ groupId: string; imageIndex: number; zoomed: boolean } | null>(null);
 
-  const filteredImages = useMemo(() => {
-    if (activeSource === "All") {
-      return images;
-    }
-
-    return images.filter((image) => image.source === activeSource);
-  }, [activeSource, images]);
+  const groups = useMemo(() => groupQCImages(images, activeSource), [activeSource, images]);
+  const activeGroup = useMemo(
+    () => groups.find((group) => group.id === viewer?.groupId) ?? null,
+    [groups, viewer?.groupId],
+  );
+  const activeImage = activeGroup?.images[viewer?.imageIndex ?? 0] ?? null;
 
   const sourceCounts = useMemo(() => {
     const counts: Record<SourceName, number> = {
@@ -114,6 +124,7 @@ export function QCTool() {
     setImages([]);
     setMeta(null);
     setActiveSource("All");
+    setViewer(null);
 
     try {
       const response = await fetch("/api/qc", {
@@ -145,7 +156,7 @@ export function QCTool() {
     setMeta(null);
     setError("");
     setActiveSource("All");
-    setPreview(null);
+    setViewer(null);
   };
 
   return (
@@ -232,12 +243,12 @@ export function QCTool() {
             />
 
             <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {filteredImages.map((image, index) => (
-                <QCImageCard
-                  image={image}
+              {groups.map((group, index) => (
+                <QCGroupCard
+                  group={group}
                   index={index}
-                  key={`${image.photoUrl}-${index}`}
-                  onPreview={() => setPreview(image)}
+                  key={group.id}
+                  onOpen={() => setViewer({ groupId: group.id, imageIndex: 0, zoomed: false })}
                 />
               ))}
             </section>
@@ -249,7 +260,17 @@ export function QCTool() {
         )}
       </section>
 
-      {preview ? <ImagePreview image={preview} onClose={() => setPreview(null)} /> : null}
+      {activeGroup && activeImage && viewer ? (
+        <QCGroupViewer
+          group={activeGroup}
+          image={activeImage}
+          imageIndex={viewer.imageIndex}
+          zoomed={viewer.zoomed}
+          onClose={() => setViewer(null)}
+          onSelect={(imageIndex) => setViewer({ groupId: activeGroup.id, imageIndex, zoomed: false })}
+          onToggleZoom={() => setViewer({ ...viewer, zoomed: !viewer.zoomed })}
+        />
+      ) : null}
     </main>
   );
 }
@@ -280,6 +301,15 @@ function ProductMetaCard({ meta }: { meta: QCResponseMeta }) {
 }
 
 function SourceStatus({ label, meta }: { label: SourceName; meta: QCSourceMeta }) {
+  const hasPhotos = meta.ok && meta.count > 0;
+  const statusText = hasPhotos
+    ? `${meta.count} photos`
+    : meta.ok
+      ? "No photos"
+      : meta.skipped
+        ? "Skipped"
+        : meta.error ?? "Unavailable";
+
   return (
     <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
       <div className="flex items-center justify-between gap-2">
@@ -287,15 +317,13 @@ function SourceStatus({ label, meta }: { label: SourceName; meta: QCSourceMeta }
         <span
           className={cn(
             "grid size-6 place-items-center rounded-full",
-            meta.ok ? "bg-emerald-500/15 text-emerald-200" : "bg-red-500/15 text-red-200",
+            hasPhotos ? "bg-emerald-500/15 text-emerald-200" : "bg-zinc-500/15 text-zinc-300",
           )}
         >
-          {meta.ok ? <IconCheck className="size-3.5" /> : <IconAlertCircle className="size-3.5" />}
+          {hasPhotos ? <IconCheck className="size-3.5" /> : <IconAlertCircle className="size-3.5" />}
         </span>
       </div>
-      <p className="mt-2 text-xs text-slate-500">
-        {meta.ok ? `${meta.count} photos` : meta.skipped ? "Skipped" : meta.error ?? "Unavailable"}
-      </p>
+      <p className="mt-2 text-xs text-slate-500">{statusText}</p>
     </div>
   );
 }
@@ -344,48 +372,71 @@ function SourceFilters({
   );
 }
 
-function QCImageCard({
-  image,
+function QCGroupCard({
+  group,
   index,
-  onPreview,
+  onOpen,
 }: {
-  image: QCImage;
+  group: QCGroup;
   index: number;
-  onPreview: () => void;
+  onOpen: () => void;
 }) {
+  const cover = group.images[0];
+  const second = group.images[1];
+  const third = group.images[2];
+
   return (
     <article
       className="group relative overflow-hidden rounded-[28px] border border-white/10 bg-[#0d0e14] shadow-2xl shadow-black/20 transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_90px_rgba(41,52,255,0.18)]"
       style={{ animation: `framer-hero-appear-up 0.75s cubic-bezier(0.22,1,0.36,1) ${Math.min(index * 0.035, 0.28)}s both` }}
     >
-      <button type="button" onClick={onPreview} className="block w-full text-left">
+      <button type="button" onClick={onOpen} className="block w-full text-left">
         <div className="relative aspect-[4/5] overflow-hidden bg-zinc-950">
-          <img
-            src={image.photoUrl}
-            alt={`${image.source} QC photo`}
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-            loading="lazy"
-          />
+          {cover ? (
+            <img
+              src={cover.photoUrl}
+              alt={`${group.source} QC group cover`}
+              className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+              loading="lazy"
+            />
+          ) : null}
+          {third ? (
+            <img
+              src={third.photoUrl}
+              alt=""
+              className="absolute bottom-8 right-12 h-20 w-16 -rotate-6 rounded-xl border border-white/15 object-cover opacity-80 shadow-2xl shadow-black/40"
+              loading="lazy"
+            />
+          ) : null}
+          {second ? (
+            <img
+              src={second.photoUrl}
+              alt=""
+              className="absolute bottom-4 right-4 h-24 w-20 rotate-3 rounded-2xl border border-white/15 object-cover shadow-2xl shadow-black/50"
+              loading="lazy"
+            />
+          ) : null}
           <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black via-black/60 to-transparent" />
           <span
             className={cn(
               "absolute left-3 top-3 rounded-full bg-gradient-to-r px-3 py-1.5 text-xs font-black text-white shadow-lg",
-              sourceAccent[image.source],
+              sourceAccent[group.source],
             )}
           >
-            {sourceLabels[image.source]}
+            {sourceLabels[group.source]}
           </span>
-          <span className="absolute right-3 top-3 grid size-9 place-items-center rounded-xl bg-black/50 text-white backdrop-blur">
-            <IconExternalLink className="size-4" />
+          <span className="absolute right-3 top-3 inline-flex h-9 items-center gap-1.5 rounded-xl bg-black/55 px-3 text-xs font-bold text-white backdrop-blur">
+            <IconLayoutGrid className="size-4" />
+            {group.images.length}
           </span>
         </div>
         <div className="grid gap-3 p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white">
-                {image.skuId || "Warehouse photo"}
+              <p className="truncate text-sm font-semibold text-white">{group.title}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                {group.dateLabel} / {group.images.length} photos
               </p>
-              <p className="mt-1 text-xs text-slate-500">{formatDate(image.createTime)}</p>
             </div>
             <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-blue-500/10 text-blue-100 ring-1 ring-blue-300/20">
               <IconTags className="size-5" />
@@ -406,12 +457,12 @@ function QCEmptyState() {
         </span>
         <h2 className="mt-5 text-xl font-semibold text-white">Paste a product link to start</h2>
         <p className="mt-2 text-sm leading-relaxed text-slate-500">
-          QC photos will appear here as a clean gallery, grouped by source.
+          QC photos will appear here as grouped warehouse sets.
         </p>
         <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/25 px-3 py-1.5 text-xs text-slate-400">
           Product link
           <IconArrowRight className="size-3.5" />
-          QC gallery
+          QC groups
         </div>
       </div>
     </div>
@@ -431,40 +482,180 @@ function QCLoadingState() {
   );
 }
 
-function ImagePreview({ image, onClose }: { image: QCImage; onClose: () => void }) {
+function QCGroupViewer({
+  group,
+  image,
+  imageIndex,
+  onClose,
+  onSelect,
+  onToggleZoom,
+  zoomed,
+}: {
+  group: QCGroup;
+  image: QCImage;
+  imageIndex: number;
+  onClose: () => void;
+  onSelect: (imageIndex: number) => void;
+  onToggleZoom: () => void;
+  zoomed: boolean;
+}) {
+  const previousIndex = imageIndex === 0 ? group.images.length - 1 : imageIndex - 1;
+  const nextIndex = imageIndex === group.images.length - 1 ? 0 : imageIndex + 1;
+
   return (
     <div className="fixed inset-0 z-[100] grid place-items-center bg-black/80 p-4 backdrop-blur-md" onClick={onClose}>
       <div
-        className="relative max-h-[90vh] w-full max-w-5xl overflow-hidden rounded-[32px] border border-white/10 bg-[#0d0e14] shadow-2xl shadow-black"
+        className="relative grid max-h-[92vh] w-full max-w-6xl overflow-hidden rounded-[32px] border border-white/10 bg-[#0d0e14] shadow-2xl shadow-black lg:grid-cols-[minmax(0,1fr)_280px]"
         onClick={(event) => event.stopPropagation()}
       >
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 z-10 grid size-10 place-items-center rounded-2xl bg-black/60 text-white backdrop-blur transition hover:bg-black"
+          className="absolute right-4 top-4 z-20 grid size-10 place-items-center rounded-2xl bg-black/60 text-white backdrop-blur transition hover:bg-black"
           aria-label="Close preview"
         >
           <IconX className="size-5" />
         </button>
-        <img src={image.photoUrl} alt={`${image.source} QC preview`} className="max-h-[82vh] w-full object-contain" />
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 p-4">
-          <div>
-            <p className="font-semibold text-white">{sourceLabels[image.source]}</p>
-            <p className="text-sm text-slate-500">{image.skuId || "Warehouse photo"} · {formatDate(image.createTime)}</p>
+
+        <div className="grid min-h-0 grid-rows-[1fr_auto]">
+          <div className="relative grid max-h-[74vh] min-h-[420px] place-items-center overflow-auto bg-black">
+            {group.images.length > 1 ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onSelect(previousIndex)}
+                  className="absolute left-4 top-1/2 z-10 grid size-11 -translate-y-1/2 place-items-center rounded-2xl bg-black/60 text-white backdrop-blur transition hover:bg-black"
+                  aria-label="Previous QC photo"
+                >
+                  <IconChevronLeft className="size-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSelect(nextIndex)}
+                  className="absolute right-4 top-1/2 z-10 grid size-11 -translate-y-1/2 place-items-center rounded-2xl bg-black/60 text-white backdrop-blur transition hover:bg-black"
+                  aria-label="Next QC photo"
+                >
+                  <IconChevronRight className="size-5" />
+                </button>
+              </>
+            ) : null}
+            <button
+              type="button"
+              onClick={onToggleZoom}
+              className={cn(
+                "grid h-full min-h-[420px] w-full place-items-center",
+                zoomed ? "cursor-zoom-out" : "cursor-zoom-in",
+              )}
+              aria-label={zoomed ? "Zoom out" : "Zoom in"}
+            >
+              <img
+                src={image.photoUrl}
+                alt={`${image.source} QC preview`}
+                className={cn(
+                  "transition duration-300",
+                  zoomed
+                    ? "max-h-none max-w-none scale-150 object-none"
+                    : "max-h-[74vh] max-w-full object-contain",
+                )}
+              />
+            </button>
           </div>
-          <a
-            href={image.photoUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-white px-4 text-sm font-bold text-black transition hover:bg-blue-100"
-          >
-            <IconExternalLink className="size-4" />
-            Open original
-          </a>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 p-4">
+            <div>
+              <p className="font-semibold text-white">{group.title}</p>
+              <p className="text-sm text-slate-500">
+                {sourceLabels[group.source]} / {group.dateLabel} / {imageIndex + 1} of {group.images.length}
+              </p>
+            </div>
+            <a
+              href={image.photoUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-white px-4 text-sm font-bold text-black transition hover:bg-blue-100"
+            >
+              <IconExternalLink className="size-4" />
+              Open original
+            </a>
+          </div>
         </div>
+
+        <aside className="min-h-0 border-t border-white/10 bg-white/[0.025] p-4 lg:border-l lg:border-t-0">
+          <div className="mb-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Group</p>
+            <h3 className="mt-2 text-lg font-semibold text-white">{group.title}</h3>
+            <p className="mt-1 text-sm text-slate-500">{group.images.length} QC photos</p>
+          </div>
+          <div className="grid max-h-[58vh] grid-cols-3 gap-2 overflow-y-auto pr-1 lg:grid-cols-2">
+            {group.images.map((groupImage, index) => (
+              <button
+                key={`${groupImage.photoUrl}-${index}`}
+                type="button"
+                onClick={() => onSelect(index)}
+                className={cn(
+                  "relative aspect-square overflow-hidden rounded-2xl border transition",
+                  index === imageIndex
+                    ? "border-blue-300 shadow-[0_0_28px_rgba(41,52,255,0.3)]"
+                    : "border-white/10 opacity-70 hover:opacity-100",
+                )}
+              >
+                <img src={groupImage.photoUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+              </button>
+            ))}
+          </div>
+        </aside>
       </div>
     </div>
   );
+}
+
+function groupQCImages(images: QCImage[], activeSource: (typeof sourceOrder)[number]) {
+  const filteredImages =
+    activeSource === "All"
+      ? images
+      : images.filter((image) => image.source === activeSource);
+  const groupMap = new Map<string, QCGroup>();
+
+  for (const image of filteredImages) {
+    const dateLabel = formatDate(image.createTime);
+    const skuLabel = image.skuId?.trim() || "Warehouse set";
+    const id = `${image.source}:${dateLabel}:${skuLabel}`;
+    const existing = groupMap.get(id);
+
+    if (existing) {
+      existing.images.push(image);
+      continue;
+    }
+
+    groupMap.set(id, {
+      dateLabel,
+      id,
+      images: [image],
+      source: image.source,
+      title: skuLabel,
+    });
+  }
+
+  return Array.from(groupMap.values()).sort((first, second) => {
+    const firstTime = getComparableTime(first.images[0]?.createTime);
+    const secondTime = getComparableTime(second.images[0]?.createTime);
+    return secondTime - firstTime;
+  });
+}
+
+function getComparableTime(value: string | number | null | undefined) {
+  if (!value) {
+    return 0;
+  }
+
+  const numericValue = typeof value === "number" ? value : Number(value);
+
+  if (Number.isFinite(numericValue)) {
+    return numericValue > 10_000_000_000 ? numericValue : numericValue * 1000;
+  }
+
+  const parsed = Date.parse(String(value));
+  return Number.isNaN(parsed) ? 0 : parsed;
 }
 
 function formatDate(value: string | number | null) {

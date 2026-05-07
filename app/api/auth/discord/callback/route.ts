@@ -4,6 +4,7 @@ import {
   createSessionCookieValue,
   getDiscordAvatarUrl,
   oauthStateCookieName,
+  parseSessionCookieValue,
   sessionCookieName,
   type DiscordSession,
 } from "@/lib/auth";
@@ -31,8 +32,13 @@ export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   const state = request.nextUrl.searchParams.get("state");
   const savedState = request.cookies.get(oauthStateCookieName)?.value;
+  const existingSession = parseSessionCookieValue(request.cookies.get(sessionCookieName)?.value);
 
   if (!code || !state || !savedState || state !== savedState) {
+    if (existingSession) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
     return NextResponse.json({ error: "Invalid Discord OAuth state" }, { status: 400 });
   }
 

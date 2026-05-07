@@ -1,23 +1,24 @@
 import type { NextRequest } from "next/server";
 
 export function getPublicOrigin(request: NextRequest) {
-  const host =
-    request.headers.get("x-forwarded-host") ??
-    request.headers.get("host");
-  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
   const publicUrl =
     process.env.NEXT_PUBLIC_SITE_URL ??
     process.env.SITE_URL ??
     process.env.APP_URL ??
     "";
 
+  if (publicUrl) {
+    return publicUrl.replace(/\/+$/, "");
+  }
+
+  const host =
+    request.headers.get("x-forwarded-host") ??
+    request.headers.get("host");
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+
   if (host && !isLocalHost(host)) {
     const protocol = forwardedProto || "https";
     return `${protocol}://${host}`;
-  }
-
-  if (publicUrl) {
-    return publicUrl.replace(/\/+$/, "");
   }
 
   const fallbackProtocol = forwardedProto || request.nextUrl.protocol.replace(":", "");

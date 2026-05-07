@@ -8,7 +8,7 @@ import {
   sessionCookieName,
   type DiscordSession,
 } from "@/lib/auth";
-import { getDiscordRedirectUri } from "@/lib/discord-oauth";
+import { getDiscordRedirectUri, getPublicUrl } from "@/lib/discord-oauth";
 
 type DiscordTokenResponse = {
   access_token: string;
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 
   if (!code || !state || !savedState || state !== savedState) {
     if (existingSession) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(getPublicUrl(request, "/"));
     }
 
     return NextResponse.json({ error: "Invalid Discord OAuth state" }, { status: 400 });
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
     isAdmin,
   };
 
-  const response = NextResponse.redirect(new URL("/", request.url));
+  const response = NextResponse.redirect(getPublicUrl(request, "/"));
 
   response.cookies.delete(oauthStateCookieName);
   response.cookies.set(sessionCookieName, createSessionCookieValue(session), {

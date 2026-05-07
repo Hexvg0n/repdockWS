@@ -574,8 +574,19 @@
   }
 
   .card {
-    min-height: 360px;
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
     padding: 22px;
+  }
+
+  .cardLarge,
+  .cardSide {
+    min-height: 0;
+  }
+
+  .cardHeader {
+    align-items: flex-start;
   }
 
   .cardTitle {
@@ -590,9 +601,34 @@
   .workflowVisual,
   .calculatorVisual,
   .trackingVisual {
-    right: 20px;
-    bottom: 22px;
-    left: 20px;
+    position: relative;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    width: 100%;
+    margin-top: 24px;
+  }
+
+  .converterVisual {
+    height: 160px;
+  }
+
+  .workflowVisual {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    align-items: stretch;
+    height: auto;
+  }
+
+  .calculatorVisual {
+    display: grid;
+    gap: 14px;
+    height: auto;
+  }
+
+  .trackingVisual {
+    max-width: none;
   }
 
   .badgeTop {
@@ -600,14 +636,15 @@
   }
 
   .badgeMiddle {
-    left: 40px;
+    left: clamp(0px, 14%, calc(100% - 145px));
   }
 
   .badgeBottom {
-    left: 78px;
+    left: clamp(0px, 28%, calc(100% - 145px));
   }
 
   .agentBadge {
+    max-width: 100%;
     min-width: 145px;
     height: 54px;
     padding: 0 12px;
@@ -615,19 +652,53 @@
 
   .previewPanel {
     width: 100%;
+    height: auto;
+    min-height: 176px;
+    padding: 28px 14px 18px;
   }
 
   .linkGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    margin: 0;
+    transform: none;
+    gap: 8px;
+    padding: 10px;
   }
 
   .analyticsPanel {
+    position: relative;
+    bottom: auto;
+    left: auto;
     width: 100%;
+    height: auto;
+    min-height: 230px;
   }
 
   .costPanel {
-    right: 12px;
-    bottom: 20px;
-    width: calc(100% - 24px);
+    position: relative;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    gap: 10px 14px;
+    padding: 16px;
+    transform: none;
+  }
+
+  .linkGrid span,
+  .trackingVisual > span {
+    min-width: 0;
+    padding: 0 10px;
+    font-size: 13px;
+  }
+
+  .costPanel span,
+  .costPanel strong {
+    min-width: 0;
+    font-size: 13px;
+  }
+
+  .trackingVisual .agentBadge {
+    min-width: 0;
   }
 }

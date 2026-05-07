@@ -21,7 +21,7 @@ const logos: Logo[] = [
     displayWidth: "125px",
   },
   {
-    src: "/agents/kakobuy.png",
+    src: "/agents/Kakobuy.png",
     width: 75,
     height: 17,
     displayWidth: "125px",

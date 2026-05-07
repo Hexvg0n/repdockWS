@@ -12,6 +12,7 @@
 
 import { Fingerprint } from "lucide-react";
 import { motion } from "motion/react";
+import type { Variants } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
 import type * as React from "react";
@@ -69,7 +70,7 @@ interface DrawerDemoProps extends React.HTMLAttributes<HTMLDivElement> {
   discountedPrice?: number;
 }
 
-const drawerVariants = {
+const drawerVariants: Variants = {
   hidden: {
     y: "100%",
     opacity: 0,
@@ -95,7 +96,7 @@ const drawerVariants = {
   },
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: {
     y: 20,
     opacity: 0,
@@ -144,21 +145,21 @@ export default function SmoothDrawer({
           animate="visible"
           className="mx-auto w-full max-w-[390px] space-y-6 p-6"
           initial="hidden"
-          variants={drawerVariants as any}
+          variants={drawerVariants}
         >
-          <motion.div variants={itemVariants as any}>
+          <motion.div variants={itemVariants}>
             <DrawerHeader className="space-y-2.5 px-0">
               <DrawerTitle className="flex items-center gap-2.5 font-semibold text-2xl tracking-tighter">
-                <motion.div variants={itemVariants as any}>
+                <motion.div variants={itemVariants}>
                   <div className="rounded-2xl bg-gradient-to-br from-blue-500/30 to-indigo-500/10 p-1.5 shadow-inner ring-1 ring-white/10 rounded-2">
                     <Image alt="Logo" height={32} src="/RepDock-25.png" width={32} />
                   </div>
                 </motion.div>
-                <motion.span variants={itemVariants as any}>
+                <motion.span variants={itemVariants}>
                   {title}
                 </motion.span>
               </DrawerTitle>
-              <motion.div variants={itemVariants as any}>
+              <motion.div variants={itemVariants}>
                 <DrawerDescription className="max-w-[310px] text-sm text-zinc-400 leading-relaxed tracking-tighter">
                   {description}
                 </DrawerDescription>
@@ -167,14 +168,14 @@ export default function SmoothDrawer({
           </motion.div>
 
           {children ? (
-            <motion.div variants={itemVariants as any}>{children}</motion.div>
+            <motion.div variants={itemVariants}>{children}</motion.div>
           ) : showPrice ? (
-            <motion.div variants={itemVariants as any}>
+            <motion.div variants={itemVariants}>
               <PriceTag discountedPrice={discountedPrice} price={price} />
             </motion.div>
           ) : null}
 
-          <motion.div variants={itemVariants as any}>
+          <motion.div variants={itemVariants}>
             <DrawerFooter className="flex flex-col gap-3 px-0">
               {showPrimaryAction ? (
                 <div className="w-full">

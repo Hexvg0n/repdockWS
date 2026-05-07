@@ -12,7 +12,6 @@ import {
   IconFlame,
   IconHeart,
   IconHeartFilled,
-  IconLeaf,
   IconLoader2,
   IconSearch,
   IconSnowflake,
@@ -25,23 +24,18 @@ import {
 } from "@tabler/icons-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { getWebpImageUrl } from "@/lib/cloudinary-image";
+import { currencies, fallbackCurrencyRates, formatPrice, readClientRate } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 import type { W2CGender, W2CProduct, W2CProductsResponse } from "@/types/w2c";
 
 const settingsStorageKey = "repdock-settings";
 const favoritesStorageKey = "repdock-w2c-favorites";
-const currencies = ["CNY", "PLN", "USD", "EUR"] as const;
 const agents = ["RIZZITGO", "KAKOBUY", "USFANS", "ACBUY"] as const;
 const seasonOptions = ["All", "SS", "FW"];
-
-const fallbackCurrencyRates: Record<(typeof currencies)[number], number> = {
-  CNY: 1,
-  PLN: 0.52,
-  USD: 0.14,
-  EUR: 0.13,
-};
 
 const agentLogos: Record<(typeof agents)[number], string> = {
   RIZZITGO: "/agents/rig_icon.png",
@@ -287,36 +281,9 @@ export function W2CCatalog() {
   };
 
   const recordInteraction = (productId: string, type: "view" | "buy") => {
-    setProducts((current) =>
-      current.map((product) => {
-        if (product.id !== productId) {
-          return product;
-        }
-
-        if (type === "view") {
-          return {
-            ...product,
-            metadata: {
-              ...product.metadata,
-              clicks: {
-                ...product.metadata.clicks,
-                today: product.metadata.clicks.today + 1,
-                week: product.metadata.clicks.week + 1,
-                allTime: product.metadata.clicks.allTime + 1,
-              },
-            },
-          };
-        }
-
-        return {
-          ...product,
-          metadata: {
-            ...product.metadata,
-            purchases: (product.metadata.purchases ?? 0) + 1,
-          },
-        };
-      }),
-    );
+    if (type === "view") {
+      return;
+    }
 
     void fetch(`/api/w2c/${encodeURIComponent(productId)}/interaction`, {
       method: "POST",
@@ -325,7 +292,29 @@ export function W2CCatalog() {
       },
       body: JSON.stringify({ type }),
       keepalive: true,
-    }).catch(() => undefined);
+    })
+      .then((response) => response.json() as Promise<{ counted?: boolean }>)
+      .then((data) => {
+        if (!data.counted) {
+          return;
+        }
+
+        setProducts((current) =>
+          current.map((product) => {
+            if (product.id !== productId) {
+              return product;
+            }
+            return {
+              ...product,
+              metadata: {
+                ...product.metadata,
+                purchases: (product.metadata.purchases ?? 0) + 1,
+              },
+            };
+          }),
+        );
+      })
+      .catch(() => undefined);
   };
 
   return (
@@ -467,10 +456,12 @@ export function W2CCatalog() {
               product={product}
               rates={currencyRates}
               onRecordBuy={() => recordInteraction(product.id, "buy")}
-              onRecordView={() => recordInteraction(product.id, "view")}
               onToggleFavorite={() => toggleFavorite(product.id)}
             />
           ))}
+          {loading && products.length === 0
+            ? Array.from({ length: 8 }).map((_, index) => <ProductCardSkeleton key={index} />)
+            : null}
         </div>
 
         <div ref={observerTarget} className="grid min-h-24 place-items-center">
@@ -504,7 +495,6 @@ function ProductCard({
   product,
   rates,
   onRecordBuy,
-  onRecordView,
   onToggleFavorite,
 }: Readonly<{
   agent: (typeof agents)[number];
@@ -513,41 +503,22 @@ function ProductCard({
   product: W2CProduct;
   rates: Record<(typeof currencies)[number], number>;
   onRecordBuy: () => void;
-  onRecordView: () => void;
   onToggleFavorite: () => void;
 }>) {
   const link = product.links[agent] ?? product.links.original;
   const imageUrl = getWebpImageUrl(product.image);
   const isFresh =
     Date.now() - Date.parse(product.metadata.addedAt) < 1000 * 60 * 60 * 24 * 7;
-  const handleCardClick = (event: React.MouseEvent<HTMLElement>) => {
-    const target = event.target as Element;
-
-    if (target.closest("a,button")) {
-      return;
-    }
-
-    onRecordView();
-  };
-
-  const handleCardKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
-    if (event.key === "Enter" || event.key === " ") {
-      const target = event.target as Element;
-
-      if (target.closest("a,button")) {
-        return;
-      }
-
-      event.preventDefault();
-      onRecordView();
-    }
-  };
 
   return (
     <article
-      onClick={handleCardClick}
-      className="group relative flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#0d0e14] shadow-2xl shadow-black/20 transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_90px_rgba(41,52,255,0.18)]"
+      className="group relative flex h-full w-full flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#0d0e14] shadow-2xl shadow-black/20 transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_90px_rgba(41,52,255,0.18)]"
     >
+      <Link
+        href={`/w2c/${encodeURIComponent(product.id)}`}
+        aria-label={`Open ${product.name}`}
+        className="absolute inset-0 z-10"
+      />
       {/* Image area — white rounded bg */}
       <div className="relative m-3 mb-0 overflow-hidden rounded-2xl bg-zinc-900">
         <img
@@ -566,7 +537,7 @@ function ProductCard({
             type="button"
             onClick={onToggleFavorite}
             aria-label="Add to favorites"
-            className="grid size-9 place-items-center rounded-xl bg-black/50 text-white backdrop-blur transition hover:bg-black/70"
+            className="relative z-20 grid size-9 place-items-center rounded-xl bg-black/50 text-white backdrop-blur transition hover:bg-black/70"
           >
             {favorite ? (
               <IconHeartFilled className="size-4 text-red-400" />
@@ -586,12 +557,12 @@ function ProductCard({
       </div>
 
       {/* Content section */}
-      <div className="flex flex-grow flex-col gap-3 p-4">
+      <div className="flex min-h-[184px] flex-grow flex-col p-4">
         {/* Name */}
         <h2 className="line-clamp-2 text-sm font-semibold leading-snug text-white">
           {product.name}
         </h2>
-
+        <div className="mt-auto grid gap-3 pt-4">
         {/* Price */}
         <span className="text-2xl font-black text-white">
           {formatPrice(product.priceCny, currency, rates)}
@@ -603,7 +574,7 @@ function ProductCard({
           target="_blank"
           rel="noreferrer"
           onClick={onRecordBuy}
-          className="inline-flex w-full h-11 items-center justify-center gap-2 rounded-2xl bg-white px-4 text-sm font-bold text-black transition hover:bg-blue-100"
+          className="relative z-20 inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 text-sm font-bold text-black transition hover:bg-blue-100"
         >
           <img src={agentLogos[agent]} alt="" className="size-5 rounded-md object-contain" />
           Buy Now
@@ -619,6 +590,7 @@ function ProductCard({
             <IconShoppingBag className="size-3.5" stroke={1.6} />
             {formatCompact(product.metadata.purchases ?? 0)}
           </span>
+        </div>
         </div>
       </div>
     </article>
@@ -648,6 +620,23 @@ function AgentPill({
         {agent}
       </span>
     </span>
+  );
+}
+
+function ProductCardSkeleton() {
+  return (
+    <article className="flex h-full w-full animate-pulse flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#0d0e14] shadow-2xl shadow-black/20">
+      <div className="m-3 mb-0 h-52 rounded-2xl bg-white/[0.06]" />
+      <div className="flex min-h-[184px] flex-grow flex-col p-4">
+        <div className="h-4 w-4/5 rounded-full bg-white/[0.08]" />
+        <div className="mt-2 h-4 w-2/3 rounded-full bg-white/[0.06]" />
+        <div className="mt-auto grid gap-3 pt-4">
+          <div className="h-8 w-1/2 rounded-full bg-white/[0.08]" />
+          <div className="h-11 rounded-2xl bg-white/[0.09]" />
+          <div className="mx-auto h-3 w-24 rounded-full bg-white/[0.06]" />
+        </div>
+      </div>
+    </article>
   );
 }
 
@@ -985,57 +974,6 @@ function addOptionalParam(params: URLSearchParams, key: string, value: string) {
   if (value.trim()) {
     params.set(key, value.trim());
   }
-}
-
-function getWebpImageUrl(imageUrl: string) {
-  try {
-    const url = new URL(imageUrl);
-
-    if (!url.hostname.includes("res.cloudinary.com")) {
-      return imageUrl;
-    }
-
-    const uploadMarker = "/image/upload/";
-    const uploadIndex = url.pathname.indexOf(uploadMarker);
-
-    if (uploadIndex === -1) {
-      return imageUrl;
-    }
-
-    const beforeUpload = url.pathname.slice(0, uploadIndex + uploadMarker.length);
-    const afterUpload = url.pathname.slice(uploadIndex + uploadMarker.length);
-    const alreadyTransformed = afterUpload.split("/")[0]?.startsWith("f_");
-    const transformedPath = alreadyTransformed
-      ? afterUpload.replace(/^([^/]+)/, "f_webp,q_auto")
-      : `f_webp,q_auto/${afterUpload}`;
-
-    url.pathname = `${beforeUpload}${transformedPath}`;
-    return url.toString();
-  } catch {
-    return imageUrl;
-  }
-}
-
-function readClientRate(value: number | undefined, fallback: number) {
-  return Number.isFinite(value) ? Number(value) : fallback;
-}
-
-function formatPrice(
-  priceCny: number,
-  currency: (typeof currencies)[number],
-  rates: Record<(typeof currencies)[number], number>,
-) {
-  const converted = priceCny * (rates[currency] ?? fallbackCurrencyRates[currency]);
-
-  if (currency === "CNY") {
-    return `${Math.round(converted)} CNY`;
-  }
-
-  if (currency === "USD") {
-    return `$${converted.toFixed(2)}`;
-  }
-
-  return `${converted.toFixed(2)} ${currency}`;
 }
 
 function formatCompact(value: number) {

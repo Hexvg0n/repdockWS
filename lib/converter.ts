@@ -1,7 +1,7 @@
 type PlatformName = "taobao" | "tmall" | "1688" | "weidian";
 
 interface Platform {
-  regex: RegExp;
+  hosts: string[];
   urlPattern: string;
   itemIDPattern: RegExp[];
 }
@@ -9,7 +9,7 @@ interface Platform {
 interface Middleman {
   name: string;
   template: string;
-  platformMapping: Record<string, string>;
+  platformMapping: Record<PlatformName, string>;
   requiresDecoding: boolean;
   aliases?: string[];
   reverseMapping?: Record<string, PlatformName>;
@@ -28,22 +28,22 @@ interface ExtractionResult {
 
 const platforms: Readonly<Record<PlatformName, Platform>> = {
   taobao: {
-    regex: /(?:https?:\/\/)?(?:\w+\.)?taobao\.com/i,
+    hosts: ["taobao.com"],
     urlPattern: "https://item.taobao.com/item.htm?id={{itemID}}",
     itemIDPattern: [/[?&]id=(\d+)/],
   },
   tmall: {
-    regex: /(?:https?:\/\/)?(?:www\.)?detail\.tmall\.com/i,
+    hosts: ["tmall.com"],
     urlPattern: "https://detail.tmall.com/item.htm?id={{itemID}}",
     itemIDPattern: [/[?&]id=(\d+)/],
   },
   "1688": {
-    regex: /(?:https?:\/\/)?(?:\w+\.)?1688\.com/i,
+    hosts: ["1688.com"],
     urlPattern: "https://detail.1688.com/offer/{{itemID}}.html",
     itemIDPattern: [/\/offer\/(\d+)\.html/],
   },
   weidian: {
-    regex: /(?:https?:\/\/)?(?:www\.)?weidian\.com/i,
+    hosts: ["weidian.com"],
     urlPattern: "https://weidian.com/item.html?itemID={{itemID}}",
     itemIDPattern: [/[?&]itemI[dD]=(\d+)/],
   },
@@ -77,7 +77,29 @@ const usfansCodes: Record<PlatformName, string> = {
   tmall: "2",
 };
 
+const rizzitgoCodes: Record<PlatformName, string> = {
+  taobao: "1",
+  tmall: "1",
+  "1688": "2",
+  weidian: "3",
+};
+
+const litbuyCodes: Record<PlatformName, string> = {
+  taobao: "1",
+  tmall: "1",
+  "1688": "0",
+  weidian: "weidian",
+};
+
 const middlemen: Readonly<Record<string, Middleman>> = {
+  rizzitgo: {
+    name: "RizzItGo",
+    template: "https://www.rizzitgo.com/detail-page/?goodsId={{itemID}}&source={{platformCode}}",
+    platformMapping: rizzitgoCodes,
+    requiresDecoding: false,
+    aliases: ["rizz", "rig"],
+    reverseMapping: { "1": "taobao", "2": "1688", "3": "weidian" },
+  },
   kakobuy: {
     name: "Kakobuy",
     template: "https://www.kakobuy.com/item/details?url={{encodedUrl}}&affcode=RepDock",
@@ -98,6 +120,13 @@ const middlemen: Readonly<Record<string, Middleman>> = {
     platformMapping: { taobao: "TB", tmall: "TB", weidian: "WD", "1688": "AL" },
     requiresDecoding: false,
     reverseMapping: { TB: "taobao", WD: "weidian", AL: "1688" },
+  },
+  litbuy: {
+    name: "Litbuy",
+    template: "https://litbuy.com/product/{{platformCode}}/{{itemID}}",
+    platformMapping: litbuyCodes,
+    requiresDecoding: false,
+    reverseMapping: { "0": "1688", "1": "taobao", weidian: "weidian" },
   },
   cnfans: {
     name: "CNFans",
@@ -163,6 +192,37 @@ const middlemen: Readonly<Record<string, Middleman>> = {
 };
 
 const templateRegexCache = new Map<string, RegExp>();
+const MAX_URL_LENGTH = 4096;
+
+const safeDecodeURIComponent = (value: string): string => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+};
+
+const normalizeUrlInput = (inputUrl: string): string | null => {
+  const trimmed = inputUrl.trim();
+
+  if (!trimmed || trimmed.length > MAX_URL_LENGTH) return null;
+
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+};
+
+const getHostname = (inputUrl: string): string | null => {
+  const normalized = normalizeUrlInput(inputUrl);
+  if (!normalized) return null;
+
+  try {
+    return new URL(normalized).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+};
+
+const hostMatches = (hostname: string, allowedHost: string): boolean =>
+  hostname === allowedHost || hostname.endsWith(`.${allowedHost}`);
 
 export function getConverterAgents() {
   return Object.entries(middlemen).map(([key, { name }]) => ({ key, name }));
@@ -199,12 +259,12 @@ const templateToRegex = (template: string): RegExp => {
   }
 
   let pattern = template
-    .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
-    .replace(/\\\{\\\{platformCode\\\}\\\}/g, "(?<platformCode>[^/&?]+)")
-    .replace(/\\\{\\\{itemID\\\}\\\}/g, "(?<itemID>\\d+)")
-    .replace(/\\\{\\\{encodedUrl\\\}\\\}/g, "(?<encodedUrl>[^&]+)");
+    .replaceAll(/[.+?^${}()|[\]\\]/g, String.raw`\$&`)
+    .replaceAll(String.raw`\{\{platformCode\}\}`, "(?<platformCode>[^/&?]+)")
+    .replaceAll(String.raw`\{\{itemID\}\}`, String.raw`(?<itemID>\d+)`)
+    .replaceAll(String.raw`\{\{encodedUrl\}\}`, "(?<encodedUrl>[^&]+)");
 
-  pattern = pattern.replace(/^https\\:/, "https?:").replace(/www\\\./, "(?:www\\.)?");
+  pattern = pattern.replace(/^https\\:/, "https?:").replace(/www\\\./, String.raw`(?:www\.)?`);
 
   const regex = new RegExp(pattern, "i");
   templateRegexCache.set(template, regex);
@@ -213,7 +273,7 @@ const templateToRegex = (template: string): RegExp => {
 
 const extractQueryParams = (inputUrl: string): Record<string, string> => {
   try {
-    const url = inputUrl.match(/^https?:\/\//) ? inputUrl : `https://${inputUrl}`;
+    const url = new RegExp(/^https?:\/\//).exec(inputUrl) ? inputUrl : `https://${inputUrl}`;
     const urlObj = new URL(url);
     const params: Record<string, string> = {};
     urlObj.searchParams.forEach((value, key) => {
@@ -234,7 +294,7 @@ const parseMiddlemanUrl = (
   encodedUrl?: string;
 } | null => {
   const regex = templateToRegex(middleman.template);
-  const match = urlStr.match(regex);
+  const match = new RegExp(regex).exec(urlStr);
 
   if (match?.groups) {
     return {
@@ -260,7 +320,7 @@ const parseMiddlemanUrl = (
 };
 
 const extractItemID = (url: string, patterns: RegExp[]): ExtractionResult | null => {
-  const decoded = decodeURIComponent(url);
+  const decoded = safeDecodeURIComponent(url);
 
   for (const pattern of patterns) {
     const match = decoded.match(pattern);
@@ -278,17 +338,25 @@ const extractItemID = (url: string, patterns: RegExp[]): ExtractionResult | null
 const decodeMiddlemanUrl = (url: string, middleman: Middleman): string => {
   if (!middleman.requiresDecoding) return url;
 
+  const normalized = normalizeUrlInput(url);
+  if (!normalized) return url;
+
   try {
-    const urlParam = new URL(url).searchParams.get("url");
-    return urlParam ? decodeURIComponent(urlParam) : url;
+    const urlParam = new URL(normalized).searchParams.get("url");
+    return urlParam ? safeDecodeURIComponent(urlParam) : url;
   } catch {
     return url;
   }
 };
 
 const identifyPlatform = (url: string): PlatformName | null => {
+  const hostname = getHostname(url);
+  if (!hostname) return null;
+
   for (const [name, platform] of Object.entries(platforms)) {
-    if (platform.regex.test(url)) return name as PlatformName;
+    if (platform.hosts.some((host) => hostMatches(hostname, host))) {
+      return name as PlatformName;
+    }
   }
 
   return null;
@@ -298,9 +366,11 @@ const buildOriginalUrl = (platform: PlatformName, itemID: string): string =>
   platforms[platform].urlPattern.replace("{{itemID}}", itemID);
 
 const matchesMiddleman = (url: string, key: string, middleman: Middleman): boolean => {
-  const lowerUrl = url.toLowerCase();
+  const hostname = getHostname(url);
+  if (!hostname) return false;
+
   const names = [key, ...(middleman.aliases || [])];
-  return names.some((name) => lowerUrl.includes(name.toLowerCase()));
+  return names.some((name) => hostname.includes(name.toLowerCase()));
 };
 
 const convertMiddlemanToOriginal = (url: string): string | null => {
@@ -349,7 +419,7 @@ const convertUrlToMiddleman = (originalUrl: string, middlemanKey: string): strin
   }
 
   return middleman.template
-    .replace(/{{itemID}}/g, itemID)
-    .replace(/{{platformCode}}/g, platformCode || "")
-    .replace(/{{encodedUrl}}/g, encodeURIComponent(originalUrl));
+    .replaceAll('{{itemID}}', itemID)
+    .replaceAll('{{platformCode}}', platformCode || "")
+    .replaceAll('{{encodedUrl}}', encodeURIComponent(originalUrl));
 };

@@ -20,7 +20,6 @@ import {
 } from "@tabler/icons-react";
 import SmoothDrawer from "@/components/kokonutui/smooth-drawer";
 import { useEffect, useRef, useState } from "react";
-import { div } from "framer-motion/client";
 
 const navItems = [
   {

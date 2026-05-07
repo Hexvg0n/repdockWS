@@ -13,6 +13,10 @@ export function ensureW2CIndexes(db: Db) {
     db.collection("w2c_products").createIndex({ name: "text", "metadata.brand": "text", "metadata.category": "text" }),
     db.collection("w2c_categories").createIndex({ slug: 1 }, { unique: true }),
     db.collection("w2c_categories").createIndex({ name: 1 }),
+    db
+      .collection("w2c_interactions")
+      .createIndex({ productId: 1, anonymousId: 1, type: 1 }, { unique: true }),
+    db.collection("w2c_interactions").createIndex({ productId: 1, type: 1 }),
   ])
     .then(() => undefined)
     .catch((error) => {

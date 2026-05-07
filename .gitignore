@@ -1,6 +1,11 @@
 node_modules/
 .next/
 out/
+.mongo-data/
+.venv/
+.local-bin/
+coverage/
+*.tsbuildinfo
 
 .env*
 !.env.example
@@ -9,3 +14,4 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+*.log

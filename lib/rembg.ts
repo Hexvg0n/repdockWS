@@ -1,6 +1,8 @@
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import { lookup } from "node:dns/promises";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import net from "node:net";
 import path from "node:path";
 
 export type ProcessedImage = {
@@ -8,6 +10,9 @@ export type ProcessedImage = {
   inputPath: string;
   outputPath: string;
 };
+
+const maxDownloadedImageSize = 12 * 1024 * 1024;
+const imageDownloadTimeoutMs = 10_000;
 
 export async function removeImageBackground(imageUrl: string): Promise<ProcessedImage> {
   const url = parseImageUrl(imageUrl);
@@ -55,7 +60,12 @@ function parseImageUrl(imageUrl: string) {
 }
 
 async function downloadImage(url: URL) {
-  const response = await fetch(url);
+  await assertPublicHostname(url.hostname);
+
+  const response = await fetch(url, {
+    redirect: "follow",
+    signal: AbortSignal.timeout(imageDownloadTimeoutMs),
+  });
 
   if (!response.ok) {
     throw new Error(`Image download failed: ${response.status}`);
@@ -67,7 +77,96 @@ async function downloadImage(url: URL) {
     throw new Error("URL does not point to an image");
   }
 
-  return Buffer.from(await response.arrayBuffer());
+  const contentLength = Number(response.headers.get("content-length") ?? 0);
+
+  if (contentLength > maxDownloadedImageSize) {
+    throw new Error("Image is too large. Max size is 12MB.");
+  }
+
+  if (!response.body) {
+    const buffer = Buffer.from(await response.arrayBuffer());
+
+    if (buffer.byteLength > maxDownloadedImageSize) {
+      throw new Error("Image is too large. Max size is 12MB.");
+    }
+
+    return buffer;
+  }
+
+  const reader = response.body.getReader();
+  const chunks: Buffer[] = [];
+  let totalBytes = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+
+    if (done) {
+      break;
+    }
+
+    totalBytes += value.byteLength;
+
+    if (totalBytes > maxDownloadedImageSize) {
+      throw new Error("Image is too large. Max size is 12MB.");
+    }
+
+    chunks.push(Buffer.from(value));
+  }
+
+  return Buffer.concat(chunks, totalBytes);
+}
+
+async function assertPublicHostname(hostname: string) {
+  const normalizedHostname = hostname.toLowerCase();
+
+  if (
+    normalizedHostname === "localhost" ||
+    normalizedHostname.endsWith(".localhost") ||
+    normalizedHostname.endsWith(".local")
+  ) {
+    throw new Error("Image URL host is not allowed");
+  }
+
+  const directIpVersion = net.isIP(normalizedHostname);
+  const addresses =
+    directIpVersion > 0
+      ? [{ address: normalizedHostname }]
+      : await lookup(normalizedHostname, { all: true, verbatim: true });
+
+  if (addresses.length === 0 || addresses.some(({ address }) => isPrivateAddress(address))) {
+    throw new Error("Image URL host is not allowed");
+  }
+}
+
+function isPrivateAddress(address: string) {
+  if (address.startsWith("::ffff:")) {
+    return isPrivateAddress(address.slice(7));
+  }
+
+  if (address === "::1" || address.toLowerCase().startsWith("fe80:")) {
+    return true;
+  }
+
+  if (/^f[cd][0-9a-f]{2}:/i.test(address)) {
+    return true;
+  }
+
+  if (net.isIP(address) !== 4) {
+    return false;
+  }
+
+  const [first = 0, second = 0] = address.split(".").map(Number);
+
+  return (
+    first === 0 ||
+    first === 10 ||
+    first === 127 ||
+    first >= 224 ||
+    (first === 100 && second >= 64 && second <= 127) ||
+    (first === 169 && second === 254) ||
+    (first === 172 && second >= 16 && second <= 31) ||
+    (first === 192 && second === 168)
+  );
 }
 
 function getExtension(url: URL) {

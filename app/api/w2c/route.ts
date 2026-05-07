@@ -3,6 +3,7 @@ import type { Filter, Sort } from "mongodb";
 
 import { getMongoClient } from "@/lib/mongodb";
 import { ensureW2CIndexes } from "@/lib/w2c-indexes";
+import { normalizeW2CProduct } from "@/lib/w2c-products";
 import type { W2CCategory, W2CGender, W2CProduct, W2CProductsResponse } from "@/types/w2c";
 
 const pageSize = 16;
@@ -38,14 +39,7 @@ export async function GET(request: NextRequest) {
     ]);
     const categories = mergeCategories(savedCategories, productCategories);
 
-    const normalizedProducts = products.map((product) => ({
-      ...product,
-      id: String(product.id ?? product._id),
-      metadata: {
-        ...product.metadata,
-        purchases: product.metadata.purchases ?? 0,
-      },
-    }));
+    const normalizedProducts = products.map((product) => normalizeW2CProduct(product));
 
     return NextResponse.json({
       products: normalizedProducts,

@@ -1,13 +1,13 @@
 import { randomUUID } from "crypto";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import { oauthStateCookieName } from "@/lib/auth";
+import { getDiscordRedirectUri } from "@/lib/discord-oauth";
 
-export function GET() {
+export function GET(request: NextRequest) {
   const clientId = process.env.DISCORD_CLIENT_ID;
-  const redirectUri = process.env.DISCORD_REDIRECT_URI;
 
-  if (!clientId || !redirectUri) {
+  if (!clientId) {
     return NextResponse.json(
       { error: "Discord OAuth is not configured" },
       { status: 500 },
@@ -15,6 +15,7 @@ export function GET() {
   }
 
   const state = randomUUID();
+  const redirectUri = getDiscordRedirectUri(request);
   const authorizationUrl = new URL("https://discord.com/oauth2/authorize");
 
   authorizationUrl.searchParams.set("client_id", clientId);

@@ -8,6 +8,7 @@ import {
   sessionCookieName,
   type DiscordSession,
 } from "@/lib/auth";
+import { getDiscordRedirectUri } from "@/lib/discord-oauth";
 
 type DiscordTokenResponse = {
   access_token: string;
@@ -44,15 +45,15 @@ export async function GET(request: NextRequest) {
 
   const clientId = process.env.DISCORD_CLIENT_ID;
   const clientSecret = process.env.DISCORD_CLIENT_SECRET;
-  const redirectUri = process.env.DISCORD_REDIRECT_URI;
 
-  if (!clientId || !clientSecret || !redirectUri || !process.env.AUTH_SECRET) {
+  if (!clientId || !clientSecret || !process.env.AUTH_SECRET) {
     return NextResponse.json(
       { error: "Discord OAuth is not configured" },
       { status: 500 },
     );
   }
 
+  const redirectUri = getDiscordRedirectUri(request);
   const tokenResponse = await fetch("https://discord.com/api/oauth2/token", {
     method: "POST",
     headers: {

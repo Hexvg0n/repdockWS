@@ -194,7 +194,7 @@ export function AdminOutfitsPanel() {
       items: current.items.map((item) => (item.id === id ? { ...item, [key]: value } : item)),
     }));
   };
-
+// 
   const removeItem = (id: string) => {
     setForm((current) => ({
       ...current,

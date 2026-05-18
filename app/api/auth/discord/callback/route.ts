@@ -77,11 +77,26 @@ export async function GET(request: NextRequest) {
 
   const token = (await tokenResponse.json()) as DiscordTokenResponse;
 
-  const userResponse = await fetch("https://discord.com/api/users/@me", {
+  const authHeaders = {
+    authorization: `${token.token_type} ${token.access_token}`,
+  };
+  const adminGuildId = process.env.DISCORD_ADMIN_GUILD_ID ?? process.env.DISCORD_GUILD_ID;
+  const userRequest = fetch("https://discord.com/api/users/@me", {
     headers: {
-      authorization: `${token.token_type} ${token.access_token}`,
+      ...authHeaders,
     },
   });
+  const guildsRequest = adminGuildId
+    ? fetch("https://discord.com/api/users/@me/guilds", {
+        headers: {
+          ...authHeaders,
+        },
+      })
+    : null;
+  const [userResponse, guildsResponse] = await Promise.all([
+    userRequest,
+    guildsRequest,
+  ]);
 
   if (!userResponse.ok) {
     return NextResponse.json(
@@ -92,24 +107,15 @@ export async function GET(request: NextRequest) {
 
   const user = (await userResponse.json()) as DiscordUserResponse;
   const avatarUrl = getDiscordAvatarUrl(user.id, user.avatar);
-  const adminGuildId = process.env.DISCORD_ADMIN_GUILD_ID ?? process.env.DISCORD_GUILD_ID;
   let isAdmin = false;
 
-  if (adminGuildId) {
-    const guildsResponse = await fetch("https://discord.com/api/users/@me/guilds", {
-      headers: {
-        authorization: `${token.token_type} ${token.access_token}`,
-      },
-    });
-
-    if (guildsResponse.ok) {
+  if (guildsResponse?.ok) {
       const guilds = (await guildsResponse.json()) as DiscordGuildResponse[];
       const targetGuild = guilds.find((guild) => guild.id === adminGuildId);
 
       if (targetGuild) {
         isAdmin = (BigInt(targetGuild.permissions) & administratorPermission) === administratorPermission;
       }
-    }
   }
 
   const session: DiscordSession = {

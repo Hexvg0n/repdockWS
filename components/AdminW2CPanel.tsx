@@ -6,6 +6,7 @@ import {
   IconCloudUpload,
   IconDatabase,
   IconHome,
+  IconHanger,
   IconLoader2,
   IconPencil,
   IconPhoto,
@@ -20,6 +21,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { AdminSelect } from "@/components/ui/admin-select";
 import { AdminLogo, Sidebar, SidebarBody, SidebarLink, useSidebar } from "@/components/ui/sidebar";
 import type { W2CProduct } from "@/types/w2c";
 
@@ -1082,7 +1084,7 @@ function AdminSidebar({
     href: string;
     icon: React.ReactNode;
     label: string;
-    tab: AdminTab;
+    tab?: AdminTab;
   }> = [
     {
       href: "#products",
@@ -1096,6 +1098,11 @@ function AdminSidebar({
       label: "Categories",
       tab: "categories",
     },
+    {
+      href: "/admin/outfits",
+      icon: <IconHanger className="size-5 shrink-0" />,
+      label: "Outfits",
+    },
   ];
 
   return (
@@ -1104,11 +1111,11 @@ function AdminSidebar({
         <AdminLogo compact={!open} />
         <div className="mt-8 flex flex-col gap-2">
           {links.map((link) => {
-            const active = activeTab === link.tab;
+            const active = Boolean(link.tab && activeTab === link.tab);
 
             return (
               <SidebarLink
-                key={link.tab}
+                key={link.href}
                 link={{
                   href: link.href,
                   icon: (
@@ -1126,8 +1133,10 @@ function AdminSidebar({
                 }}
                 className={active ? "bg-blue-500/15" : ""}
                 onClick={(event) => {
-                  event.preventDefault();
-                  onTabChange(link.tab);
+                  if (link.tab) {
+                    event.preventDefault();
+                    onTabChange(link.tab);
+                  }
                   setOpen(false);
                 }}
               />
@@ -1379,26 +1388,13 @@ function SelectInput({
   value: string;
 }) {
   return (
-    <label className="grid gap-2 text-sm">
-      <span className="font-medium text-slate-300">{label}</span>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        disabled={!options.length}
-        className="h-11 rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-white outline-none transition focus:border-blue-400/60 focus:bg-white/[0.07] disabled:cursor-not-allowed disabled:text-slate-600"
-      >
-        {!options.length ? (
-          <option className="bg-neutral-950" value="">
-            {placeholder ?? "No options"}
-          </option>
-        ) : null}
-        {options.map((option) => (
-          <option className="bg-neutral-950" key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-    </label>
+    <AdminSelect
+      label={label}
+      value={value}
+      options={options}
+      placeholder={placeholder}
+      onChange={onChange}
+    />
   );
 }
 

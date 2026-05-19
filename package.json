@@ -27,7 +27,7 @@
     "react": "19.2.5",
     "react-dom": "19.2.5",
     "tailwind-merge": "^3.5.0",
-    "validator": "^13.15.35",
+    "validator": "^13 .15.35",
     "vaul": "^1.1.2"
   },
   "devDependencies": {

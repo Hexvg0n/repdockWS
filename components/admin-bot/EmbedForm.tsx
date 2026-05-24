@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { EmbedData, EmbedField } from './types';
 import { Plus, Trash2, Send, RefreshCw } from 'lucide-react';
-import { HexColorPicker } from "react-colorful";
 import TextToolbar, { insertAtCursor } from './TextToolbar';
 
 interface Channel {
@@ -24,6 +23,19 @@ interface EmbedFormProps {
     hideContentInput?: boolean;
 }
 
+const colorSwatches = [
+    "#5865f2",
+    "#57f287",
+    "#fee75c",
+    "#eb459e",
+    "#ed4245",
+    "#2b2d31",
+] as const;
+
+function normalizeHexColor(color: string) {
+    return /^#[0-9a-f]{6}$/i.test(color) ? color : "#5865f2";
+}
+
 export default function EmbedForm({
     embedData,
     setEmbedData,
@@ -41,6 +53,7 @@ export default function EmbedForm({
     const [channels, setChannels] = useState<Channel[]>([]);
     const [isLoadingChannels, setIsLoadingChannels] = useState(false);
     const [showColorPicker, setShowColorPicker] = useState(false);
+    const normalizedColor = normalizeHexColor(embedData.color);
 
     // Emoji State
     const [emojis, setEmojis] = useState<any[]>([]);
@@ -219,7 +232,38 @@ export default function EmbedForm({
                             <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '8px', zIndex: 100 }}>
                                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }} onClick={() => setShowColorPicker(false)} />
                                 <div style={{ position: 'relative', zIndex: 101, background: 'var(--background-secondary)', padding: '10px', borderRadius: '8px', border: '1px solid var(--background-tertiary)', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
-                                    <HexColorPicker color={embedData.color} onChange={(color) => handleChange('color', color)} />
+                                    <input
+                                        type="color"
+                                        value={normalizedColor}
+                                        onChange={(e) => handleChange('color', e.target.value)}
+                                        aria-label="Kolor embeda"
+                                        style={{
+                                            width: '100%',
+                                            height: '92px',
+                                            padding: 0,
+                                            border: '1px solid var(--background-tertiary)',
+                                            borderRadius: '8px',
+                                            background: 'transparent',
+                                            cursor: 'pointer'
+                                        }}
+                                    />
+                                    <div style={{ marginTop: '8px', display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '6px' }}>
+                                        {colorSwatches.map((color) => (
+                                            <button
+                                                key={color}
+                                                type="button"
+                                                onClick={() => handleChange('color', color)}
+                                                aria-label={`Ustaw kolor ${color}`}
+                                                style={{
+                                                    height: '26px',
+                                                    backgroundColor: color,
+                                                    borderRadius: '6px',
+                                                    border: normalizedColor.toLowerCase() === color ? '2px solid white' : '1px solid var(--background-tertiary)',
+                                                    cursor: 'pointer'
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
                                     <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>HEX</span>
                                         <input

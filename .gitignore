@@ -15,3 +15,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 *.log
+bot/debug.log
+bot/restore_oauth_states.json
+bot/restore_users.json
+bot/ticket_state.json

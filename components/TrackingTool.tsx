@@ -20,13 +20,12 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useLanguageCopy, useRepdockLanguage } from "@/lib/use-repdock-language";
 import type { TrackingData, TrackingEvent } from "@/types/tracking";
 
 type TrackingResponse = TrackingData & {
   error?: string;
 };
-
-const settingsStorageKey = "repdock-settings";
 
 const statusHighlights = [
   "delivered",
@@ -41,31 +40,125 @@ const statusHighlights = [
   "tranzyt",
 ];
 
+const trackingCopy = {
+  PL: {
+    actions: {
+      clear: "Wyczyść",
+      copied: "Skopiowano",
+      copyNumber: "Skopiuj numer",
+      open: "Otwórz",
+      track: "Śledź",
+    },
+    empty: [
+      {
+        title: "Szukaj w mirrorach",
+        text: "API sprawdza kilka mirrorów logistycznych jednocześnie.",
+      },
+      {
+        title: "Czytaj timeline",
+        text: "Zobacz najnowszy status jako pierwszy, razem z lokalizacją i datą.",
+      },
+      {
+        title: "Czyste numery",
+        text: "Obsługiwane są alfanumeryczne numery paczek dla bezpieczniejszych zapytań.",
+      },
+    ],
+    errors: {
+      failed: "Wyszukiwanie trackingu nie powiodło się.",
+      missing: "Najpierw wklej numer trackingowy.",
+      notFound: "Nie udało się znaleźć danych trackingu.",
+    },
+    header: {
+      badge: "Tracking paczek",
+      description:
+        "Wklej numer trackingowy, a RepDock sprawdzi dostępne chińskie mirrory logistyczne równolegle.",
+      title: "Śledź paczki z magazynu",
+    },
+    inputPlaceholder: "Wklej numer trackingowy...",
+    labels: {
+      country: "Kraj",
+      date: "Data",
+      lastStatus: "Ostatni status",
+      events: "zdarzeń trackingu",
+      mirrorTitle: "Wyszukiwanie mirrorów",
+      mirrorText: "Wyniki są tłumaczone zgodnie z językiem zapisanym w ustawieniach.",
+      noEvents: "Brak szczegółowych wydarzeń dla tego numeru trackingowego.",
+      noStatus: "Brak statusu",
+      reference: "Referencja",
+      timeline: "Timeline",
+      trackingNumber: "Numer trackingowy",
+      unknownLocation: "Nieznana lokalizacja",
+    },
+  },
+  EN: {
+    actions: {
+      clear: "Clear",
+      copied: "Copied",
+      copyNumber: "Copy number",
+      open: "Open",
+      track: "Track",
+    },
+    empty: [
+      {
+        title: "Search mirrors",
+        text: "The API checks multiple logistics mirrors at the same time.",
+      },
+      {
+        title: "Read the timeline",
+        text: "See the newest status first with location and date details.",
+      },
+      {
+        title: "Keep numbers clean",
+        text: "Alphanumeric parcel numbers are accepted for safer lookups.",
+      },
+    ],
+    errors: {
+      failed: "Tracking lookup failed.",
+      missing: "Paste a tracking number first.",
+      notFound: "Could not find tracking data.",
+    },
+    header: {
+      badge: "Parcel tracking",
+      description:
+        "Paste a tracking number and RepDock checks available Chinese logistics mirrors in parallel.",
+      title: "Track warehouse parcels",
+    },
+    inputPlaceholder: "Paste tracking number...",
+    labels: {
+      country: "Country",
+      date: "Date",
+      lastStatus: "Last status",
+      events: "tracking events",
+      mirrorTitle: "Mirror search",
+      mirrorText: "Results are translated using your saved language preference.",
+      noEvents: "No detailed events were returned for this tracking number.",
+      noStatus: "No status",
+      reference: "Reference",
+      timeline: "Timeline",
+      trackingNumber: "Tracking number",
+      unknownLocation: "Unknown location",
+    },
+  },
+} as const;
+
+type TrackingCopy = (typeof trackingCopy)[keyof typeof trackingCopy];
+
 export function TrackingTool() {
+  const copy = useLanguageCopy(trackingCopy);
+  const language = useRepdockLanguage();
+  const apiLanguage = language === "EN" ? "en" : "pl";
   const [trackingNumber, setTrackingNumber] = useState("");
-  const [language, setLanguage] = useState<"pl" | "en">("pl");
   const [result, setResult] = useState<TrackingData | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    try {
-      const savedSettings = JSON.parse(
-        globalThis.localStorage.getItem(settingsStorageKey) ?? "{}",
-      ) as { language?: string };
-      setLanguage(savedSettings.language === "EN" ? "en" : "pl");
-    } catch {
-      setLanguage("pl");
-    }
-  }, []);
 
   const latestEvent = result?.details[0] ?? null;
   const progressTone = useMemo(() => getStatusTone(result?.lastStatus ?? latestEvent?.status ?? ""), [latestEvent, result]);
 
   const search = async () => {
     if (!trackingNumber.trim()) {
-      setError("Paste a tracking number first.");
+      setError(copy.errors.missing);
       setResult(null);
       return;
     }
@@ -78,7 +171,7 @@ export function TrackingTool() {
     try {
       const response = await fetch("/api/tracking", {
         body: JSON.stringify({
-          language,
+          language: apiLanguage,
           trackingNumber: trackingNumber.trim(),
         }),
         headers: {
@@ -90,12 +183,12 @@ export function TrackingTool() {
       const data = (await response.json()) as TrackingResponse;
 
       if (!response.ok) {
-        throw new Error(data.error || "Could not find tracking data.");
+        throw new Error(data.error || copy.errors.notFound);
       }
 
       setResult(data);
     } catch (trackingError) {
-      setError(trackingError instanceof Error ? trackingError.message : "Tracking lookup failed.");
+      setError(trackingError instanceof Error ? trackingError.message : copy.errors.failed);
     } finally {
       setLoading(false);
     }
@@ -126,13 +219,13 @@ export function TrackingTool() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-blue-300/20 bg-blue-500/10 px-3 py-1.5 text-sm font-semibold text-blue-100">
               <IconSparkles2Filled className="size-4" />
-              Parcel tracking
+              {copy.header.badge}
             </div>
             <h1 className="mt-5 font-['Poppins'] text-4xl font-medium tracking-normal md:text-6xl">
-              Track warehouse parcels
+              {copy.header.title}
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-400">
-              Paste a tracking number and RepDock checks available Chinese logistics mirrors in parallel.
+              {copy.header.description}
             </p>
           </div>
 
@@ -142,9 +235,9 @@ export function TrackingTool() {
                 <IconRoute className="size-6" />
               </span>
               <div>
-                <p className="text-sm font-semibold text-white">Mirror search</p>
+                <p className="text-sm font-semibold text-white">{copy.labels.mirrorTitle}</p>
                 <p className="text-xs leading-relaxed text-slate-500">
-                  Results are translated using your saved language preference.
+                  {copy.labels.mirrorText}
                 </p>
               </div>
             </div>
@@ -163,13 +256,13 @@ export function TrackingTool() {
                     void search();
                   }
                 }}
-                placeholder="Paste tracking number..."
+                placeholder={copy.inputPlaceholder}
                 className="h-14 w-full rounded-2xl border border-white/10 bg-black/25 pl-12 pr-4 text-sm font-medium text-white outline-none transition placeholder:text-slate-600 focus:border-blue-400/50 focus:bg-white/[0.06] focus:shadow-[0_0_32px_rgba(41,52,255,0.18)]"
               />
             </label>
             <Button onClick={search} disabled={loading} className="h-14 rounded-2xl px-6">
               {loading ? <IconLoader2 className="size-4 animate-spin" /> : <IconRefresh className="size-4" />}
-              Track
+              {copy.actions.track}
             </Button>
             <Button
               onClick={clear}
@@ -177,7 +270,7 @@ export function TrackingTool() {
               className="h-14 rounded-2xl border-white/10 bg-white/[0.04] px-5 text-white hover:bg-white/[0.08]"
             >
               <IconX className="size-4" />
-              Clear
+              {copy.actions.clear}
             </Button>
           </div>
 
@@ -198,7 +291,7 @@ export function TrackingTool() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">
-                        Tracking number
+                        {copy.labels.trackingNumber}
                       </p>
                       <h2 className="mt-2 break-all font-['Poppins'] text-2xl font-medium text-white">
                         {result.trackingNumber}
@@ -214,14 +307,14 @@ export function TrackingTool() {
                   </div>
 
                   <div className="mt-5 rounded-3xl border border-white/10 bg-black/25 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Last status</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{copy.labels.lastStatus}</p>
                     <p className="mt-2 text-sm leading-relaxed text-slate-200">{result.lastStatus}</p>
                   </div>
 
                   <div className="mt-4 divide-y divide-white/10 overflow-hidden rounded-3xl border border-white/10 bg-black/20">
-                    <MetaRow icon={<IconMapPin className="size-4" />} label="Country" value={result.country} />
-                    <MetaRow icon={<IconClock className="size-4" />} label="Date" value={result.date} />
-                    <MetaRow icon={<IconPackage className="size-4" />} label="Reference" value={result.referenceNo} />
+                    <MetaRow icon={<IconMapPin className="size-4" />} label={copy.labels.country} value={result.country} />
+                    <MetaRow icon={<IconClock className="size-4" />} label={copy.labels.date} value={result.date} />
+                    <MetaRow icon={<IconPackage className="size-4" />} label={copy.labels.reference} value={result.referenceNo} />
                   </div>
                 </div>
               </article>
@@ -230,9 +323,9 @@ export function TrackingTool() {
             <section className="rounded-[34px] border border-white/10 bg-white/[0.035] p-4 shadow-2xl shadow-black/25 backdrop-blur-xl md:p-6">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">Timeline</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">{copy.labels.timeline}</p>
                   <h2 className="mt-2 font-['Poppins'] text-2xl font-medium text-white">
-                    {result.details.length} tracking events
+                    {result.details.length} {copy.labels.events}
                   </h2>
                 </div>
                 <span className="grid size-12 place-items-center rounded-2xl bg-blue-500/15 text-blue-100 ring-1 ring-blue-300/20">
@@ -243,18 +336,18 @@ export function TrackingTool() {
               <div className="mt-6 grid gap-3">
                 {result.details.length > 0 ? (
                   result.details.map((event, index) => (
-                    <TimelineEvent event={event} first={index === 0} key={`${event.date}-${event.status}-${index}`} />
+                    <TimelineEvent copy={copy} event={event} first={index === 0} key={`${event.date}-${event.status}-${index}`} />
                   ))
                 ) : (
                   <div className="rounded-3xl border border-white/10 bg-black/20 p-8 text-center text-sm text-slate-500">
-                    No detailed events were returned for this tracking number.
+                    {copy.labels.noEvents}
                   </div>
                 )}
               </div>
             </section>
           </div>
         ) : (
-          <EmptyTrackingState />
+          <EmptyTrackingState copy={copy} />
         )}
       </section>
     </main>
@@ -262,9 +355,11 @@ export function TrackingTool() {
 }
 
 function TimelineEvent({
+  copy,
   event,
   first,
 }: {
+  copy: TrackingCopy;
   event: TrackingEvent;
   first: boolean;
 }) {
@@ -289,8 +384,8 @@ function TimelineEvent({
         <span>{event.date || "N/A"}</span>
       </div>
       <div className="min-w-0">
-        <p className="text-sm leading-relaxed text-white">{event.status || "No status"}</p>
-        <p className="mt-1 text-xs text-slate-500">{event.location || "Unknown location"}</p>
+        <p className="text-sm leading-relaxed text-white">{event.status || copy.labels.noStatus}</p>
+        <p className="mt-1 text-xs text-slate-500">{event.location || copy.labels.unknownLocation}</p>
       </div>
     </article>
   );
@@ -318,32 +413,22 @@ function MetaRow({
   );
 }
 
-function EmptyTrackingState() {
+function EmptyTrackingState({ copy }: { copy: TrackingCopy }) {
+  const icons = [
+    <IconTruckDelivery className="size-6" key="truck" />,
+    <IconRoute className="size-6" key="route" />,
+    <IconPackage className="size-6" key="package" />,
+  ];
+
   return (
     <div className="grid gap-6 lg:grid-cols-3">
-      {[
-        {
-          icon: <IconTruckDelivery className="size-6" />,
-          title: "Search mirrors",
-          text: "The API checks multiple logistics mirrors at the same time.",
-        },
-        {
-          icon: <IconRoute className="size-6" />,
-          title: "Read the timeline",
-          text: "See the newest status first with location and date details.",
-        },
-        {
-          icon: <IconPackage className="size-6" />,
-          title: "Keep numbers clean",
-          text: "Alphanumeric parcel numbers are accepted for safer lookups.",
-        },
-      ].map((item) => (
+      {copy.empty.map((item, index) => (
         <article
           className="rounded-[30px] border border-white/10 bg-white/[0.035] p-5 shadow-2xl shadow-black/20"
           key={item.title}
         >
           <span className="grid size-12 place-items-center rounded-2xl bg-blue-500/15 text-blue-100 ring-1 ring-blue-300/20">
-            {item.icon}
+            {icons[index]}
           </span>
           <h2 className="mt-5 text-lg font-semibold text-white">{item.title}</h2>
           <p className="mt-2 text-sm leading-relaxed text-slate-500">{item.text}</p>

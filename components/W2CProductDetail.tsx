@@ -14,9 +14,13 @@ import { useEffect, useRef, useState } from "react";
 
 import { getWebpImageUrl } from "@/lib/cloudinary-image";
 import { currencies, fallbackCurrencyRates, formatPrice, readClientRate } from "@/lib/currency";
+import {
+  settingsStorageKey,
+  useLanguageCopy,
+  useRepdockLanguage,
+} from "@/lib/use-repdock-language";
 import type { W2CProduct } from "@/types/w2c";
 
-const settingsStorageKey = "repdock-settings";
 const favoritesStorageKey = "repdock-w2c-favorites";
 const agents = ["RIZZITGO", "KAKOBUY", "USFANS", "ACBUY"] as const;
 
@@ -27,7 +31,45 @@ const agentLogos: Record<(typeof agents)[number], string> = {
   ACBUY: "/agents/acb_icon.png",
 };
 
+const productDetailCopy = {
+  PL: {
+    back: "Wróć do W2C",
+    buyNowWith: "Kup teraz przez",
+    favorite: "Przełącz ulubione",
+    gender: {
+      men: "Męskie",
+      women: "Damskie",
+    },
+    original: "Oryginał",
+    price: "Cena",
+    settingsFollow: "Agent i waluta korzystają z Twoich Ustawień.",
+    stats: {
+      buys: "Zakupy",
+      views: "Wyświetlenia",
+    },
+  },
+  EN: {
+    back: "Back to W2C",
+    buyNowWith: "Buy Now with",
+    favorite: "Toggle favorite",
+    gender: {
+      men: "Men",
+      women: "Women",
+    },
+    original: "Original",
+    price: "Price",
+    settingsFollow: "Agent and currency follow your Settings.",
+    stats: {
+      buys: "Buys",
+      views: "Views",
+    },
+  },
+} as const;
+
 export function W2CProductDetail({ product }: { product: W2CProduct }) {
+  const copy = useLanguageCopy(productDetailCopy);
+  const language = useRepdockLanguage();
+  const numberLocale = language === "PL" ? "pl" : "en";
   const [currency, setCurrency] = useState<(typeof currencies)[number]>("CNY");
   const [rates, setRates] = useState(fallbackCurrencyRates);
   const [agent, setAgent] = useState<(typeof agents)[number]>("RIZZITGO");
@@ -39,27 +81,40 @@ export function W2CProductDetail({ product }: { product: W2CProduct }) {
   const link = product.links[agent] ?? product.links.original;
 
   useEffect(() => {
-    try {
-      const savedSettings = JSON.parse(
-        globalThis.localStorage.getItem(settingsStorageKey) ?? "{}",
-      ) as { currency?: string; agent?: string };
+    const loadSettings = () => {
+      try {
+        const savedSettings = JSON.parse(
+          globalThis.localStorage.getItem(settingsStorageKey) ?? "{}",
+        ) as { currency?: string; agent?: string };
 
-      if (currencies.includes(savedSettings.currency as (typeof currencies)[number])) {
-        setCurrency(savedSettings.currency as (typeof currencies)[number]);
+        if (currencies.includes(savedSettings.currency as (typeof currencies)[number])) {
+          setCurrency(savedSettings.currency as (typeof currencies)[number]);
+        }
+
+        if (agents.includes(savedSettings.agent as (typeof agents)[number])) {
+          setAgent(savedSettings.agent as (typeof agents)[number]);
+        }
+
+        const favorites = JSON.parse(
+          globalThis.localStorage.getItem(favoritesStorageKey) ?? "[]",
+        ) as string[];
+        setFavorite(favorites.includes(product.id));
+      } catch {
+        setCurrency("CNY");
+        setAgent("RIZZITGO");
       }
+    };
 
-      if (agents.includes(savedSettings.agent as (typeof agents)[number])) {
-        setAgent(savedSettings.agent as (typeof agents)[number]);
-      }
+    loadSettings();
+    globalThis.addEventListener("focus", loadSettings);
+    globalThis.addEventListener("storage", loadSettings);
+    globalThis.addEventListener("repdock-settings-updated", loadSettings);
 
-      const favorites = JSON.parse(
-        globalThis.localStorage.getItem(favoritesStorageKey) ?? "[]",
-      ) as string[];
-      setFavorite(favorites.includes(product.id));
-    } catch {
-      setCurrency("CNY");
-      setAgent("RIZZITGO");
-    }
+    return () => {
+      globalThis.removeEventListener("focus", loadSettings);
+      globalThis.removeEventListener("storage", loadSettings);
+      globalThis.removeEventListener("repdock-settings-updated", loadSettings);
+    };
   }, [product.id]);
 
   useEffect(() => {
@@ -172,7 +227,7 @@ export function W2CProductDetail({ product }: { product: W2CProduct }) {
 
         <aside className="flex flex-col rounded-[34px] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/30 backdrop-blur-xl lg:sticky lg:top-28 lg:max-h-[calc(100vh-8rem)]">
           <Link href="/w2c" className="mb-5 text-sm font-semibold text-blue-200 hover:text-white">
-            Back to W2C
+            {copy.back}
           </Link>
 
           <div className="flex items-start justify-between gap-4">
@@ -189,7 +244,7 @@ export function W2CProductDetail({ product }: { product: W2CProduct }) {
               type="button"
               onClick={toggleFavorite}
               className="grid size-11 shrink-0 place-items-center rounded-2xl border border-white/10 bg-white/[0.04] text-white transition hover:bg-white/[0.08]"
-              aria-label="Toggle favorite"
+              aria-label={copy.favorite}
             >
               {favorite ? <IconHeartFilled className="size-5 text-red-400" /> : <IconHeart className="size-5" />}
             </button>
@@ -200,19 +255,19 @@ export function W2CProductDetail({ product }: { product: W2CProduct }) {
               <IconStarFilled className="size-3.5 text-amber-300" />
               {product.rating.toFixed(1)}
             </span>
-            <span className="rounded-full bg-white/[0.04] px-3 py-1">{product.metadata.gender}</span>
+            <span className="rounded-full bg-white/[0.04] px-3 py-1">{formatGender(product.metadata.gender, copy.gender)}</span>
             <span className="rounded-full bg-white/[0.04] px-3 py-1">{product.metadata.season}</span>
           </div>
 
           <div className="mt-7 rounded-3xl border border-white/10 bg-black/25 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Price</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{copy.price}</p>
             <p className="mt-2 text-4xl font-black text-white">{formatPrice(product.priceCny, currency, rates)}</p>
-            <p className="mt-1 text-sm text-slate-500">Original: {Math.round(product.priceCny)} CNY</p>
+            <p className="mt-1 text-sm text-slate-500">{copy.original}: {Math.round(product.priceCny)} CNY</p>
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <StatPill icon={<IconEye className="size-4" />} label="Views" value={formatCompact(views)} />
-            <StatPill icon={<IconShoppingBag className="size-4" />} label="Buys" value={formatCompact(purchases)} />
+            <StatPill icon={<IconEye className="size-4" />} label={copy.stats.views} value={formatCompact(views, numberLocale)} />
+            <StatPill icon={<IconShoppingBag className="size-4" />} label={copy.stats.buys} value={formatCompact(purchases, numberLocale)} />
           </div>
 
           <div className="mt-auto grid gap-3 pt-7">
@@ -224,10 +279,10 @@ export function W2CProductDetail({ product }: { product: W2CProduct }) {
               className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-white px-4 text-sm font-black text-black transition hover:bg-blue-100"
             >
               <img src={agentLogos[agent]} alt="" className="size-5 rounded-md object-contain" />
-              Buy Now with {agent}
+              {copy.buyNowWith} {agent}
             </a>
             <p className="text-center text-xs text-slate-500">
-              Agent and currency follow your Settings.
+              {copy.settingsFollow}
             </p>
           </div>
         </aside>
@@ -256,8 +311,12 @@ function StatPill({
   );
 }
 
-function formatCompact(value: number) {
-  return new Intl.NumberFormat("en", {
+function formatGender(value: string, labels: Record<string, string>) {
+  return labels[value] ?? value;
+}
+
+function formatCompact(value: number, locale: string) {
+  return new Intl.NumberFormat(locale, {
     compactDisplay: "short",
     maximumFractionDigits: 1,
     notation: "compact",

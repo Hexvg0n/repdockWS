@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "bot": "node bot/bot.js",
     "start": "next start"
   },
   "dependencies": {
@@ -19,15 +20,18 @@
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.10.0",
     "clsx": "^2.1.1",
+    "discord.js": "^14.25.1",
+    "dotenv": "^17.2.3",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.14.0",
     "mongodb": "^7.2.0",
     "motion": "^12.38.0",
     "next": "16.2.4",
     "react": "19.2.5",
+    "react-colorful": "^5.6.1",
     "react-dom": "19.2.5",
     "tailwind-merge": "^3.5.0",
-    "validator": "^13 .15.35",
+    "validator": "^13.15.35",
     "vaul": "^1.1.2"
   },
   "devDependencies": {

@@ -69,8 +69,25 @@ export async function GET(request: NextRequest) {
   });
 
   if (!tokenResponse.ok) {
+    const errorBody = await tokenResponse.text();
+
+    console.error("Discord token exchange failed", {
+      status: tokenResponse.status,
+      redirectUri,
+      body: errorBody,
+    });
+
     return NextResponse.json(
-      { error: "Failed to exchange Discord authorization code" },
+      {
+        error: "Failed to exchange Discord authorization code",
+        ...(process.env.NODE_ENV !== "production"
+          ? {
+              status: tokenResponse.status,
+              discordError: errorBody,
+              redirectUri,
+            }
+          : {}),
+      },
       { status: 401 },
     );
   }

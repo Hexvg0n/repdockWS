@@ -12,6 +12,7 @@ import {
   IconPhoto,
   IconPlus,
   IconRefresh,
+  IconRobot,
   IconSparkles,
   IconTags,
   IconTrash,
@@ -1102,6 +1103,11 @@ function AdminSidebar({
       href: "/admin/outfits",
       icon: <IconHanger className="size-5 shrink-0" />,
       label: "Outfits",
+    },
+    {
+      href: "/admin/bot",
+      icon: <IconRobot className="size-5 shrink-0" />,
+      label: "Bot",
     },
   ];
 

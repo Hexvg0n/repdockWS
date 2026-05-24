@@ -21,6 +21,7 @@ import {
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useLanguageCopy, useRepdockLanguage } from "@/lib/use-repdock-language";
 import { cn } from "@/lib/utils";
 
 type SourceName = "ACBuy" | "USFans" | "CNFans";
@@ -81,7 +82,105 @@ const sourceAccent: Record<SourceName, string> = {
   USFans: "from-sky-300 to-blue-500",
 };
 
+const qcCopy = {
+  PL: {
+    actions: {
+      clear: "Wyczyść",
+      openOriginal: "Otwórz oryginał",
+      search: "Szukaj QC",
+    },
+    empty: {
+      badgeFrom: "Link produktu",
+      badgeTo: "Grupy QC",
+      description: "Zdjęcia QC pojawią się tutaj jako pogrupowane zestawy z magazynu.",
+      title: "Wklej link produktu, żeby zacząć",
+    },
+    errors: {
+      failed: "Wyszukiwanie QC nie powiodło się.",
+      load: "Nie udało się załadować zdjęć QC.",
+      missing: "Najpierw wklej link produktu lub agenta.",
+    },
+    header: {
+      badge: "Wyszukiwarka QC",
+      description: "Wklej link z Taobao, 1688, Weidian albo agenta i sprawdź zdjęcia magazynowe przed zakupem.",
+      sourceText: "ACBuy, USFans i CNFans są sprawdzane równolegle.",
+      sourceTitle: "Trzy źródła naraz",
+      title: "Znajdź prawdziwe zdjęcia QC",
+    },
+    inputPlaceholder: "Wklej link produktu lub agenta...",
+    labels: {
+      all: "Wszystkie",
+      closePreview: "Zamknij podgląd",
+      dateUnknown: "Nieznana data",
+      group: "Grupa",
+      nextPhoto: "Następne zdjęcie QC",
+      noPhotos: "Brak zdjęć",
+      of: "z",
+      photos: "zdjęć",
+      previousPhoto: "Poprzednie zdjęcie QC",
+      qcPhotos: "zdjęć QC",
+      resolvedProduct: "Rozpoznany produkt",
+      skipped: "Pominięto",
+      source: "Źródło",
+      unavailable: "Niedostępne",
+      warehouseSet: "Zestaw magazynowy",
+      zoomIn: "Powiększ",
+      zoomOut: "Pomniejsz",
+    },
+  },
+  EN: {
+    actions: {
+      clear: "Clear",
+      openOriginal: "Open original",
+      search: "Search QC",
+    },
+    empty: {
+      badgeFrom: "Product link",
+      badgeTo: "QC groups",
+      description: "QC photos will appear here as grouped warehouse sets.",
+      title: "Paste a product link to start",
+    },
+    errors: {
+      failed: "QC lookup failed.",
+      load: "Could not load QC photos.",
+      missing: "Paste a product or agent link first.",
+    },
+    header: {
+      badge: "Warehouse QC finder",
+      description: "Paste a Taobao, 1688, Weidian or agent link and check warehouse photos before buying.",
+      sourceText: "ACBuy, USFans and CNFans are checked in parallel.",
+      sourceTitle: "Three source search",
+      title: "Find real QC photos",
+    },
+    inputPlaceholder: "Paste product or agent link...",
+    labels: {
+      all: "All",
+      closePreview: "Close preview",
+      dateUnknown: "Date unknown",
+      group: "Group",
+      nextPhoto: "Next QC photo",
+      noPhotos: "No photos",
+      of: "of",
+      photos: "photos",
+      previousPhoto: "Previous QC photo",
+      qcPhotos: "QC photos",
+      resolvedProduct: "Resolved product",
+      skipped: "Skipped",
+      source: "Source",
+      unavailable: "Unavailable",
+      warehouseSet: "Warehouse set",
+      zoomIn: "Zoom in",
+      zoomOut: "Zoom out",
+    },
+  },
+} as const;
+
+type QCCopy = (typeof qcCopy)[keyof typeof qcCopy];
+
 export function QCTool() {
+  const copy = useLanguageCopy(qcCopy);
+  const language = useRepdockLanguage();
+  const dateLocale = language === "PL" ? "pl" : "en";
   const [url, setUrl] = useState("");
   const [images, setImages] = useState<QCImage[]>([]);
   const [meta, setMeta] = useState<QCResponseMeta | null>(null);
@@ -90,7 +189,10 @@ export function QCTool() {
   const [activeSource, setActiveSource] = useState<(typeof sourceOrder)[number]>("All");
   const [viewer, setViewer] = useState<{ groupId: string; imageIndex: number; zoomed: boolean } | null>(null);
 
-  const groups = useMemo(() => groupQCImages(images, activeSource), [activeSource, images]);
+  const groups = useMemo(
+    () => groupQCImages(images, activeSource, dateLocale, copy.labels),
+    [activeSource, copy.labels, dateLocale, images],
+  );
   const activeGroup = useMemo(
     () => groups.find((group) => group.id === viewer?.groupId) ?? null,
     [groups, viewer?.groupId],
@@ -113,7 +215,7 @@ export function QCTool() {
 
   const search = async () => {
     if (!url.trim()) {
-      setError("Paste a product or agent link first.");
+      setError(copy.errors.missing);
       setImages([]);
       setMeta(null);
       return;
@@ -138,13 +240,13 @@ export function QCTool() {
 
       if (!response.ok) {
         setMeta(data.meta ?? null);
-        throw new Error(data.error || "Could not load QC photos.");
+        throw new Error(data.error || copy.errors.load);
       }
 
       setImages(data.data ?? []);
       setMeta(data.meta ?? null);
     } catch (searchError) {
-      setError(searchError instanceof Error ? searchError.message : "QC lookup failed.");
+      setError(searchError instanceof Error ? searchError.message : copy.errors.failed);
     } finally {
       setLoading(false);
     }
@@ -170,13 +272,13 @@ export function QCTool() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-blue-300/20 bg-blue-500/10 px-3 py-1.5 text-sm font-semibold text-blue-100">
               <IconSparkles2Filled className="size-4" />
-              Warehouse QC finder
+              {copy.header.badge}
             </div>
             <h1 className="mt-5 font-['Poppins'] text-4xl font-medium tracking-normal md:text-6xl">
-              Find real QC photos
+              {copy.header.title}
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-400">
-              Paste a Taobao, 1688, Weidian or agent link and check warehouse photos before buying.
+              {copy.header.description}
             </p>
           </div>
 
@@ -186,8 +288,8 @@ export function QCTool() {
                 <IconWorldSearch className="size-6" />
               </span>
               <div>
-                <p className="text-sm font-semibold text-white">Three source search</p>
-                <p className="text-xs leading-relaxed text-slate-500">ACBuy, USFans and CNFans are checked in parallel.</p>
+                <p className="text-sm font-semibold text-white">{copy.header.sourceTitle}</p>
+                <p className="text-xs leading-relaxed text-slate-500">{copy.header.sourceText}</p>
               </div>
             </div>
           </div>
@@ -205,13 +307,13 @@ export function QCTool() {
                     void search();
                   }
                 }}
-                placeholder="Paste product or agent link..."
+                placeholder={copy.inputPlaceholder}
                 className="h-14 w-full rounded-2xl border border-white/10 bg-black/25 pl-12 pr-4 text-sm font-medium text-white outline-none transition placeholder:text-slate-600 focus:border-blue-400/50 focus:bg-white/[0.06] focus:shadow-[0_0_32px_rgba(41,52,255,0.18)]"
               />
             </label>
             <Button onClick={search} disabled={loading} className="h-14 rounded-2xl px-6">
               {loading ? <IconLoader2 className="size-4 animate-spin" /> : <IconRefresh className="size-4" />}
-              Search QC
+              {copy.actions.search}
             </Button>
             <Button
               onClick={clear}
@@ -219,7 +321,7 @@ export function QCTool() {
               className="h-14 rounded-2xl border-white/10 bg-white/[0.04] px-5 text-white hover:bg-white/[0.08]"
             >
               <IconX className="size-4" />
-              Clear
+              {copy.actions.clear}
             </Button>
           </div>
 
@@ -231,12 +333,13 @@ export function QCTool() {
           ) : null}
         </div>
 
-        {meta ? <ProductMetaCard meta={meta} /> : null}
+        {meta ? <ProductMetaCard copy={copy} meta={meta} /> : null}
 
         {images.length > 0 ? (
           <div className="grid gap-5">
             <SourceFilters
               activeSource={activeSource}
+              copy={copy}
               counts={sourceCounts}
               total={images.length}
               onChange={setActiveSource}
@@ -247,6 +350,7 @@ export function QCTool() {
                 <QCGroupCard
                   group={group}
                   index={index}
+                  copy={copy}
                   key={group.id}
                   onOpen={() => setViewer({ groupId: group.id, imageIndex: 0, zoomed: false })}
                 />
@@ -256,7 +360,7 @@ export function QCTool() {
         ) : loading ? (
           <QCLoadingState />
         ) : (
-          <QCEmptyState />
+          <QCEmptyState copy={copy} />
         )}
       </section>
 
@@ -265,6 +369,7 @@ export function QCTool() {
           group={activeGroup}
           image={activeImage}
           imageIndex={viewer.imageIndex}
+          copy={copy}
           zoomed={viewer.zoomed}
           onClose={() => setViewer(null)}
           onSelect={(imageIndex) => setViewer({ groupId: activeGroup.id, imageIndex, zoomed: false })}
@@ -275,11 +380,11 @@ export function QCTool() {
   );
 }
 
-function ProductMetaCard({ meta }: { meta: QCResponseMeta }) {
+function ProductMetaCard({ copy, meta }: { copy: QCCopy; meta: QCResponseMeta }) {
   return (
     <section className="grid gap-4 rounded-[32px] border border-white/10 bg-white/[0.035] p-5 shadow-2xl shadow-black/25 backdrop-blur-xl lg:grid-cols-[minmax(0,1fr)_auto]">
       <div className="min-w-0">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Resolved product</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{copy.labels.resolvedProduct}</p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-blue-500/15 px-3 py-1.5 text-sm font-semibold uppercase text-blue-100">
             {meta.product.platform}
@@ -292,23 +397,23 @@ function ProductMetaCard({ meta }: { meta: QCResponseMeta }) {
       </div>
 
       <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[420px]">
-        <SourceStatus label="ACBuy" meta={meta.sources.acbuy} />
-        <SourceStatus label="USFans" meta={meta.sources.usfans} />
-        <SourceStatus label="CNFans" meta={meta.sources.cnfans} />
+        <SourceStatus copy={copy} label="ACBuy" meta={meta.sources.acbuy} />
+        <SourceStatus copy={copy} label="USFans" meta={meta.sources.usfans} />
+        <SourceStatus copy={copy} label="CNFans" meta={meta.sources.cnfans} />
       </div>
     </section>
   );
 }
 
-function SourceStatus({ label, meta }: { label: SourceName; meta: QCSourceMeta }) {
+function SourceStatus({ copy, label, meta }: { copy: QCCopy; label: SourceName; meta: QCSourceMeta }) {
   const hasPhotos = meta.ok && meta.count > 0;
   const statusText = hasPhotos
-    ? `${meta.count} photos`
+    ? `${meta.count} ${copy.labels.photos}`
     : meta.ok
-      ? "No photos"
+      ? copy.labels.noPhotos
       : meta.skipped
-        ? "Skipped"
-        : meta.error ?? "Unavailable";
+        ? copy.labels.skipped
+        : meta.error ?? copy.labels.unavailable;
 
   return (
     <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
@@ -330,11 +435,13 @@ function SourceStatus({ label, meta }: { label: SourceName; meta: QCSourceMeta }
 
 function SourceFilters({
   activeSource,
+  copy,
   counts,
   onChange,
   total,
 }: {
   activeSource: (typeof sourceOrder)[number];
+  copy: QCCopy;
   counts: Record<SourceName, number>;
   onChange: (source: (typeof sourceOrder)[number]) => void;
   total: number;
@@ -343,7 +450,7 @@ function SourceFilters({
     <div className="flex flex-wrap items-center gap-2 rounded-[28px] border border-white/10 bg-white/[0.035] p-2 shadow-2xl shadow-black/20 backdrop-blur-xl">
       <span className="ml-2 mr-1 inline-flex items-center gap-2 text-sm font-semibold text-slate-400">
         <IconFilter className="size-4" />
-        Source
+        {copy.labels.source}
       </span>
       {sourceOrder.map((source) => {
         const count = source === "All" ? total : counts[source];
@@ -361,7 +468,7 @@ function SourceFilters({
                 : "bg-black/25 text-slate-400 hover:bg-white/[0.07] hover:text-white",
             )}
           >
-            {source}
+            {source === "All" ? copy.labels.all : source}
             <span className={cn("rounded-full px-2 py-0.5 text-xs", active ? "bg-black/10" : "bg-white/[0.06]")}>
               {count}
             </span>
@@ -373,10 +480,12 @@ function SourceFilters({
 }
 
 function QCGroupCard({
+  copy,
   group,
   index,
   onOpen,
 }: {
+  copy: QCCopy;
   group: QCGroup;
   index: number;
   onOpen: () => void;
@@ -395,7 +504,7 @@ function QCGroupCard({
           {cover ? (
             <img
               src={cover.photoUrl}
-              alt={`${group.source} QC group cover`}
+              alt={`${group.source} ${copy.labels.group}`}
               className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
               loading="lazy"
             />
@@ -435,7 +544,7 @@ function QCGroupCard({
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-white">{group.title}</p>
               <p className="mt-1 text-xs text-slate-500">
-                {group.dateLabel} / {group.images.length} photos
+                {group.dateLabel} / {group.images.length} {copy.labels.photos}
               </p>
             </div>
             <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-blue-500/10 text-blue-100 ring-1 ring-blue-300/20">
@@ -448,21 +557,21 @@ function QCGroupCard({
   );
 }
 
-function QCEmptyState() {
+function QCEmptyState({ copy }: { copy: QCCopy }) {
   return (
     <div className="grid min-h-72 place-items-center rounded-[34px] border border-dashed border-white/10 bg-white/[0.025] p-8 text-center">
       <div className="max-w-md">
         <span className="mx-auto grid size-14 place-items-center rounded-3xl bg-blue-500/15 text-blue-100 ring-1 ring-blue-300/20">
           <IconPhoto className="size-6" />
         </span>
-        <h2 className="mt-5 text-xl font-semibold text-white">Paste a product link to start</h2>
+        <h2 className="mt-5 text-xl font-semibold text-white">{copy.empty.title}</h2>
         <p className="mt-2 text-sm leading-relaxed text-slate-500">
-          QC photos will appear here as grouped warehouse sets.
+          {copy.empty.description}
         </p>
         <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/25 px-3 py-1.5 text-xs text-slate-400">
-          Product link
+          {copy.empty.badgeFrom}
           <IconArrowRight className="size-3.5" />
-          QC groups
+          {copy.empty.badgeTo}
         </div>
       </div>
     </div>
@@ -483,6 +592,7 @@ function QCLoadingState() {
 }
 
 function QCGroupViewer({
+  copy,
   group,
   image,
   imageIndex,
@@ -491,6 +601,7 @@ function QCGroupViewer({
   onToggleZoom,
   zoomed,
 }: {
+  copy: QCCopy;
   group: QCGroup;
   image: QCImage;
   imageIndex: number;
@@ -512,7 +623,7 @@ function QCGroupViewer({
           type="button"
           onClick={onClose}
           className="absolute right-4 top-4 z-20 grid size-10 place-items-center rounded-2xl bg-black/60 text-white backdrop-blur transition hover:bg-black"
-          aria-label="Close preview"
+          aria-label={copy.labels.closePreview}
         >
           <IconX className="size-5" />
         </button>
@@ -525,7 +636,7 @@ function QCGroupViewer({
                   type="button"
                   onClick={() => onSelect(previousIndex)}
                   className="absolute left-4 top-1/2 z-10 grid size-11 -translate-y-1/2 place-items-center rounded-2xl bg-black/60 text-white backdrop-blur transition hover:bg-black"
-                  aria-label="Previous QC photo"
+                  aria-label={copy.labels.previousPhoto}
                 >
                   <IconChevronLeft className="size-5" />
                 </button>
@@ -533,7 +644,7 @@ function QCGroupViewer({
                   type="button"
                   onClick={() => onSelect(nextIndex)}
                   className="absolute right-4 top-1/2 z-10 grid size-11 -translate-y-1/2 place-items-center rounded-2xl bg-black/60 text-white backdrop-blur transition hover:bg-black"
-                  aria-label="Next QC photo"
+                  aria-label={copy.labels.nextPhoto}
                 >
                   <IconChevronRight className="size-5" />
                 </button>
@@ -546,7 +657,7 @@ function QCGroupViewer({
                 "grid h-full min-h-[420px] w-full place-items-center",
                 zoomed ? "cursor-zoom-out" : "cursor-zoom-in",
               )}
-              aria-label={zoomed ? "Zoom out" : "Zoom in"}
+              aria-label={zoomed ? copy.labels.zoomOut : copy.labels.zoomIn}
             >
               <img
                 src={image.photoUrl}
@@ -565,7 +676,7 @@ function QCGroupViewer({
             <div>
               <p className="font-semibold text-white">{group.title}</p>
               <p className="text-sm text-slate-500">
-                {sourceLabels[group.source]} / {group.dateLabel} / {imageIndex + 1} of {group.images.length}
+                {sourceLabels[group.source]} / {group.dateLabel} / {imageIndex + 1} {copy.labels.of} {group.images.length}
               </p>
             </div>
             <a
@@ -575,16 +686,16 @@ function QCGroupViewer({
               className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-white px-4 text-sm font-bold text-black transition hover:bg-blue-100"
             >
               <IconExternalLink className="size-4" />
-              Open original
+              {copy.actions.openOriginal}
             </a>
           </div>
         </div>
 
         <aside className="min-h-0 border-t border-white/10 bg-white/[0.025] p-4 lg:border-l lg:border-t-0">
           <div className="mb-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Group</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{copy.labels.group}</p>
             <h3 className="mt-2 text-lg font-semibold text-white">{group.title}</h3>
-            <p className="mt-1 text-sm text-slate-500">{group.images.length} QC photos</p>
+            <p className="mt-1 text-sm text-slate-500">{group.images.length} {copy.labels.qcPhotos}</p>
           </div>
           <div className="grid max-h-[58vh] grid-cols-3 gap-2 overflow-y-auto pr-1 lg:grid-cols-2">
             {group.images.map((groupImage, index) => (
@@ -609,7 +720,12 @@ function QCGroupViewer({
   );
 }
 
-function groupQCImages(images: QCImage[], activeSource: (typeof sourceOrder)[number]) {
+function groupQCImages(
+  images: QCImage[],
+  activeSource: (typeof sourceOrder)[number],
+  dateLocale: string,
+  labels: QCCopy["labels"],
+) {
   const filteredImages =
     activeSource === "All"
       ? images
@@ -617,8 +733,8 @@ function groupQCImages(images: QCImage[], activeSource: (typeof sourceOrder)[num
   const groupMap = new Map<string, QCGroup>();
 
   for (const image of filteredImages) {
-    const dateLabel = formatDate(image.createTime);
-    const skuLabel = image.skuId?.trim() || "Warehouse set";
+    const dateLabel = formatDate(image.createTime, dateLocale, labels.dateUnknown);
+    const skuLabel = image.skuId?.trim() || labels.warehouseSet;
     const id = `${image.source}:${dateLabel}:${skuLabel}`;
     const existing = groupMap.get(id);
 
@@ -658,9 +774,9 @@ function getComparableTime(value: string | number | null | undefined) {
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
-function formatDate(value: string | number | null) {
+function formatDate(value: string | number | null, locale: string, fallback: string) {
   if (!value) {
-    return "Date unknown";
+    return fallback;
   }
 
   const numericValue = typeof value === "number" ? value : Number(value);
@@ -672,7 +788,7 @@ function formatDate(value: string | number | null) {
     return String(value);
   }
 
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat(locale, {
     day: "2-digit",
     month: "short",
     year: "numeric",

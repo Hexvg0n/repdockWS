@@ -1,0 +1,31 @@
+{
+  "embed": {
+    "123": {
+      "payload": {
+        "content": "",
+        "embedData": {
+          "title": "Przykładowy Tytuł",
+          "description": "To jest opis embeda. Możesz go edytować w panelu po lewej stronie.",
+          "url": "",
+          "color": "#5865f2",
+          "author": {
+            "name": "",
+            "url": "",
+            "icon_url": ""
+          },
+          "thumbnail_url": "",
+          "image_url": "",
+          "footer": {
+            "text": "",
+            "icon_url": ""
+          },
+          "timestamp": false,
+          "fields": [],
+          "buttons": []
+        },
+        "channelId": "1450612857229148293"
+      },
+      "updatedAt": "2026-05-07T16:16:53.345Z"
+    }
+  }
+}

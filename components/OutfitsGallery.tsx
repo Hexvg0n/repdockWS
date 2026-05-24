@@ -18,10 +18,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { convertLink } from "@/lib/converter";
 import { currencies, fallbackCurrencyRates, formatPrice, readClientRate } from "@/lib/currency";
+import {
+  settingsStorageKey,
+  useLanguageCopy,
+  useRepdockLanguage,
+} from "@/lib/use-repdock-language";
 import { cn } from "@/lib/utils";
 import type { Outfit, OutfitItem, OutfitsResponse } from "@/types/outfits";
 
-const settingsStorageKey = "repdock-settings";
 const agents = ["RIZZITGO", "KAKOBUY", "USFANS", "ACBUY"] as const;
 const agentKeyMap: Record<(typeof agents)[number], string> = {
   ACBUY: "acbuy",
@@ -60,7 +64,119 @@ const createSubmitForm = (): OutfitSubmitForm => ({
   title: "",
 });
 
+const outfitsCopy = {
+  PL: {
+    actions: {
+      cancel: "Anuluj",
+      loginToSubmit: "Zaloguj, żeby dodać",
+      search: "Szukaj",
+      submit: "Dodaj outfit",
+      submitForReview: "Wyślij do akceptacji",
+    },
+    empty: "Nie ma jeszcze zaakceptowanych outfitów.",
+    header: {
+      approved: "Zaakceptowane posty",
+      description: "Przeglądaj outfity społeczności i otwieraj posty, żeby zobaczyć każdy podlinkowany element.",
+      ready: "Outfity gotowe do przeglądania",
+      title: "Kup kompletne fity",
+      badge: "Outfity społeczności",
+    },
+    labels: {
+      item: "element",
+      items: "elementów",
+      closePost: "Zamknij post outfitu",
+      piecesInFit: "Elementy w tym ficie",
+      total: "Razem",
+      views: "wyświetleń",
+    },
+    searchPlaceholder: "Szukaj outfitów, elementów lub twórców...",
+    status: {
+      incomplete: "Uzupełnij tytuł, zdjęcie główne i przynajmniej jeden kompletny element outfitu.",
+      loginRequired: "Zaloguj się przez Discorda przed dodaniem outfitu.",
+      submitError: "Nie udało się wysłać outfitu.",
+      submitted: "Outfit wysłany. Pojawi się po akceptacji admina.",
+    },
+    submit: {
+      addItem: "Dodaj element",
+      close: "Zamknij dodawanie outfitu",
+      coverImage: "URL zdjęcia głównego",
+      description: "Opis",
+      header: "Dodaj outfit",
+      imageUrl: "URL zdjęcia",
+      intro: "Twój outfit zostanie zapisany jako oczekujący i opublikowany po akceptacji admina.",
+      linkedPieces: "Podlinkowane elementy",
+      notePlaceholder: "Dodaj krótką notatkę o ficie, vibe, rozmiarówce albo stylizacji.",
+      piece: "Element",
+      preview: "Podgląd outfitu",
+      price: "Cena CNY",
+      productLink: "Link produktu",
+      sentAs: "Wysłane jako",
+      title: "Wyślij swój fit do sprawdzenia",
+      titleField: "Tytuł outfitu",
+      titleShort: "Tytuł",
+      userFallback: "Użytkownik Discorda",
+    },
+  },
+  EN: {
+    actions: {
+      cancel: "Cancel",
+      loginToSubmit: "Login to submit",
+      search: "Search",
+      submit: "Submit outfit",
+      submitForReview: "Submit for review",
+    },
+    empty: "No approved outfits yet.",
+    header: {
+      approved: "Approved posts",
+      badge: "Community outfits",
+      description: "Browse community outfits and open a post to see every linked piece in the look.",
+      ready: "Outfits ready to explore",
+      title: "Shop complete fits",
+    },
+    labels: {
+      item: "item",
+      items: "items",
+      closePost: "Close outfit post",
+      piecesInFit: "Pieces in this fit",
+      total: "Total",
+      views: "views",
+    },
+    searchPlaceholder: "Search outfits, pieces or creators...",
+    status: {
+      incomplete: "Fill title, cover image and at least one complete outfit piece.",
+      loginRequired: "Login with Discord before submitting an outfit.",
+      submitError: "Could not submit outfit.",
+      submitted: "Outfit submitted. It will appear after admin approval.",
+    },
+    submit: {
+      addItem: "Add item",
+      close: "Close submit outfit",
+      coverImage: "Cover image URL",
+      description: "Description",
+      header: "Submit outfit",
+      imageUrl: "Image URL",
+      intro: "Your outfit will be saved as pending and published after admin approval.",
+      linkedPieces: "Linked pieces",
+      notePlaceholder: "Add a short note about the fit, vibe, sizing or styling.",
+      piece: "Piece",
+      preview: "Outfit preview",
+      price: "Price CNY",
+      productLink: "Product link",
+      sentAs: "Submitted as",
+      title: "Send your fit for review",
+      titleField: "Outfit title",
+      titleShort: "Title",
+      userFallback: "Discord user",
+    },
+  },
+} as const;
+
+type OutfitsCopy = (typeof outfitsCopy)[keyof typeof outfitsCopy];
+
 export function OutfitsGallery() {
+  const copy = useLanguageCopy(outfitsCopy);
+  const language = useRepdockLanguage();
+  const dateLocale = language === "PL" ? "pl" : "en";
   const [search, setSearch] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
   const [outfits, setOutfits] = useState<Outfit[]>([]);
@@ -266,12 +382,12 @@ export function OutfitsGallery() {
 
   const saveOutfitSubmission = async () => {
     if (!user) {
-      setSubmitStatus({ tone: "error", text: "Login with Discord before submitting an outfit." });
+      setSubmitStatus({ tone: "error", text: copy.status.loginRequired });
       return;
     }
 
     if (!readyToSubmit) {
-      setSubmitStatus({ tone: "error", text: "Fill title, cover image and at least one complete outfit piece." });
+      setSubmitStatus({ tone: "error", text: copy.status.incomplete });
       return;
     }
 
@@ -291,12 +407,12 @@ export function OutfitsGallery() {
         throw new Error(await response.text());
       }
 
-      setSubmitStatus({ tone: "success", text: "Outfit submitted. It will appear after admin approval." });
+      setSubmitStatus({ tone: "success", text: copy.status.submitted });
       setSubmitForm(createSubmitForm());
     } catch (error) {
       setSubmitStatus({
         tone: "error",
-        text: error instanceof Error ? error.message : "Could not submit outfit.",
+        text: error instanceof Error ? error.message : copy.status.submitError,
       });
     } finally {
       setSubmitSaving(false);
@@ -321,24 +437,24 @@ export function OutfitsGallery() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-blue-300/20 bg-blue-500/10 px-3 py-1.5 text-sm font-semibold text-blue-100">
               <IconSparkles2Filled className="size-4" />
-              Community outfits
+              {copy.header.badge}
             </div>
             <h1 className="mt-5 font-['Poppins'] text-4xl font-medium tracking-normal md:text-6xl">
-              Shop complete fits
+              {copy.header.title}
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-400">
-              Browse community outfits and open a post to see every linked piece in the look.
+              {copy.header.description}
             </p>
           </div>
 
           <div className="grid gap-4 rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/25 backdrop-blur-xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">Approved posts</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">{copy.header.approved}</p>
             <p className="mt-2 font-['Poppins'] text-3xl font-medium text-white">{total}</p>
-            <p className="mt-1 text-sm text-slate-500">Outfits ready to explore</p>
+            <p className="mt-1 text-sm text-slate-500">{copy.header.ready}</p>
             {user ? (
               <Button onClick={() => setSubmitOpen(true)} className="h-12 rounded-2xl">
                 <IconSend className="size-4" />
-                Submit outfit
+                {copy.actions.submit}
               </Button>
             ) : (
               <a
@@ -346,7 +462,7 @@ export function OutfitsGallery() {
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#5865F2] px-4 text-sm font-semibold text-white transition hover:bg-[#4752C4]"
               >
                 <IconLogin className="size-4" />
-                Login to submit
+                {copy.actions.loginToSubmit}
               </a>
             )}
           </div>
@@ -362,13 +478,13 @@ export function OutfitsGallery() {
                 onKeyDown={(event) => {
                   if (event.key === "Enter") applySearch();
                 }}
-                placeholder="Search outfits, pieces or creators..."
+                placeholder={copy.searchPlaceholder}
                 className="h-14 w-full rounded-2xl border border-white/10 bg-black/25 pl-12 pr-4 text-sm font-medium text-white outline-none transition placeholder:text-slate-600 focus:border-blue-400/50 focus:bg-white/[0.06] focus:shadow-[0_0_32px_rgba(41,52,255,0.18)]"
               />
             </label>
             <Button onClick={applySearch} className="h-14 rounded-2xl px-6">
               <IconSearch className="size-4" />
-              Search
+              {copy.actions.search}
             </Button>
           </div>
         </div>
@@ -377,6 +493,7 @@ export function OutfitsGallery() {
           {outfits.map((outfit) => (
             <OutfitCard
               key={outfit.id}
+              copy={copy}
               outfit={outfit}
               onOpen={() => openOutfit(outfit)}
             />
@@ -385,7 +502,7 @@ export function OutfitsGallery() {
 
         {!loading && !outfits.length ? (
           <div className="rounded-[34px] border border-white/10 bg-white/[0.035] p-10 text-center text-slate-500">
-            No approved outfits yet.
+            {copy.empty}
           </div>
         ) : null}
 
@@ -401,6 +518,8 @@ export function OutfitsGallery() {
         <OutfitPostModal
           currency={currency}
           currencyRates={currencyRates}
+          copy={copy}
+          dateLocale={dateLocale}
           preferredAgent={agent}
           outfit={selectedOutfit}
           onClose={() => setSelectedOutfitId(null)}
@@ -410,6 +529,7 @@ export function OutfitsGallery() {
       {submitOpen ? (
         <SubmitOutfitModal
           form={submitForm}
+          copy={copy}
           ready={readyToSubmit}
           saving={submitSaving}
           status={submitStatus}
@@ -432,12 +552,16 @@ export function OutfitsGallery() {
 }
 
 function OutfitCard({
+  copy,
   outfit,
   onOpen,
 }: {
+  copy: OutfitsCopy;
   outfit: Outfit;
   onOpen: () => void;
 }) {
+  const itemLabel = outfit.items.length === 1 ? copy.labels.item : copy.labels.items;
+
   return (
     <button
       type="button"
@@ -451,7 +575,7 @@ function OutfitCard({
         <img src={outfit.image} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent" />
         <div className="absolute left-4 top-4 rounded-full border border-white/15 bg-black/35 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
-          {outfit.items.length} items
+          {outfit.items.length} {itemLabel}
         </div>
       </div>
       <div className="grid gap-3 p-4">
@@ -474,6 +598,7 @@ function OutfitCard({
 }
 
 function SubmitOutfitModal({
+  copy,
   form,
   onAddItem,
   onClose,
@@ -486,6 +611,7 @@ function SubmitOutfitModal({
   status,
   user,
 }: {
+  copy: OutfitsCopy;
   form: OutfitSubmitForm;
   onAddItem: () => void;
   onClose: () => void;
@@ -500,7 +626,7 @@ function SubmitOutfitModal({
 }) {
   return (
     <div className="fixed inset-0 z-[210] grid place-items-center bg-black/80 p-3 backdrop-blur-xl md:p-6">
-      <button type="button" aria-label="Close submit outfit" className="absolute inset-0" onClick={onClose} />
+      <button type="button" aria-label={copy.submit.close} className="absolute inset-0" onClick={onClose} />
       <article className="relative grid max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-[34px] border border-white/10 bg-[#080910] shadow-2xl shadow-black md:grid-cols-[minmax(0,1fr)_340px]">
         <button
           type="button"
@@ -512,10 +638,10 @@ function SubmitOutfitModal({
 
         <div className="max-h-[92vh] overflow-y-auto p-5 md:p-6">
           <div className="mb-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">Submit outfit</p>
-            <h2 className="mt-2 font-['Poppins'] text-3xl font-medium text-white">Send your fit for review</h2>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">{copy.submit.header}</p>
+            <h2 className="mt-2 font-['Poppins'] text-3xl font-medium text-white">{copy.submit.title}</h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-500">
-              Your outfit will be saved as pending and published after admin approval.
+              {copy.submit.intro}
             </p>
           </div>
 
@@ -533,27 +659,27 @@ function SubmitOutfitModal({
           ) : null}
 
           <div className="grid gap-4">
-            <TextInput label="Outfit title" value={form.title} onChange={(value) => onUpdateField("title", value)} />
-            <TextInput label="Cover image URL" value={form.image} onChange={(value) => onUpdateField("image", value)} />
-            <TextArea label="Description" value={form.description} onChange={(value) => onUpdateField("description", value)} />
+            <TextInput label={copy.submit.titleField} value={form.title} onChange={(value) => onUpdateField("title", value)} />
+            <TextInput label={copy.submit.coverImage} value={form.image} onChange={(value) => onUpdateField("image", value)} />
+            <TextArea label={copy.submit.description} value={form.description} onChange={(value) => onUpdateField("description", value)} />
 
             <div className="mt-2 grid gap-3">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Linked pieces</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{copy.submit.linkedPieces}</p>
                 <Button
                   variant="outline"
                   onClick={onAddItem}
                   className="rounded-2xl border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]"
                 >
                   <IconPlus className="size-4" />
-                  Add item
+                  {copy.submit.addItem}
                 </Button>
               </div>
 
               {form.items.map((item, index) => (
                 <div key={item.id} className="grid gap-3 rounded-3xl border border-white/10 bg-black/25 p-4">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-white">Piece {index + 1}</p>
+                    <p className="text-sm font-semibold text-white">{copy.submit.piece} {index + 1}</p>
                     <button
                       type="button"
                       onClick={() => onRemoveItem(item.id)}
@@ -563,15 +689,15 @@ function SubmitOutfitModal({
                     </button>
                   </div>
                   <div className="grid gap-3 md:grid-cols-2">
-                    <TextInput label="Title" value={item.title} onChange={(value) => onUpdateItem(item.id, "title", value)} />
+                    <TextInput label={copy.submit.titleShort} value={item.title} onChange={(value) => onUpdateItem(item.id, "title", value)} />
                     <TextInput
-                      label="Price CNY"
+                      label={copy.submit.price}
                       type="number"
                       value={String(item.priceCny || "")}
                       onChange={(value) => onUpdateItem(item.id, "priceCny", Number(value))}
                     />
-                    <TextInput label="Image URL" value={item.image} onChange={(value) => onUpdateItem(item.id, "image", value)} />
-                    <TextInput label="Product link" value={item.link} onChange={(value) => onUpdateItem(item.id, "link", value)} />
+                    <TextInput label={copy.submit.imageUrl} value={item.image} onChange={(value) => onUpdateItem(item.id, "image", value)} />
+                    <TextInput label={copy.submit.productLink} value={item.link} onChange={(value) => onUpdateItem(item.id, "link", value)} />
                   </div>
                 </div>
               ))}
@@ -581,14 +707,14 @@ function SubmitOutfitModal({
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Button onClick={onSave} disabled={saving || !ready || !user} className="h-12 rounded-2xl">
               {saving ? <IconLoader2 className="size-4 animate-spin" /> : <IconSend className="size-4" />}
-              Submit for review
+              {copy.actions.submitForReview}
             </Button>
             <Button
               variant="outline"
               onClick={onClose}
               className="h-12 rounded-2xl border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]"
             >
-              Cancel
+              {copy.actions.cancel}
             </Button>
           </div>
         </div>
@@ -604,12 +730,12 @@ function SubmitOutfitModal({
                 </div>
               )}
             </div>
-            <h3 className="mt-5 line-clamp-2 text-xl font-semibold text-white">{form.title || "Outfit preview"}</h3>
+            <h3 className="mt-5 line-clamp-2 text-xl font-semibold text-white">{form.title || copy.submit.preview}</h3>
             <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-slate-500">
-              {form.description || "Add a short note about the fit, vibe, sizing or styling."}
+              {form.description || copy.submit.notePlaceholder}
             </p>
             <div className="mt-5 rounded-3xl border border-white/10 bg-black/25 p-4 text-sm text-slate-400">
-              Submitted as <span className="font-semibold text-white">{user?.globalName || user?.username || "Discord user"}</span>
+              {copy.submit.sentAs} <span className="font-semibold text-white">{user?.globalName || user?.username || copy.submit.userFallback}</span>
             </div>
           </div>
         </aside>
@@ -619,14 +745,18 @@ function SubmitOutfitModal({
 }
 
 function OutfitPostModal({
+  copy,
   currency,
   currencyRates,
+  dateLocale,
   outfit,
   preferredAgent,
   onClose,
 }: {
+  copy: OutfitsCopy;
   currency: (typeof currencies)[number];
   currencyRates: Record<(typeof currencies)[number], number>;
+  dateLocale: string;
   outfit: Outfit;
   preferredAgent: (typeof agents)[number];
   onClose: () => void;
@@ -638,7 +768,7 @@ function OutfitPostModal({
 
   return (
     <div className="fixed inset-0 z-[200] grid place-items-center bg-black/80 p-3 backdrop-blur-xl md:p-6">
-      <button type="button" aria-label="Close outfit post" className="absolute inset-0" onClick={onClose} />
+      <button type="button" aria-label={copy.labels.closePost} className="absolute inset-0" onClick={onClose} />
       <article className="relative max-h-[92vh] w-full max-w-6xl overflow-y-auto rounded-[34px] border border-white/10 bg-[#080910] shadow-2xl shadow-black md:grid md:grid-cols-[minmax(0,1.15fr)_430px] md:overflow-hidden">
         <button
           type="button"
@@ -661,7 +791,7 @@ function OutfitPostModal({
               <AuthorAvatar outfit={outfit} size="lg" />
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-white">{outfit.createdBy}</p>
-                <p className="text-xs text-slate-500">{formatDate(outfit.createdAt)}</p>
+                <p className="text-xs text-slate-500">{formatDate(outfit.createdAt, dateLocale)}</p>
               </div>
             </div>
             <h2 className="mt-5 hidden font-['Poppins'] text-3xl font-medium text-white md:block">{outfit.title}</h2>
@@ -672,9 +802,9 @@ function OutfitPostModal({
 
           <div className="p-5 md:overflow-y-auto">
             <div className="mb-4 flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">Pieces in this fit</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">{copy.labels.piecesInFit}</p>
               <p className="text-xs text-slate-500">
-                Total {formatPrice(total, currency, currencyRates)}
+                {copy.labels.total} {formatPrice(total, currency, currencyRates)}
               </p>
             </div>
             <div className="grid gap-3">
@@ -707,7 +837,7 @@ function OutfitPostModal({
             <div className="flex items-center justify-end text-sm text-slate-400">
               <span className="inline-flex items-center gap-2">
                 <IconEye className="size-4" />
-                {outfit.stats.views} views
+                {outfit.stats.views} {copy.labels.views}
               </span>
             </div>
           </footer>
@@ -802,11 +932,11 @@ function AuthorAvatar({
   );
 }
 
-function formatDate(value: string) {
+function formatDate(value: string, locale: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
 
-  return date.toLocaleDateString("en", {
+  return date.toLocaleDateString(locale, {
     day: "2-digit",
     month: "short",
     year: "numeric",

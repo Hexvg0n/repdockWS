@@ -1,0 +1,63 @@
+{
+  "ids": {
+    "ticketCategoryId": "1452798199096934431",
+    "supportRoleId": "1451330304181800970",
+    "ticketPanelChannelId": "1450951679121035304",
+    "ticketCategories": [
+      {
+        "id": "1766446568491",
+        "label": "1",
+        "value": "1",
+        "emoji": "🎫",
+        "description": ""
+      },
+      {
+        "id": "1766446569579",
+        "label": "2",
+        "value": "2",
+        "emoji": "🎫",
+        "description": ""
+      }
+    ]
+  },
+  "panelEmbed": {
+    "title": "Stwórz Ticket",
+    "description": "Aby skontaktować się z administracją, kliknij przycisk poniżej.",
+    "color": "#5865f2",
+    "author": {
+      "name": "",
+      "url": "",
+      "icon_url": ""
+    },
+    "thumbnail_url": "",
+    "image_url": "",
+    "footer": {
+      "text": "RepDock Support",
+      "icon_url": ""
+    },
+    "timestamp": false,
+    "fields": [],
+    "url": "",
+    "buttons": []
+  },
+  "welcomeEmbed": {
+    "title": "Witaj w zgłoszeniu!",
+    "description": "Opisz swój problem, a członek zespołu wkrótce Ci pomoże.",
+    "color": "#57f287",
+    "author": {
+      "name": "",
+      "url": "",
+      "icon_url": ""
+    },
+    "thumbnail_url": "",
+    "image_url": "",
+    "footer": {
+      "text": "",
+      "icon_url": ""
+    },
+    "timestamp": true,
+    "fields": [],
+    "url": "",
+    "buttons": []
+  }
+}

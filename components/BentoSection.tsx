@@ -1,3 +1,5 @@
+"use client";
+
 import {
   IconCalculator,
   IconLink,
@@ -7,32 +9,96 @@ import {
 } from "@tabler/icons-react";
 
 import styles from "./BentoSection.module.css";
+import { useLanguageCopy } from "@/lib/use-repdock-language";
 
-const items = [
+const bentoCopy = {
+  PL: {
+    items: [
+      {
+        title: "Konwertuj między agentami",
+        description: "Wklej jeden link produktu i przenieś go do preferowanych agentów.",
+      },
+      {
+        title: "Wszystkie narzędzia w jednym flow",
+        description: "Konwerter, QC, kalkulator i tracking są zawsze blisko Twojego zamówienia.",
+      },
+      {
+        title: "Koszty jasne przed checkoutem",
+        description: "Oszacuj cenę produktu, lokalną wysyłkę i opłaty międzynarodowe przed zakupem.",
+      },
+      {
+        title: "Śledź każdą paczkę",
+        description: "Sprawdzaj status magazynu i dostawy bez otwierania kilku kart.",
+      },
+    ],
+    visual: {
+      costBreakdown: "Koszty",
+      delivery: "Dostawa",
+      international: "Międzynarodowo",
+      itemPrice: "Cena produktu",
+      productLink: "Link produktu",
+      qcPhotos: "Zdjęcia QC",
+      seeTotal: "Zobacz sumę",
+      shipping: "Wysyłka",
+      totalEstimate: "Szacowana suma",
+      warehouse: "Magazyn",
+      workflow: ["Konwerter", "Galeria QC", "Kalkulator", "Tracking", "Outfity", "Sprzedawcy"],
+    },
+  },
+  EN: {
+    items: [
+      {
+        title: "Convert across agents",
+        description: "Paste one product link and move it between your preferred agents.",
+      },
+      {
+        title: "All tools in one workflow",
+        description: "Converter, QC checks, calculator and tracking stay close to your order.",
+      },
+      {
+        title: "Cost clarity before checkout",
+        description: "Estimate item price, local shipping and international fees before you commit.",
+      },
+      {
+        title: "Track every parcel",
+        description: "Follow warehouse updates and delivery progress without opening five tabs.",
+      },
+    ],
+    visual: {
+      costBreakdown: "Cost breakdown",
+      delivery: "Delivery",
+      international: "International",
+      itemPrice: "Item price",
+      productLink: "Product Link",
+      qcPhotos: "QC photos",
+      seeTotal: "See total",
+      shipping: "Shipping",
+      totalEstimate: "Total estimate",
+      warehouse: "Warehouse",
+      workflow: ["Converter", "QC Gallery", "Calculator", "Tracking", "Outfits", "Sellers"],
+    },
+  },
+} as const;
+
+type BentoVisualCopy = (typeof bentoCopy)[keyof typeof bentoCopy]["visual"];
+
+const itemMeta = [
   {
-    title: "Convert across agents",
-    description: "Paste one product link and move it between your preferred agents.",
     className: styles.cardCompact,
     icon: IconTransform,
     visual: "converter",
   },
   {
-    title: "All tools in one workflow",
-    description: "Converter, QC checks, calculator and tracking stay close to your order.",
     className: styles.cardWide,
     icon: IconTools,
     visual: "workflow",
   },
   {
-    title: "Cost clarity before checkout",
-    description: "Estimate item price, local shipping and international fees before you commit.",
     className: styles.cardLarge,
     icon: IconCalculator,
     visual: "calculator",
   },
   {
-    title: "Track every parcel",
-    description: "Follow warehouse updates and delivery progress without opening five tabs.",
     className: styles.cardSide,
     icon: IconTruckDelivery,
     visual: "tracking",
@@ -50,23 +116,26 @@ const agentIcons = {
 } as const;
 
 export function BentoSection() {
+  const copy = useLanguageCopy(bentoCopy);
+
   return (
     <section className={styles.section} id="features">
       <div className={styles.grid}>
-        {items.map((item) => {
+        {itemMeta.map((item, index) => {
           const Icon = item.icon;
+          const text = copy.items[index];
 
           return (
-            <article className={`${styles.card} ${item.className}`} key={item.title}>
+            <article className={`${styles.card} ${item.className}`} key={text.title}>
               <div className={styles.cardHeader}>
                 <span className={styles.iconWrap}>
                   <Icon className={styles.icon} stroke={1.8} />
                 </span>
-                <h3 className={styles.cardTitle}>{item.title}</h3>
+                <h3 className={styles.cardTitle}>{text.title}</h3>
               </div>
 
-              <p className={styles.description}>{item.description}</p>
-              <CardVisual type={item.visual} />
+              <p className={styles.description}>{text.description}</p>
+              <CardVisual type={item.visual} copy={copy.visual} />
             </article>
           );
         })}
@@ -75,7 +144,13 @@ export function BentoSection() {
   );
 }
 
-function CardVisual({ type }: { type: string }) {
+function CardVisual({
+  copy,
+  type,
+}: {
+  copy: BentoVisualCopy;
+  type: string;
+}) {
   if (type === "converter") {
     return (
       <div className={styles.converterVisual} aria-hidden="true">
@@ -109,7 +184,7 @@ function CardVisual({ type }: { type: string }) {
             <span className={styles.productLinkIcon}>
               <IconLink size={18} stroke={2} />
             </span>
-            <strong>Product Link</strong>
+            <strong>{copy.productLink}</strong>
           </span>
           <div className={styles.productPreview}>
             <span />
@@ -119,11 +194,9 @@ function CardVisual({ type }: { type: string }) {
         </div>
 
         <div className={styles.linkGrid}>
-          {["Converter", "QC Gallery", "Calculator", "Tracking", "Outfits", "Sellers"].map(
-            (label) => (
-              <span key={label}>{label}</span>
-            ),
-          )}
+          {copy.workflow.map((label) => (
+            <span key={label}>{label}</span>
+          ))}
         </div>
       </div>
     );
@@ -133,7 +206,7 @@ function CardVisual({ type }: { type: string }) {
     return (
       <div className={styles.calculatorVisual} aria-hidden="true">
         <div className={styles.analyticsPanel}>
-          <p>See total</p>
+          <p>{copy.seeTotal}</p>
           <div className={styles.chart}>
             <span className={styles.chartGridLine} />
             <span className={styles.chartGridLine} />
@@ -156,12 +229,12 @@ function CardVisual({ type }: { type: string }) {
         </div>
 
         <div className={styles.costPanel}>
-          <p>Cost breakdown</p>
-          <span>Item price</span>
+          <p>{copy.costBreakdown}</p>
+          <span>{copy.itemPrice}</span>
           <strong>389 CNY</strong>
-          <span>Shipping</span>
+          <span>{copy.shipping}</span>
           <strong>72 CNY</strong>
-          <span>Total estimate</span>
+          <span>{copy.totalEstimate}</span>
           <strong>$64.12</strong>
         </div>
       </div>
@@ -170,10 +243,10 @@ function CardVisual({ type }: { type: string }) {
 
   return (
     <div className={styles.trackingVisual} aria-hidden="true">
-      <span>Warehouse</span>
-      <span>QC photos</span>
-      <span>International</span>
-      <span>Delivery</span>
+      <span>{copy.warehouse}</span>
+      <span>{copy.qcPhotos}</span>
+      <span>{copy.international}</span>
+      <span>{copy.delivery}</span>
       <AgentBadge color="blue" label="WEIDIAN" src={agentIcons.WEIDIAN} />
       <AgentBadge color="pink" label="DHL" src={agentIcons.DHL} />
     </div>

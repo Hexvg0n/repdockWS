@@ -9,6 +9,7 @@ import {
   IconPencil,
   IconPhoto,
   IconPlus,
+  IconRobot,
   IconShieldCheck,
   IconTrash,
   IconX,
@@ -298,6 +299,17 @@ function AdminOutfitsSidebar() {
             }}
             className="bg-blue-500/15"
             onClick={() => setOpen(false)}
+          />
+          <SidebarLink
+            link={{
+              href: "/admin/bot",
+              icon: (
+                <span className="grid size-9 shrink-0 place-items-center rounded-2xl bg-white/[0.04] text-neutral-400 ring-1 ring-white/10">
+                  <IconRobot className="size-5" />
+                </span>
+              ),
+              label: "Bot",
+            }}
           />
         </div>
       </div>

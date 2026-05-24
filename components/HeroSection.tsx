@@ -1,7 +1,10 @@
+"use client";
+
 import styles from "./HeroSection.module.css";
 import type { CSSProperties } from "react";
 import { BentoSection } from "./BentoSection";
 import { ServerMembersBadge } from "./ServerMembersBadge";
+import { useLanguageCopy } from "@/lib/use-repdock-language";
 
 type CssVariables = CSSProperties & Record<`--${string}`, string | undefined>;
 
@@ -90,7 +93,36 @@ const rays: CssVariables[] = [
 
 const duplicatedLogos = [...logos, ...logos];
 
-function HeroActions() {
+const heroCopy = {
+  PL: {
+    actions: {
+      primary: "Sprawdź spreadsheet",
+      secondary: "Lista sprzedawców",
+    },
+    hero: {
+      title: "Twoje ostatnie miejsce w świecie repów",
+      subtitle:
+        "Najpotrzebniejsze narzędzia do wygodnego przeglądania oraz aktualny spreadsheet wybrany przez nas dla Ciebie.",
+    },
+    logosLabel: "Zaufani agenci",
+  },
+  EN: {
+    actions: {
+      primary: "Check Spreadsheet",
+      secondary: "Seller list",
+    },
+    hero: {
+      title: "Your last stop in the replica world",
+      subtitle:
+        "The most useful tools to comfortably browse and the most up to date spreadsheet selected by us for you.",
+    },
+    logosLabel: "Trusted by companies",
+  },
+} as const;
+
+type HeroActionCopy = (typeof heroCopy)[keyof typeof heroCopy]["actions"];
+
+function HeroActions({ copy }: { copy: HeroActionCopy }) {
   return (
     <div className={styles.heroActions}>
       <a
@@ -99,10 +131,10 @@ function HeroActions() {
         target="_blank"
         rel="noopener noreferrer"
       >
-        Check Spreadsheet
+        {copy.primary}
       </a>
       <a className={`${styles.button} ${styles.buttonSecondary}`} href="/sellers">
-        Seller list
+        {copy.secondary}
       </a>
     </div>
   );
@@ -142,9 +174,9 @@ function HeroBackground() {
   );
 }
 
-function LogoSlider() {
+function LogoSlider({ label }: { label: string }) {
   return (
-    <section className={styles.logoSlider} aria-label="Trusted by companies">
+    <section className={styles.logoSlider} aria-label={label}>
       <div className={styles.logoMarquee}>
         <ul className={styles.logoTrack}>
           {duplicatedLogos.map((logo, index) => (
@@ -173,21 +205,20 @@ function LogoSlider() {
 }
 
 export function HeroSection() {
+  const copy = useLanguageCopy(heroCopy);
+
   return (
     <main className={styles.page}>
       <HeroBackground />
 
       <section className={styles.heroContent} id="hero">
         <ServerMembersBadge />
-        <h1 className={styles.heroTitle}>Your last stop in the replica world</h1>
-        <p className={styles.heroSubtitle}>
-          The most useful tools to comfortable browse and the most up to date spreadsheet selected by us for you.
-
-        </p>
-        <HeroActions />
+        <h1 className={styles.heroTitle}>{copy.hero.title}</h1>
+        <p className={styles.heroSubtitle}>{copy.hero.subtitle}</p>
+        <HeroActions copy={copy.actions} />
       </section>
 
-      <LogoSlider />
+      <LogoSlider label={copy.logosLabel} />
       <BentoSection />
     </main>
   );

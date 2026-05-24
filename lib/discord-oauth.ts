@@ -30,6 +30,10 @@ export function getPublicUrl(request: NextRequest, path = "/") {
 }
 
 export function getDiscordRedirectUri(request: NextRequest) {
+  if (process.env.DISCORD_REDIRECT_URI) {
+    return process.env.DISCORD_REDIRECT_URI.replace(/\/+$/, "");
+  }
+
   return getPublicUrl(request, "/api/auth/discord/callback").toString();
 }
 

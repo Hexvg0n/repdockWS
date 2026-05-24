@@ -29,10 +29,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getWebpImageUrl } from "@/lib/cloudinary-image";
 import { currencies, fallbackCurrencyRates, formatPrice, readClientRate } from "@/lib/currency";
+import {
+  settingsStorageKey,
+  useLanguageCopy,
+  useRepdockLanguage,
+} from "@/lib/use-repdock-language";
 import { cn } from "@/lib/utils";
 import type { W2CGender, W2CProduct, W2CProductsResponse } from "@/types/w2c";
 
-const settingsStorageKey = "repdock-settings";
 const favoritesStorageKey = "repdock-w2c-favorites";
 const agents = ["RIZZITGO", "KAKOBUY", "USFANS", "ACBUY"] as const;
 const seasonOptions = ["All", "SS", "FW"];
@@ -42,14 +46,6 @@ const agentLogos: Record<(typeof agents)[number], string> = {
   KAKOBUY: "/agents/kako_icon.png",
   USFANS: "/agents/usfans_icon.png",
   ACBUY: "/agents/acb_icon.png",
-};
-
-const sortLabels: Record<string, string> = {
-  popular: "Popular",
-  newest: "Newest",
-  rating: "Top rated",
-  "price-low": "Price low",
-  "price-high": "Price high",
 };
 
 const priceSlider = {
@@ -80,7 +76,119 @@ const defaultFilters: Filters = {
   sort: "popular",
 };
 
+const w2cCopy = {
+  PL: {
+    filter: {
+      apply: "Zastosuj",
+      brandDescription: "Ogranicz wyniki do wybranej marki.",
+      brandTitle: "Marka",
+      clear: "Wyczyść",
+      close: "Zamknij filtry",
+      description: "Dopasuj katalog według metadanych produktów.",
+      filters: "Filtry",
+      optionLabels: {
+        All: "Wszystkie",
+      },
+      priceActive: "Do",
+      priceAny: "Dowolna cena",
+      priceDescription: "Przeciągnij suwak, aby ustawić maksymalną cenę produktu.",
+      priceTitle: "Cena",
+      reset: "Resetuj",
+      seasonDescription: "Użyj tagów sezonu dodanych w panelu admina.",
+      seasonTitle: "Sezon",
+      sortDescription: "Zmień kolejność produktów.",
+      sortLabels: {
+        newest: "Najnowsze",
+        popular: "Popularne",
+        "price-high": "Cena wysoka",
+        "price-low": "Cena niska",
+        rating: "Najlepiej oceniane",
+      },
+      sortTitle: "Sortowanie",
+    },
+    gender: {
+      men: "Męskie",
+      women: "Damskie",
+    },
+    header: {
+      description: "Najlepsza jakość wybrana przez nas dla Ciebie.",
+      title: "Where To Cop",
+    },
+    labels: {
+      all: "Wszystkie",
+      finds: "znalezisk",
+      loading: "Ładowanie produktów",
+      noMore: "Nie ma więcej produktów",
+      settingsFollow: "Ceny i linki korzystają z Ustawień",
+      searchPlaceholder: "Szukaj produktów...",
+    },
+    product: {
+      buyNow: "Kup teraz",
+      favorite: "Dodaj do ulubionych",
+      new: "Nowe",
+      open: "Otwórz produkt",
+    },
+  },
+  EN: {
+    filter: {
+      apply: "Apply",
+      brandDescription: "Limit results to a selected brand.",
+      brandTitle: "Brand",
+      clear: "Clear",
+      close: "Close filters",
+      description: "Fine tune the catalog with product metadata.",
+      filters: "Filters",
+      optionLabels: {
+        All: "All",
+      },
+      priceActive: "Up to",
+      priceAny: "Any price",
+      priceDescription: "Drag the handle to set the maximum product price.",
+      priceTitle: "Price",
+      reset: "Reset",
+      seasonDescription: "Use season tags added in the admin panel.",
+      seasonTitle: "Season",
+      sortDescription: "Change how products are ordered.",
+      sortLabels: {
+        newest: "Newest",
+        popular: "Popular",
+        "price-high": "Price high",
+        "price-low": "Price low",
+        rating: "Top rated",
+      },
+      sortTitle: "Sort",
+    },
+    gender: {
+      men: "Men",
+      women: "Women",
+    },
+    header: {
+      description: "The best quality selected by us for you.",
+      title: "Where To Cop",
+    },
+    labels: {
+      all: "All",
+      finds: "finds",
+      loading: "Loading products",
+      noMore: "No more products",
+      settingsFollow: "Prices and links follow Settings",
+      searchPlaceholder: "Search products...",
+    },
+    product: {
+      buyNow: "Buy Now",
+      favorite: "Add to favorites",
+      new: "New",
+      open: "Open product",
+    },
+  },
+} as const;
+
+type W2CCopy = (typeof w2cCopy)[keyof typeof w2cCopy];
+
 export function W2CCatalog() {
+  const copy = useLanguageCopy(w2cCopy);
+  const language = useRepdockLanguage();
+  const numberLocale = language === "PL" ? "pl" : "en";
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [products, setProducts] = useState<W2CProduct[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -341,10 +449,10 @@ export function W2CCatalog() {
         <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <h1 className="mt-3 font-['Poppins'] text-4xl font-medium tracking-normal md:text-6xl">
-              Where To Cop
+              {copy.header.title}
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-400">
-              The best quality selected by us for you.
+              {copy.header.description}
             </p>
           </div>
 
@@ -373,7 +481,7 @@ export function W2CCatalog() {
                       search: event.target.value,
                     }))
                   }
-                  placeholder="Search products..."
+                  placeholder={copy.labels.searchPlaceholder}
                   className="h-12 w-full rounded-2xl border border-white/10 bg-white/[0.045] pl-12 pr-4 text-sm font-medium text-white outline-none shadow-inner shadow-black/20 transition placeholder:text-slate-500 focus:border-blue-400/50 focus:bg-white/[0.07] focus:shadow-[0_0_32px_rgba(41,52,255,0.18)]"
                 />
               </label>
@@ -396,7 +504,7 @@ export function W2CCatalog() {
                     {filters.gender === gender ? (
                       <span className="absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
                     ) : null}
-                    {gender}
+                    {copy.gender[gender]}
                   </button>
                 ))}
               </div>
@@ -407,7 +515,7 @@ export function W2CCatalog() {
                 className="h-12 rounded-2xl border-white/10 bg-white/[0.04] px-5 text-white shadow-inner shadow-black/10 hover:border-white/20 hover:bg-white/[0.08]"
               >
                 <IconFilter className="size-4" />
-                Filters
+                {copy.filter.filters}
                 {activeFilterCount ? (
                   <span className="ml-1 rounded-full bg-blue-600 px-2 py-0.5 text-xs text-white">
                     {activeFilterCount}
@@ -434,7 +542,7 @@ export function W2CCatalog() {
                   {filters.category === category ? (
                     <span className="absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
                   ) : null}
-                  {category}
+                  {category === "All" ? copy.labels.all : category}
                 </button>
               ))}
             </div>
@@ -442,8 +550,8 @@ export function W2CCatalog() {
         </div>
 
         <div className="mb-5 flex items-center justify-between text-sm text-slate-500">
-          <span>{total} finds</span>
-          <span>Prices and links follow Settings</span>
+          <span>{total} {copy.labels.finds}</span>
+          <span>{copy.labels.settingsFollow}</span>
         </div>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -454,6 +562,8 @@ export function W2CCatalog() {
               favorite={favorites.has(product.id)}
               key={product.id}
               product={product}
+              copy={copy}
+              numberLocale={numberLocale}
               rates={currencyRates}
               onRecordBuy={() => recordInteraction(product.id, "buy")}
               onToggleFavorite={() => toggleFavorite(product.id)}
@@ -468,16 +578,17 @@ export function W2CCatalog() {
           {loading ? (
             <span className="inline-flex items-center gap-2 text-sm text-slate-400">
               <IconLoader2 className="size-4 animate-spin" />
-              Loading products
+              {copy.labels.loading}
             </span>
           ) : nextCursor === null ? (
-            <span className="text-sm text-slate-500">No more products</span>
+            <span className="text-sm text-slate-500">{copy.labels.noMore}</span>
           ) : null}
         </div>
       </section>
 
       <FilterPanel
         brands={brands}
+        copy={copy}
         filters={filters}
         open={filterPanelOpen}
         seasons={seasons}
@@ -490,16 +601,20 @@ export function W2CCatalog() {
 
 function ProductCard({
   agent,
+  copy,
   currency,
   favorite,
+  numberLocale,
   product,
   rates,
   onRecordBuy,
   onToggleFavorite,
 }: Readonly<{
   agent: (typeof agents)[number];
+  copy: W2CCopy;
   currency: (typeof currencies)[number];
   favorite: boolean;
+  numberLocale: string;
   product: W2CProduct;
   rates: Record<(typeof currencies)[number], number>;
   onRecordBuy: () => void;
@@ -516,7 +631,7 @@ function ProductCard({
     >
       <Link
         href={`/w2c/${encodeURIComponent(product.id)}`}
-        aria-label={`Open ${product.name}`}
+        aria-label={`${copy.product.open}: ${product.name}`}
         className="absolute inset-0 z-10"
       />
       {/* Image area — white rounded bg */}
@@ -536,7 +651,7 @@ function ProductCard({
           <button
             type="button"
             onClick={onToggleFavorite}
-            aria-label="Add to favorites"
+            aria-label={copy.product.favorite}
             className="relative z-20 grid size-9 place-items-center rounded-xl bg-black/50 text-white backdrop-blur transition hover:bg-black/70"
           >
             {favorite ? (
@@ -551,7 +666,7 @@ function ProductCard({
         {isFresh ? (
           <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-yellow-500 px-2.5 py-1.5 text-xs font-bold text-white shadow-lg">
             <IconSparkles2Filled  className="size-3" />
-            New
+            {copy.product.new}
           </span>
         ) : null}
       </div>
@@ -577,18 +692,18 @@ function ProductCard({
           className="relative z-20 inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 text-sm font-bold text-black transition hover:bg-blue-100"
         >
           <img src={agentLogos[agent]} alt="" className="size-5 rounded-md object-contain" />
-          Buy Now
+          {copy.product.buyNow}
         </a>
 
         {/* Stats row — bottom */}
         <div className="flex items-center justify-center gap-4">
           <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
             <IconEye className="size-3.5" stroke={1.6} />
-            {formatCompact(product.metadata.clicks.allTime)}
+            {formatCompact(product.metadata.clicks.allTime, numberLocale)}
           </span>
           <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
             <IconShoppingBag className="size-3.5" stroke={1.6} />
-            {formatCompact(product.metadata.purchases ?? 0)}
+            {formatCompact(product.metadata.purchases ?? 0, numberLocale)}
           </span>
         </div>
         </div>
@@ -642,6 +757,7 @@ function ProductCardSkeleton() {
 
 function FilterPanel({
   brands,
+  copy,
   filters,
   open,
   seasons,
@@ -649,6 +765,7 @@ function FilterPanel({
   onChange,
 }: Readonly<{
   brands: string[];
+  copy: W2CCopy;
   filters: Filters;
   open: boolean;
   seasons: string[];
@@ -675,9 +792,9 @@ function FilterPanel({
                 <IconFilter className="size-5" />
               </span>
               <div>
-                <h2 className="text-xl font-semibold">Filters</h2>
+                <h2 className="text-xl font-semibold">{copy.filter.filters}</h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Fine tune the catalog with product metadata.
+                  {copy.filter.description}
                 </p>
               </div>
             </div>
@@ -685,19 +802,20 @@ function FilterPanel({
               type="button"
               onClick={onClose}
               className="grid size-10 shrink-0 place-items-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-300 transition hover:bg-white/[0.08] hover:text-white"
-              aria-label="Close filters"
+              aria-label={copy.filter.close}
             >
               <IconX className="size-5" />
             </button>
           </div>
 
           <FilterSection
-            description="Limit results to a selected brand."
+            description={copy.filter.brandDescription}
             icon={<IconBuildingStore className="size-5" />}
-            title="Brand"
+            title={copy.filter.brandTitle}
           >
             <FilterOptionGrid
               iconForOption={() => <IconBuildingStore className="size-4" />}
+              labels={copy.filter.optionLabels}
               options={brands}
               value={filters.brand}
               onChange={(brand) => onChange((current) => ({ ...current, brand }))}
@@ -705,12 +823,13 @@ function FilterPanel({
           </FilterSection>
 
           <FilterSection
-            description="Use season tags added in the admin panel."
+            description={copy.filter.seasonDescription}
             icon={<IconCalendar className="size-5" />}
-            title="Season"
+            title={copy.filter.seasonTitle}
           >
             <FilterOptionGrid
               iconForOption={getSeasonOptionIcon}
+              labels={copy.filter.optionLabels}
               options={seasons}
               value={filters.season}
               onChange={(season) =>
@@ -720,13 +839,13 @@ function FilterPanel({
           </FilterSection>
 
           <FilterSection
-            description="Change how products are ordered."
+            description={copy.filter.sortDescription}
             icon={<IconSortDescending className="size-5" />}
-            title="Sort"
+            title={copy.filter.sortTitle}
           >
             <FilterOptionGrid
               iconForOption={getSortOptionIcon}
-              labels={sortLabels}
+              labels={copy.filter.sortLabels}
               options={["popular", "newest", "rating", "price-low", "price-high"]}
               value={filters.sort}
               onChange={(sort) => onChange((current) => ({ ...current, sort }))}
@@ -734,11 +853,12 @@ function FilterPanel({
           </FilterSection>
 
           <FilterSection
-            description="Filter by original CNY product price."
+            description={copy.filter.priceDescription}
             icon={<IconCurrencyYuan className="size-5" />}
-            title="Price"
+            title={copy.filter.priceTitle}
           >
             <PriceRangeFilter
+              copy={copy}
               maxPrice={filters.maxPrice}
               minPrice={filters.minPrice}
               onChange={(priceRange) =>
@@ -759,10 +879,10 @@ function FilterPanel({
                 }))
               }
             >
-              Reset
+              {copy.filter.reset}
             </Button>
             <Button className="h-11 flex-1 rounded-2xl" onClick={onClose}>
-              Apply
+              {copy.filter.apply}
             </Button>
           </div>
         </div>
@@ -886,10 +1006,12 @@ function getSeasonOptionIcon(option: string) {
 }
 
 function PriceRangeFilter({
+  copy,
   maxPrice,
   minPrice,
   onChange,
 }: Readonly<{
+  copy: W2CCopy;
   maxPrice: string;
   minPrice: string;
   onChange: (value: Pick<Filters, "minPrice" | "maxPrice">) => void;
@@ -918,11 +1040,11 @@ function PriceRangeFilter({
         <div>
           <p className="text-sm font-semibold text-white">
             {priceActive
-              ? `Up to ${maxValue >= priceSlider.max ? `${priceSlider.max}+` : maxValue} CNY`
-              : "Any price"}
+              ? `${copy.filter.priceActive} ${maxValue >= priceSlider.max ? `${priceSlider.max}+` : maxValue} CNY`
+              : copy.filter.priceAny}
           </p>
           <p className="mt-0.5 text-xs text-slate-500">
-            Drag the handle to set the maximum product price.
+            {copy.filter.priceDescription}
           </p>
         </div>
         <button
@@ -930,7 +1052,7 @@ function PriceRangeFilter({
           onClick={clearRange}
           className="shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
         >
-          Clear
+          {copy.filter.clear}
         </button>
       </div>
 
@@ -949,7 +1071,7 @@ function PriceRangeFilter({
           step={priceSlider.step}
           value={maxValue}
           onChange={(event) => updateMax(event.target.value)}
-          aria-label="Maximum price"
+          aria-label={copy.filter.priceTitle}
           className="absolute inset-x-0 top-1/2 h-8 -translate-y-1/2 cursor-pointer bg-transparent accent-cyan-300"
         />
       </div>
@@ -976,8 +1098,8 @@ function addOptionalParam(params: URLSearchParams, key: string, value: string) {
   }
 }
 
-function formatCompact(value: number) {
-  return new Intl.NumberFormat("en", {
+function formatCompact(value: number, locale: string) {
+  return new Intl.NumberFormat(locale, {
     compactDisplay: "short",
     maximumFractionDigits: 1,
     notation: "compact",

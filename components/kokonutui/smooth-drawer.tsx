@@ -64,6 +64,8 @@ interface DrawerDemoProps extends React.HTMLAttributes<HTMLDivElement> {
   secondaryButtonText?: string;
   onPrimaryAction?: () => void;
   onSecondaryAction?: () => void;
+  onCloseAction?: () => void;
+  onOpenChange?: (open: boolean) => void;
   showPrimaryAction?: boolean;
   showPrice?: boolean;
   price?: number;
@@ -125,6 +127,8 @@ export default function SmoothDrawer({
   description = "100+ collection of UI Components and templates built for React, Next.js, and Tailwind CSS. Spend no time on design and focus on shipping.",
   primaryButtonText = "Buy Now",
   secondaryButtonText = "Maybe Later",
+  onCloseAction,
+  onOpenChange,
   onSecondaryAction,
   showPrimaryAction = true,
   showPrice = true,
@@ -135,8 +139,16 @@ export default function SmoothDrawer({
     onSecondaryAction?.();
   };
 
+  const handleOpenChange = (open: boolean) => {
+    onOpenChange?.(open);
+
+    if (!open) {
+      onCloseAction?.();
+    }
+  };
+
   return (
-    <Drawer>
+    <Drawer onOpenChange={handleOpenChange}>
       <DrawerTrigger asChild>
         {trigger ?? <Button variant="outline">Open Drawer</Button>}
       </DrawerTrigger>

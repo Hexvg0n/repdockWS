@@ -19,41 +19,112 @@ import {
   IconTruck,
 } from "@tabler/icons-react";
 import SmoothDrawer from "@/components/kokonutui/smooth-drawer";
+import {
+  settingsStorageKey,
+  useLanguageCopy,
+} from "@/lib/use-repdock-language";
 import { useEffect, useRef, useState } from "react";
 
-const navItems = [
+const navLinks = [
   {
-    name: "W2C",
+    key: "w2c",
     link: "/w2c",
   },
   {
-    name: "Outfits",
+    key: "outfits",
     link: "/outfits",
   },
   {
-    name: "Sellers",
+    key: "sellers",
     link: "/sellers",
   },
-];
+] as const;
 
-const toolItems = [
+const toolLinks = [
   {
-    name: "Converter",
+    key: "converter",
     link: "/converter",
   },
   {
-    name: "QC",
+    key: "qc",
     link: "/qc",
   },
   {
-    name: "Calculator",
+    key: "calculator",
     link: "/calculator",
   },
   {
-    name: "Tracking",
+    key: "tracking",
     link: "/tracking",
   },
-];
+] as const;
+
+const navbarCopy = {
+  PL: {
+    auth: {
+      admin: "Admin",
+      login: "Zaloguj",
+      logout: "Wyloguj",
+      profile: "Profil",
+    },
+    nav: {
+      w2c: "W2C",
+      outfits: "Outfity",
+      sellers: "Sprzedawcy",
+    },
+    settings: {
+      agentDescription: "Preferowany agent dla linków, zamówień i trackingu.",
+      agentTitle: "Agent",
+      currencyDescription: "Używana przy wycenach, kosztach i kalkulatorach.",
+      currencyTitle: "Waluta",
+      languageDescription: "Język interfejsu dla nawigacji i narzędzi.",
+      languageTitle: "Język",
+      save: "Zapisz",
+      title: "Ustawienia",
+      trigger: "Ustawienia",
+      description: "Wybierz język, walutę i agenta zakupowego.",
+    },
+    tools: {
+      calculator: "Kalkulator",
+      converter: "Konwerter",
+      qc: "QC",
+      tracking: "Tracking",
+    },
+    toolsLabel: "Narzędzia",
+  },
+  EN: {
+    auth: {
+      admin: "Admin",
+      login: "Login",
+      logout: "Logout",
+      profile: "Profile",
+    },
+    nav: {
+      w2c: "W2C",
+      outfits: "Outfits",
+      sellers: "Sellers",
+    },
+    settings: {
+      agentDescription: "Preferred agent for links, orders and tracking.",
+      agentTitle: "Agent",
+      currencyDescription: "Used for estimates, fees and calculators.",
+      currencyTitle: "Currency",
+      languageDescription: "Interface language for navigation and tools.",
+      languageTitle: "Language",
+      save: "Save",
+      title: "Settings",
+      trigger: "Settings",
+      description: "Choose your language, currency and shopping agent.",
+    },
+    tools: {
+      calculator: "Calculator",
+      converter: "Converter",
+      qc: "QC",
+      tracking: "Tracking",
+    },
+    toolsLabel: "Tools",
+  },
+} as const;
 
 const languageOptions = ["PL", "EN"] as const;
 const currencyOptions = ["PLN", "CNY", "USD", "EUR"] as const;
@@ -95,8 +166,6 @@ const agentMeta: Record<
   },
 };
 
-const settingsStorageKey = "repdock-settings";
-
 type RepdockSettings = {
   language: (typeof languageOptions)[number];
   currency: (typeof currencyOptions)[number];
@@ -113,6 +182,15 @@ type DiscordUser = {
 
 export function NavbarDemo() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const copy = useLanguageCopy(navbarCopy);
+  const navItems = navLinks.map((item) => ({
+    link: item.link,
+    name: copy.nav[item.key],
+  }));
+  const toolItems = toolLinks.map((item) => ({
+    link: item.link,
+    name: copy.tools[item.key],
+  }));
 
   return (
     <div className="relative w-full">
@@ -120,7 +198,11 @@ export function NavbarDemo() {
         {/* Desktop Navigation */}
         <NavBody>
           <NavbarLogo />
-          <DesktopNav />
+          <DesktopNav
+            navItems={navItems}
+            toolItems={toolItems}
+            toolsLabel={copy.toolsLabel}
+          />
           <div className="relative z-30 flex items-center gap-4">
             <SettingsDrawerTrigger />
             <AuthControl />
@@ -152,7 +234,7 @@ export function NavbarDemo() {
               </a>
             ))}
             <div className="grid w-full gap-3">
-              <span className="text-sm font-medium text-white">Tools</span>
+              <span className="text-sm font-medium text-white">{copy.toolsLabel}</span>
               <div className="grid gap-2 border-l border-white/10 pl-3">
                 {toolItems.map((item) => (
                   <a
@@ -171,12 +253,12 @@ export function NavbarDemo() {
               onClick={() => setIsMobileMenuOpen(false)}
               className="relative text-neutral-300"
             >
-              <span className="block">Sellers</span>
+              <span className="block">{copy.nav.sellers}</span>
             </a>
             <div className="flex w-full flex-col gap-4">
               <SettingsDrawerTrigger
                 className="flex w-full items-center justify-center gap-2 rounded-md border border-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10"
-                label="Settings"
+                label={copy.settings.trigger}
               />
               <AuthControl
                 mobile
@@ -199,6 +281,7 @@ function AuthControl({
   mobile?: boolean;
   onNavigate?: () => void;
 }) {
+  const copy = useLanguageCopy(navbarCopy).auth;
   const [user, setUser] = useState<DiscordUser | null>(null);
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -256,7 +339,7 @@ function AuthControl({
         }`}
       >
         <DiscordLogo className="size-5" />
-        Login
+        {copy.login}
       </NavbarButton>
     );
   }
@@ -303,7 +386,7 @@ function AuthControl({
                 alt=""
                 className="size-6 shrink-0 object-contain"
               />
-              Admin
+              {copy.admin}
             </a>
           ) : null}
           <a
@@ -312,7 +395,7 @@ function AuthControl({
             className="flex items-center gap-2 rounded-xl px-3 py-2 text-neutral-300 transition hover:bg-white/[0.06] hover:text-white"
           >
             <IconUser className="size-4" stroke={1.8} />
-            Profile
+            {copy.profile}
           </a>
           <button
             type="button"
@@ -320,7 +403,7 @@ function AuthControl({
             className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-red-200 transition hover:bg-red-500/15 hover:text-white"
           >
             <IconLogout className="size-4" stroke={1.8} />
-            Logout
+            {copy.logout}
           </button>
         </div>
       ) : null}
@@ -339,6 +422,7 @@ function SettingsDrawerTrigger({
   onClick?: () => void;
   onSave?: () => void;
 }) {
+  const copy = useLanguageCopy(navbarCopy).settings;
   const [language, setLanguage] =
     useState<(typeof languageOptions)[number]>("PL");
   const [currency, setCurrency] =
@@ -393,16 +477,16 @@ function SettingsDrawerTrigger({
 
   return (
     <SmoothDrawer
-      title="Settings"
-      description="Choose your language, currency and shopping agent."
-      secondaryButtonText="Save"
-      onSecondaryAction={saveSettings}
+      title={copy.title}
+      description={copy.description}
+      secondaryButtonText={copy.save}
+      onCloseAction={saveSettings}
       showPrimaryAction={false}
       showPrice={false}
       trigger={
         <button
           type="button"
-          aria-label="Settings"
+          aria-label={copy.trigger}
           onClick={onClick}
           className={
             className ??
@@ -416,8 +500,9 @@ function SettingsDrawerTrigger({
     >
       <div className="grid gap-5">
         <SettingsSection
-          title="Language"
-          description="Interface language for navigation and tools."
+          iconType="language"
+          title={copy.languageTitle}
+          description={copy.languageDescription}
         >
           <div className="grid grid-cols-2 gap-2">
             {languageOptions.map((option) => (
@@ -435,8 +520,9 @@ function SettingsDrawerTrigger({
         </SettingsSection>
 
         <SettingsSection
-          title="Currency"
-          description="Used for estimates, fees and calculators."
+          iconType="currency"
+          title={copy.currencyTitle}
+          description={copy.currencyDescription}
         >
           <div className="grid grid-cols-4 rounded-2xl bg-black/35 p-1 ring-1 ring-white/10">
             {currencyOptions.map((option) => (
@@ -452,8 +538,9 @@ function SettingsDrawerTrigger({
         </SettingsSection>
 
         <SettingsSection
-          title="Agent"
-          description="Preferred agent for links, orders and tracking."
+          iconType="agent"
+          title={copy.agentTitle}
+          description={copy.agentDescription}
         >
           <div className="grid grid-cols-2 gap-2">
             {agentOptions.map((option) => (
@@ -478,17 +565,19 @@ function SettingsSection({
   title,
   description,
   children,
+  iconType,
 }: {
   title: string;
   description: string;
   children: React.ReactNode;
+  iconType: "agent" | "currency" | "language";
 }) {
   const icons = {
-    Language: IconFlagQuestion,
-    Currency: IconCurrencyYuan,
-    Agent: IconTruck,
+    agent: IconTruck,
+    currency: IconCurrencyYuan,
+    language: IconFlagQuestion,
   };
-  const Icon = icons[title as keyof typeof icons];
+  const Icon = icons[iconType];
 
   return (
     <section className="grid gap-3">
@@ -580,14 +669,22 @@ function SettingsOption({
   );
 }
 
-function DesktopNav() {
+function DesktopNav({
+  navItems,
+  toolItems,
+  toolsLabel,
+}: {
+  navItems: Array<{ link: string; name: string }>;
+  toolItems: Array<{ link: string; name: string }>;
+  toolsLabel: string;
+}) {
   return (
     <div className="pointer-events-none absolute inset-0 hidden flex-1 flex-row items-center justify-center space-x-2 text-sm font-medium text-neutral-300 lg:flex lg:space-x-2">
-      <NavLink href="/w2c">W2C</NavLink>
-      <NavLink href="/outfits">Outfits</NavLink>
+      <NavLink href="/w2c">{navItems[0]?.name ?? "W2C"}</NavLink>
+      <NavLink href="/outfits">{navItems[1]?.name ?? "Outfits"}</NavLink>
       <div className="group pointer-events-auto relative">
         <button className="relative flex items-center gap-1 rounded-full px-4 py-2 text-neutral-300 transition hover:bg-neutral-800 hover:text-white">
-          Tools
+          {toolsLabel}
           <IconChevronDown
             className="size-4 transition group-hover:rotate-180"
             stroke={1.8}
@@ -606,7 +703,7 @@ function DesktopNav() {
           ))}
         </div>
       </div>
-      <NavLink href="/sellers">Sellers</NavLink>
+      <NavLink href="/sellers">{navItems[2]?.name ?? "Sellers"}</NavLink>
     </div>
   );
 }

@@ -77,11 +77,11 @@ const usfansCodes: Record<PlatformName, string> = {
   tmall: "2",
 };
 
-const rizzitgoCodes: Record<PlatformName, string> = {
-  taobao: "1",
-  tmall: "1",
-  "1688": "2",
-  weidian: "3",
+const bbdbuyCodes: Record<PlatformName, string> = {
+  taobao: "TAOBAO",
+  tmall: "TAOBAO",
+  "1688": "1688",
+  weidian: "WEIDIAN",
 };
 
 const litbuyCodes: Record<PlatformName, string> = {
@@ -92,13 +92,13 @@ const litbuyCodes: Record<PlatformName, string> = {
 };
 
 const middlemen: Readonly<Record<string, Middleman>> = {
-  rizzitgo: {
-    name: "RizzItGo",
-    template: "https://www.rizzitgo.com/detail-page/?goodsId={{itemID}}&source={{platformCode}}",
-    platformMapping: rizzitgoCodes,
+  bbdbuy: {
+    name: "BBDBuy",
+    template: "www.bbdbuyeu.com/goods/{{platformCode}}/{{itemID}}?inviteCode=ZqhUMV",
+    platformMapping: bbdbuyCodes,
     requiresDecoding: false,
-    aliases: ["rizz", "rig"],
-    reverseMapping: { "1": "taobao", "2": "1688", "3": "weidian" },
+    aliases: ["bbd"],
+    reverseMapping: { "TAOBAO": "taobao", "1688": "1688", "WEIDIAN": "weidian" },
   },
   kakobuy: {
     name: "Kakobuy",

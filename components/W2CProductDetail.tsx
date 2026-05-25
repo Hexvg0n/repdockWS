@@ -22,10 +22,10 @@ import {
 import type { W2CProduct } from "@/types/w2c";
 
 const favoritesStorageKey = "repdock-w2c-favorites";
-const agents = ["RIZZITGO", "KAKOBUY", "USFANS", "ACBUY"] as const;
+const agents = ["BBDBUY", "KAKOBUY", "USFANS", "ACBUY"] as const;
 
 const agentLogos: Record<(typeof agents)[number], string> = {
-  RIZZITGO: "/agents/rig_icon.png",
+  BBDBUY: "/agents/BBDBUY_icon.png",
   KAKOBUY: "/agents/kako_icon.png",
   USFANS: "/agents/usfans_icon.png",
   ACBUY: "/agents/acb_icon.png",
@@ -72,7 +72,7 @@ export function W2CProductDetail({ product }: { product: W2CProduct }) {
   const numberLocale = language === "PL" ? "pl" : "en";
   const [currency, setCurrency] = useState<(typeof currencies)[number]>("CNY");
   const [rates, setRates] = useState(fallbackCurrencyRates);
-  const [agent, setAgent] = useState<(typeof agents)[number]>("RIZZITGO");
+  const [agent, setAgent] = useState<(typeof agents)[number]>("BBDBUY");
   const [favorite, setFavorite] = useState(false);
   const [views, setViews] = useState(product.metadata.clicks.allTime);
   const [purchases, setPurchases] = useState(product.metadata.purchases ?? 0);
@@ -101,7 +101,7 @@ export function W2CProductDetail({ product }: { product: W2CProduct }) {
         setFavorite(favorites.includes(product.id));
       } catch {
         setCurrency("CNY");
-        setAgent("RIZZITGO");
+        setAgent("BBDBUY");
       }
     };
 

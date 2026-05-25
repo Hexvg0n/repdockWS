@@ -5,14 +5,14 @@ const { readJson, writeJsonAtomic } = require('../utils/jsonStore');
 const dbPath = path.join(__dirname, '../giveaways.json');
 
 // --- Helper Functions ---
-function getAllGiveaways() {
-    const giveaways = readJson(dbPath, []);
+async function getAllGiveaways() {
+    const giveaways = await readJson(dbPath, []);
     return Array.isArray(giveaways) ? giveaways : [];
 }
 
-function saveGiveaways(giveaways) {
+async function saveGiveaways(giveaways) {
     try {
-        writeJsonAtomic(dbPath, giveaways);
+        await writeJsonAtomic(dbPath, giveaways);
     } catch (e) {
         console.error("Error saving giveaways:", e);
     }
@@ -81,15 +81,15 @@ async function startGiveaway(interaction, prize, durationStr, winnerCount, chann
         hostId: interaction.user.id
     };
 
-    const giveaways = getAllGiveaways();
+    const giveaways = await getAllGiveaways();
     giveaways.push(newGiveaway);
-    saveGiveaways(giveaways);
+    await saveGiveaways(giveaways);
 
     await interaction.reply({ content: `Konkurs utworzony na kanale ${channel}!`, flags: MessageFlags.Ephemeral });
 }
 
 async function handleJoinGiveaway(interaction) {
-    const giveaways = getAllGiveaways();
+    const giveaways = await getAllGiveaways();
     const giveaway = giveaways.find(g => g.messageId === interaction.message.id);
 
     if (!giveaway) {
@@ -105,18 +105,18 @@ async function handleJoinGiveaway(interaction) {
     }
 
     giveaway.participants.push(interaction.user.id);
-    saveGiveaways(giveaways);
+    await saveGiveaways(giveaways);
 
     return interaction.reply({ content: 'Dołączyłeś do konkursu! Powodzenia! 🍀', flags: MessageFlags.Ephemeral });
 }
 
 async function endGiveaway(client, messageId) {
-    const giveaways = getAllGiveaways();
+    const giveaways = await getAllGiveaways();
     const giveaway = giveaways.find(g => g.messageId === messageId);
     if (!giveaway || giveaway.ended) return;
 
     giveaway.ended = true;
-    saveGiveaways(giveaways);
+    await saveGiveaways(giveaways);
 
     try {
         const channel = await client.channels.fetch(giveaway.channelId);
@@ -158,7 +158,7 @@ async function endGiveaway(client, messageId) {
 }
 
 async function checkGiveaways(client) {
-    const giveaways = getAllGiveaways();
+    const giveaways = await getAllGiveaways();
     const now = Date.now();
 
     for (const giveaway of giveaways) {
@@ -169,7 +169,7 @@ async function checkGiveaways(client) {
 }
 
 async function rerollGiveaway(client, messageId, channelId) {
-    const giveaways = getAllGiveaways();
+    const giveaways = await getAllGiveaways();
     const giveaway = giveaways.find(g => g.messageId === messageId);
 
     if (!giveaway) return "Nie znaleziono konkursu.";

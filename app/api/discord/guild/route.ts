@@ -14,21 +14,7 @@ const responseHeaders = {
   "Cache-Control": "public, s-maxage=300, stale-while-revalidate=900",
 };
 
-let guildStatsCache:
-  | {
-      data: GuildStatsResponse;
-      expiresAt: number;
-    }
-  | null = null;
-
 export async function GET() {
-  const now = Date.now();
-
-  if (guildStatsCache && guildStatsCache.expiresAt > now) {
-    return NextResponse.json(guildStatsCache.data, {
-      headers: responseHeaders,
-    });
-  }
 
   const guildId = process.env.DISCORD_GUILD_ID;
   const botToken = process.env.DISCORD_BOT_TOKEN;
@@ -55,12 +41,6 @@ export async function GET() {
     );
 
     if (!response.ok) {
-      if (guildStatsCache) {
-        return NextResponse.json(guildStatsCache.data, {
-          headers: responseHeaders,
-        });
-      }
-
       return NextResponse.json(
         { error: "Failed to fetch Discord guild stats" },
         { status: response.status },
@@ -72,21 +52,10 @@ export async function GET() {
       memberCount: guild.approximate_member_count ?? guild.member_count ?? null,
     };
 
-    guildStatsCache = {
-      data,
-      expiresAt: now + guildStatsCacheTtlMs,
-    };
-
     return NextResponse.json(data, {
       headers: responseHeaders,
     });
   } catch {
-    if (guildStatsCache) {
-      return NextResponse.json(guildStatsCache.data, {
-        headers: responseHeaders,
-      });
-    }
-
     return NextResponse.json(
       { error: "Failed to fetch Discord guild stats" },
       { status: 504 },

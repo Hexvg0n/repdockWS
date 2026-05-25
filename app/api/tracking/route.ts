@@ -8,6 +8,30 @@ import type { TrackingData, TrackingEvent } from "@/types/tracking";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const rateLimitMap = new Map<string, { count: number; expiresAt: number }>();
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+  
+  // Cleanup occasionally
+  if (rateLimitMap.size > 1000) {
+    const expiredKeys = Array.from(rateLimitMap.entries())
+      .filter(([_, v]) => v.expiresAt <= now)
+      .map(([k]) => k);
+    for (const k of expiredKeys) rateLimitMap.delete(k);
+  }
+
+  if (record && record.expiresAt > now) {
+    if (record.count >= 10) return true;
+    record.count += 1;
+    return false;
+  }
+  
+  rateLimitMap.set(ip, { count: 1, expiresAt: now + 60_000 });
+  return false;
+}
+
 const TRACKING_URLS = [
   "http://106.55.5.75:8082/en/trackIndex.htm",
   "http://114.132.51.252:8082/en/trackIndex.htm",
@@ -167,6 +191,11 @@ async function checkTrackingUrl(
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for") ?? req.ip ?? "unknown";
+    if (isRateLimited(ip)) {
+      return NextResponse.json({ error: "Too many tracking requests. Please try again later." }, { status: 429 });
+    }
+
     const body = (await req.json()) as { language?: unknown; trackingNumber?: unknown };
     const trackingNumber = typeof body.trackingNumber === "string" ? body.trackingNumber.trim() : "";
 

@@ -18,7 +18,7 @@ type Logo = {
 
 const logos: Logo[] = [
   {
-    src: "/agents/Rizzitgo.png ",
+    src: "/agents/BBDBUY.png ",
     width: 75,
     height: 17,
     displayWidth: "125px",
@@ -100,7 +100,7 @@ const heroCopy = {
       secondary: "Lista sprzedawców",
     },
     hero: {
-      title: "Twoje ostatnie miejsce w świecie repów",
+      title: "Twój ostatni przystanek w świecie repów",
       subtitle:
         "Najpotrzebniejsze narzędzia do wygodnego przeglądania oraz aktualny spreadsheet wybrany przez nas dla Ciebie.",
     },

@@ -36,16 +36,16 @@ const agentIcons: Record<string, string> = {
   acbuy: "/agents/acb_icon.png",
   kakobuy: "/agents/kako_icon.png",
   litbuy: "/agents/litbuy_logo.jpg",
-  rizzitgo: "/agents/rig_icon.png",
+  bbdbuy: "/agents/BBDBUY_icon.png",
   usfans: "/agents/usfans_icon.png",
 };
 
-const visibleAgentKeys = new Set(["rizzitgo", "kakobuy", "usfans", "acbuy", "litbuy"]);
+const visibleAgentKeys = new Set(["bbdbuy", "kakobuy", "usfans", "acbuy", "litbuy"]);
 
 const preferredAgentMap: Record<string, string> = {
   ACBUY: "acbuy",
   KAKOBUY: "kakobuy",
-  RIZZITGO: "rizzitgo",
+  BBDBUY: "bbdbuy",
   USFANS: "usfans",
 };
 
@@ -63,7 +63,7 @@ const converterCopy = {
       badgeFrom: "Link produktu",
       badgeTo: "Linki agentów",
       description:
-        "Konwerter przyjmuje linki z marketplace oraz wspieranych agentów, a potem generuje dostępne URL-e agentów.",
+        "Konwerter przyjmuje linki ze  wspieranych agentów, a potem je convertuje.",
       title: "Wklej link, żeby zacząć",
     },
     errors: {
@@ -333,13 +333,13 @@ function ConvertedLinkCard({
   link,
   preferred,
   onCopy,
-}: {
+}: Readonly<{
   copied: boolean;
   copy: ConverterCopy;
   link: ConvertedLink;
   preferred: boolean;
   onCopy: () => void;
-}) {
+}>) {
   return (
     <article
       className={cn(
@@ -394,14 +394,14 @@ function LinkSummaryCard({
   title,
   url,
   onCopy,
-}: {
+}: Readonly<{
   copied: boolean;
   copy: ConverterCopy;
   label: string;
   title: string;
   url: string;
   onCopy: () => void;
-}) {
+}>) {
   return (
     <article className="rounded-3xl border border-white/10 bg-black/25 p-4">
       <div className="flex items-center gap-3">
@@ -426,7 +426,7 @@ function LinkSummaryCard({
   );
 }
 
-function AgentIcon({ agentKey }: { agentKey: string }) {
+function AgentIcon({ agentKey }: Readonly<{ agentKey: string }>) {
   const icon = agentIcons[agentKey];
 
   return (
@@ -440,7 +440,7 @@ function AgentIcon({ agentKey }: { agentKey: string }) {
   );
 }
 
-function EmptyConverterState({ copy }: { copy: ConverterCopy }) {
+function EmptyConverterState({ copy }: Readonly<{ copy: ConverterCopy }>) {
   return (
     <div className="grid min-h-72 place-items-center rounded-[34px] border border-dashed border-white/10 bg-white/[0.025] p-8 text-center">
       <div className="max-w-md">

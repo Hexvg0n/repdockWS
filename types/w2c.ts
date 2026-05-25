@@ -16,7 +16,7 @@ export type W2CProduct = {
   rating: number;
   links: {
     original: string;
-    RIZZITGO?: string;
+    BBDBUY?: string;
     KAKOBUY?: string;
     USFANS?: string;
     ACBUY?: string;

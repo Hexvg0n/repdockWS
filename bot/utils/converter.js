@@ -38,12 +38,12 @@ const domainMapping = {
 };
 
 const middlemen = {
-    rizzitgo: {
-        name: 'RizzItGo',
-        template: 'https://www.rizzitgo.com/detail-page/?goodsId={{itemID}}&source={{platformCode}}',
-        platformMapping: { taobao: '1', tmall: '1', '1688': '2', weidian: '3' },
-        aliases: ['rizz', 'rig'],
-        reverseMapping: { '1': 'taobao', '2': '1688', '3': 'weidian' }
+    bbdbuy: {
+        name: 'BBDBUY',
+        template: "www.bbdbuyeu.com/goods/{{platformCode}}/{{itemID}}?inviteCode=ZqhUMV",
+        platformMapping: { taobao: 'TAOBA', tmall: 'TAOBA', '1688': '1688', weidian: 'WEIDIAN' },
+        aliases: ['bbd'],
+        reverseMapping: { "TAOBAO": "taobao", "1688": "1688", "WEIDIAN": "weidian" }
     },
     kakobuy: {
         name: 'Kakobuy',

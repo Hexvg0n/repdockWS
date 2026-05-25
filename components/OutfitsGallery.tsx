@@ -26,11 +26,11 @@ import {
 import { cn } from "@/lib/utils";
 import type { Outfit, OutfitItem, OutfitsResponse } from "@/types/outfits";
 
-const agents = ["RIZZITGO", "KAKOBUY", "USFANS", "ACBUY"] as const;
+const agents = ["BBDBUY", "KAKOBUY", "USFANS", "ACBUY"] as const;
 const agentKeyMap: Record<(typeof agents)[number], string> = {
   ACBUY: "acbuy",
   KAKOBUY: "kakobuy",
-  RIZZITGO: "rizzitgo",
+  BBDBUY: "bbdbuy",
   USFANS: "usfans",
 };
 
@@ -190,7 +190,7 @@ export function OutfitsGallery() {
   const [submitSaving, setSubmitSaving] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<{ tone: "error" | "success"; text: string } | null>(null);
   const [currency, setCurrency] = useState<(typeof currencies)[number]>("CNY");
-  const [agent, setAgent] = useState<(typeof agents)[number]>("RIZZITGO");
+  const [agent, setAgent] = useState<(typeof agents)[number]>("BBDBUY");
   const [currencyRates, setCurrencyRates] = useState(fallbackCurrencyRates);
   const observerTarget = useRef<HTMLDivElement>(null);
   const requestIdRef = useRef(0);
@@ -211,7 +211,7 @@ export function OutfitsGallery() {
         }
       } catch {
         setCurrency("CNY");
-        setAgent("RIZZITGO");
+        setAgent("BBDBUY");
       }
     };
 

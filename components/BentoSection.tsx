@@ -19,29 +19,29 @@ const bentoCopy = {
         description: "Wklej jeden link produktu i przenieś go do preferowanych agentów.",
       },
       {
-        title: "Wszystkie narzędzia w jednym flow",
-        description: "Konwerter, QC, kalkulator i tracking są zawsze blisko Twojego zamówienia.",
+        title: "Wszystkie narzędzia w jednym miejscu",
+        description: "Konwerter, QC, kalkulator i tracking są zawsze w jednym miejscu.",
       },
       {
-        title: "Koszty jasne przed checkoutem",
-        description: "Oszacuj cenę produktu, lokalną wysyłkę i opłaty międzynarodowe przed zakupem.",
+        title: "Sprawdź koszty przed wysyłką",
+        description: "Oszacuj cenę wysyłki i opłaty międzynarodowe przed zakupem.",
       },
       {
         title: "Śledź każdą paczkę",
-        description: "Sprawdzaj status magazynu i dostawy bez otwierania kilku kart.",
+        description: "Sprawdzaj status twoich paczek i daty dostaw.",
       },
     ],
     visual: {
       costBreakdown: "Koszty",
       delivery: "Dostawa",
-      international: "Międzynarodowo",
+      international: "Zdjęcia QC",
       itemPrice: "Cena produktu",
       productLink: "Link produktu",
-      qcPhotos: "Zdjęcia QC",
+      qcPhotos: "Zakupy",
       seeTotal: "Zobacz sumę",
       shipping: "Wysyłka",
       totalEstimate: "Szacowana suma",
-      warehouse: "Magazyn",
+      warehouse: "Link",
       workflow: ["Konwerter", "Galeria QC", "Kalkulator", "Tracking", "Outfity", "Sprzedawcy"],
     },
   },
@@ -108,7 +108,7 @@ const itemMeta = [
 const agentIcons = {
   DHL: "/agents/DHL_logo.jpg",
   KAKOBUY: "/agents/kako_icon.png",
-  RIZZITGO: "/agents/rig_icon.png",
+  BBDBUY: "/agents/BBDBUY_icon.png",
   USFANS: "/agents/usfans_icon.png",
   OOPBUY: "/agents/oop_icon.png",
   ACBUY: "/agents/acb_icon.png",
@@ -147,18 +147,18 @@ export function BentoSection() {
 function CardVisual({
   copy,
   type,
-}: {
+}: Readonly<{
   copy: BentoVisualCopy;
   type: string;
-}) {
+}>) {
   if (type === "converter") {
     return (
       <div className={styles.converterVisual} aria-hidden="true">
         <AgentBadge
           className={styles.badgeTop}
           color="blue"
-          label="RIZZITGO"
-          src={agentIcons.RIZZITGO}
+          label="BBDBUY"
+          src={agentIcons.BBDBUY}
         />
         <AgentBadge
           className={styles.badgeMiddle}
@@ -258,12 +258,12 @@ function AgentBadge({
   color,
   label,
   src,
-}: {
+}: Readonly<{
   className?: string;
   color: "amber" | "blue" | "orange" | "pink";
   label: string;
   src?: string;
-}) {
+}>) {
   return (
     <span className={`${styles.agentBadge} ${styles[color]} ${className}`}>
       {src ? (

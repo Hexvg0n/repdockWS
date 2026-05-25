@@ -104,7 +104,7 @@ export function buildW2CProductLinks(
     original: originalLink,
     ACBUY: byKey.get("acbuy") ?? originalLink,
     KAKOBUY: byKey.get("kakobuy") ?? originalLink,
-    RIZZITGO: byKey.get("rizzitgo") ?? originalLink,
+    BBDBUY: byKey.get("bbdbuy") ?? originalLink,
     USFANS: byKey.get("usfans") ?? originalLink,
   };
 }

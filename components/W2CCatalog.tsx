@@ -38,11 +38,11 @@ import { cn } from "@/lib/utils";
 import type { W2CGender, W2CProduct, W2CProductsResponse } from "@/types/w2c";
 
 const favoritesStorageKey = "repdock-w2c-favorites";
-const agents = ["RIZZITGO", "KAKOBUY", "USFANS", "ACBUY"] as const;
+const agents = ["BBDBUY", "KAKOBUY", "USFANS", "ACBUY"] as const;
 const seasonOptions = ["All", "SS", "FW"];
 
 const agentLogos: Record<(typeof agents)[number], string> = {
-  RIZZITGO: "/agents/rig_icon.png",
+  BBDBUY: "/agents/BBDBUY_icon.png",
   KAKOBUY: "/agents/kako_icon.png",
   USFANS: "/agents/usfans_icon.png",
   ACBUY: "/agents/acb_icon.png",
@@ -111,7 +111,7 @@ const w2cCopy = {
       women: "Damskie",
     },
     header: {
-      description: "Najlepsza jakość wybrana przez nas dla Ciebie.",
+      description: "Najlepsze itemy wybrane przez nas dla Ciebie.",
       title: "Where To Cop",
     },
     labels: {
@@ -201,7 +201,7 @@ export function W2CCatalog() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [currency, setCurrency] = useState<(typeof currencies)[number]>("CNY");
   const [currencyRates, setCurrencyRates] = useState(fallbackCurrencyRates);
-  const [agent, setAgent] = useState<(typeof agents)[number]>("RIZZITGO");
+  const [agent, setAgent] = useState<(typeof agents)[number]>("BBDBUY");
   const observerTarget = useRef<HTMLDivElement>(null);
   const requestIdRef = useRef(0);
 
@@ -225,7 +225,7 @@ export function W2CCatalog() {
         }
       } catch {
         setCurrency("CNY");
-        setAgent("RIZZITGO");
+        setAgent("BBDBUY");
       }
     };
 

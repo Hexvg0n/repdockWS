@@ -128,7 +128,7 @@ const navbarCopy = {
 
 const languageOptions = ["PL", "EN"] as const;
 const currencyOptions = ["PLN", "CNY", "USD", "EUR"] as const;
-const agentOptions = ["RIZZITGO", "KAKOBUY", "USFANS", "ACBUY"] as const;
+const agentOptions = ["BBDBUY", "KAKOBUY", "USFANS", "ACBUY"] as const;
 
 const languageMeta: Record<
   (typeof languageOptions)[number],
@@ -148,8 +148,8 @@ const agentMeta: Record<
   (typeof agentOptions)[number],
   { icon: string; accent: string }
 > = {
-  RIZZITGO: {
-    icon: "/agents/rig_icon.png",
+  BBDBUY: {
+    icon: "/agents/BBDBUY_icon.png",
     accent: "from-transparent to-transparent",
   },
   KAKOBUY: {
@@ -427,7 +427,7 @@ function SettingsDrawerTrigger({
     useState<(typeof languageOptions)[number]>("PL");
   const [currency, setCurrency] =
     useState<(typeof currencyOptions)[number]>("PLN");
-  const [agent, setAgent] = useState<(typeof agentOptions)[number]>("RIZZITGO");
+  const [agent, setAgent] = useState<(typeof agentOptions)[number]>("BBDBUY");
 
   useEffect(() => {
     const savedSettings = window.localStorage.getItem(settingsStorageKey);

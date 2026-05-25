@@ -2,11 +2,17 @@ import {
     AlertTriangle,
     CheckCircle2,
     Database,
+    Fingerprint,
+    Globe2,
+    MapPin,
+    MonitorSmartphone,
     RefreshCw,
     RotateCcw,
     Save,
+    Search,
     ShieldCheck,
     UserMinus,
+    UserPlus,
     Users,
     XCircle
 } from 'lucide-react';
@@ -26,13 +32,96 @@ type RestoreEnvState = {
     restoreRedirectUri: string;
 };
 
+type RestoreSettingsState = {
+    blacklistUserIds: string[];
+    leftServerMinDays: number;
+    maxBatchSize: number;
+    maxLeaveDetections: number;
+    minAccountAgeDays: number;
+    minPullDelayMs: number;
+    maxPullDelayMs: number;
+    minStayDurationDays: number;
+    pullCooldownMinutes: number;
+    webhookLogsEnabled: boolean;
+    webhookUrl: string;
+};
+
+type RestoreLogEntry = {
+    action: string;
+    createdAt: string;
+    details?: string;
+    status: 'blocked' | 'failed' | 'info' | 'skipped' | 'success';
+    userId?: string;
+    username?: string;
+};
+
+type RestoreMigrationAnalytics = {
+    blockedVerifications: number;
+    failedPulls: number;
+    last24h: number;
+    pulled: number;
+    skippedPulls: number;
+    totalLogs: number;
+    verificationLogs: number;
+};
+
 type RestoreStatsState = {
+    analytics: RestoreAnalyticsState;
     count: number;
     expiredTokens: number;
     latestConsentAt: string | null;
     recent7d: number;
+    users: RestoreSavedUser[];
     usersPath: string;
     validTokens: number;
+};
+
+type RestoreTopItem = {
+    label: string;
+    value: number;
+};
+
+type RestoreAnalyticsState = {
+    browsers: RestoreTopItem[];
+    cities: RestoreTopItem[];
+    countries: RestoreTopItem[];
+    deviceTypes: Record<string, number>;
+    languages: RestoreTopItem[];
+    locationsKnown: number;
+    operatingSystems: RestoreTopItem[];
+    restoreOnlyCount: number;
+    uniqueIpHashes: number;
+    verifiedCount: number;
+};
+
+type RestoreSavedUserAnalytics = {
+    capturedAt: string | null;
+    device: {
+        browser: string;
+        os: string;
+        type: string;
+    };
+    ipHash: string | null;
+    language: string;
+    location: {
+        city: string;
+        country: string;
+        countryName: string;
+        region: string;
+        source: string;
+        timezone: string;
+    };
+    source: string;
+};
+
+type RestoreSavedUser = {
+    id: string;
+    analytics: RestoreSavedUserAnalytics | null;
+    username: string;
+    displayName: string;
+    consentedAt: string | null;
+    guildId: string;
+    tokenStatus: 'valid' | 'expired';
 };
 
 type RestorePullResult = {
@@ -53,6 +142,7 @@ type RestorePullSummary = {
     missing: number;
     pulled: number;
     refreshFailed: number;
+    skipped: number;
 };
 
 const DEFAULT_CONFIG: RestoreConfigState = {
@@ -68,11 +158,48 @@ const DEFAULT_ENV: RestoreEnvState = {
     restoreRedirectUri: ''
 };
 
+const DEFAULT_SETTINGS: RestoreSettingsState = {
+    blacklistUserIds: [],
+    leftServerMinDays: 0,
+    maxBatchSize: 250,
+    maxLeaveDetections: 0,
+    minAccountAgeDays: 0,
+    minPullDelayMs: 0,
+    maxPullDelayMs: 0,
+    minStayDurationDays: 0,
+    pullCooldownMinutes: 0,
+    webhookLogsEnabled: false,
+    webhookUrl: ''
+};
+
+const DEFAULT_MIGRATION_ANALYTICS: RestoreMigrationAnalytics = {
+    blockedVerifications: 0,
+    failedPulls: 0,
+    last24h: 0,
+    pulled: 0,
+    skippedPulls: 0,
+    totalLogs: 0,
+    verificationLogs: 0
+};
+
 const DEFAULT_STATS: RestoreStatsState = {
+    analytics: {
+        browsers: [],
+        cities: [],
+        countries: [],
+        deviceTypes: {},
+        languages: [],
+        locationsKnown: 0,
+        operatingSystems: [],
+        restoreOnlyCount: 0,
+        uniqueIpHashes: 0,
+        verifiedCount: 0
+    },
     count: 0,
     expiredTokens: 0,
     latestConsentAt: null,
     recent7d: 0,
+    users: [],
     usersPath: '',
     validTokens: 0
 };
@@ -83,18 +210,24 @@ const DEFAULT_SUMMARY: RestorePullSummary = {
     inGuild: 0,
     missing: 0,
     pulled: 0,
-    refreshFailed: 0
+    refreshFailed: 0,
+    skipped: 0
 };
 
 export default function RestoreConfig() {
     const [config, setConfig] = useState<RestoreConfigState>(DEFAULT_CONFIG);
     const [env, setEnv] = useState<RestoreEnvState>(DEFAULT_ENV);
+    const [settings, setSettings] = useState<RestoreSettingsState>(DEFAULT_SETTINGS);
     const [stats, setStats] = useState<RestoreStatsState>(DEFAULT_STATS);
+    const [logs, setLogs] = useState<RestoreLogEntry[]>([]);
+    const [migrationAnalytics, setMigrationAnalytics] = useState<RestoreMigrationAnalytics>(DEFAULT_MIGRATION_ANALYTICS);
     const [results, setResults] = useState<RestorePullResult[]>([]);
     const [summary, setSummary] = useState<RestorePullSummary>(DEFAULT_SUMMARY);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [working, setWorking] = useState<'scan' | 'pull' | null>(null);
+    const [workingUserId, setWorkingUserId] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
     const [statusMsg, setStatusMsg] = useState('');
 
     const oauthReady = env.hasClientId && env.hasClientSecret && Boolean(env.publicBaseUrl) && Boolean(env.restoreRedirectUri);
@@ -103,6 +236,35 @@ export default function RestoreConfig() {
     const missingResults = results.filter((result) => result.membership === 'missing');
     const failedResults = results.filter((result) => result.action === 'failed' || result.tokenStatus === 'refresh_failed');
     const lastConsent = useMemo(() => formatDate(stats.latestConsentAt), [stats.latestConsentAt]);
+    const deviceDistribution = useMemo(() => {
+        return Object.entries(stats.analytics.deviceTypes)
+            .map(([label, value]) => ({ label: formatDeviceTypeLabel(label), value }))
+            .sort((first, second) => second.value - first.value);
+    }, [stats.analytics.deviceTypes]);
+    const topCountry = stats.analytics.countries[0]?.label || 'Brak danych';
+    const filteredSavedUsers = useMemo(() => {
+        const query = searchTerm.trim().toLowerCase();
+        if (!query) return stats.users.slice(0, 40);
+
+        return stats.users
+            .filter((user) => {
+                const haystack = [
+                    user.id,
+                    user.username,
+                    user.displayName,
+                    user.guildId,
+                    user.analytics?.device.browser,
+                    user.analytics?.device.os,
+                    user.analytics?.device.type,
+                    user.analytics?.location.city,
+                    user.analytics?.location.country,
+                    user.analytics?.location.countryName,
+                    user.analytics?.location.region
+                ].join(' ').toLowerCase();
+                return haystack.includes(query);
+            })
+            .slice(0, 40);
+    }, [searchTerm, stats.users]);
 
     const loadConfig = async () => {
         setLoading(true);
@@ -113,7 +275,10 @@ export default function RestoreConfig() {
 
             if (data.config) setConfig({ ...DEFAULT_CONFIG, ...data.config });
             if (data.env) setEnv({ ...DEFAULT_ENV, ...data.env });
+            if (data.settings) setSettings({ ...DEFAULT_SETTINGS, ...data.settings });
             if (data.stats) setStats({ ...DEFAULT_STATS, ...data.stats });
+            if (Array.isArray(data.logs)) setLogs(data.logs);
+            if (data.migrationAnalytics) setMigrationAnalytics({ ...DEFAULT_MIGRATION_ANALYTICS, ...data.migrationAnalytics });
         } catch (error) {
             console.error('Failed to load restore config', error);
             setStatusMsg('Nie udalo sie zaladowac danych restore.');
@@ -126,6 +291,16 @@ export default function RestoreConfig() {
         void loadConfig();
     }, []);
 
+    useEffect(() => {
+        if (!working) return;
+
+        const interval = window.setInterval(() => {
+            void loadConfig();
+        }, 2500);
+
+        return () => window.clearInterval(interval);
+    }, [working]);
+
     const saveConfig = async () => {
         setSaving(true);
         setStatusMsg('Zapisywanie konfiguracji...');
@@ -134,7 +309,10 @@ export default function RestoreConfig() {
             const response = await fetch('/api/admin/bot/restore/config', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(config)
+                body: JSON.stringify({
+                    ...config,
+                    restoreSettings: settings
+                })
             });
 
             if (!response.ok) throw new Error('Save failed');
@@ -148,9 +326,20 @@ export default function RestoreConfig() {
         }
     };
 
-    const runRestoreAction = async (action: 'scan' | 'pull') => {
+    const runRestoreAction = async (action: 'scan' | 'pull', userIds?: string[]) => {
+        const isSingleUser = Boolean(userIds?.length === 1);
+
         setWorking(action);
-        setStatusMsg(action === 'scan' ? 'Skanuje zapisane osoby...' : 'Pulluje osoby, ktore wyszly...');
+        setWorkingUserId(userIds?.[0] ?? null);
+        setStatusMsg(
+            isSingleUser
+                ? action === 'scan'
+                    ? 'Sprawdzam wybranego uzytkownika...'
+                    : 'Pulluje wybranego uzytkownika...'
+                : action === 'scan'
+                  ? 'Skanuje zapisane osoby...'
+                  : 'Pulluje osoby, ktore wyszly...'
+        );
 
         try {
             const response = await fetch('/api/admin/bot/restore/pull', {
@@ -159,7 +348,8 @@ export default function RestoreConfig() {
                 body: JSON.stringify({
                     action,
                     assignVerifyRole: true,
-                    limit: 1000
+                    limit: settings.maxBatchSize,
+                    userIds
                 })
             });
             const data = await response.json();
@@ -169,7 +359,9 @@ export default function RestoreConfig() {
             setResults(data.results || []);
             setSummary({ ...DEFAULT_SUMMARY, ...(data.summary || {}) });
             setStatusMsg(
-                action === 'scan'
+                isSingleUser
+                    ? data.results?.[0]?.message || 'Akcja dla wybranego uzytkownika zakonczona.'
+                    : action === 'scan'
                     ? `Skan zakonczony. Poza serwerem: ${data.summary?.missing ?? 0}.`
                     : `Pull zakonczony. Przywrocono: ${data.summary?.pulled ?? 0}.`
             );
@@ -179,6 +371,7 @@ export default function RestoreConfig() {
             setStatusMsg(error instanceof Error ? error.message : 'Akcja restore nie powiodla sie.');
         } finally {
             setWorking(null);
+            setWorkingUserId(null);
         }
     };
 
@@ -201,11 +394,11 @@ export default function RestoreConfig() {
                             Odswiez
                         </button>
                         <button className="restore-btn restore-btn-primary" onClick={() => runRestoreAction('scan')} disabled={Boolean(working) || !botReady}>
-                            {working === 'scan' ? <RefreshCw className="size-4 animate-spin" /> : <UserMinus className="size-4" />}
+                            {working === 'scan' && !workingUserId ? <RefreshCw className="size-4 animate-spin" /> : <UserMinus className="size-4" />}
                             Skanuj osoby
                         </button>
                         <button className="restore-btn restore-btn-success" onClick={() => runRestoreAction('pull')} disabled={Boolean(working) || !botReady || stats.count === 0}>
-                            {working === 'pull' ? <RefreshCw className="size-4 animate-spin" /> : <RotateCcw className="size-4" />}
+                            {working === 'pull' && !workingUserId ? <RefreshCw className="size-4 animate-spin" /> : <RotateCcw className="size-4" />}
                             Pulluj wyszlych
                         </button>
                     </div>
@@ -222,6 +415,41 @@ export default function RestoreConfig() {
                     <MetricCard icon={<ShieldCheck className="size-5" />} label="Tokeny aktywne" value={stats.validTokens} hint={`${stats.expiredTokens} wygaslych`} />
                     <MetricCard icon={<UserMinus className="size-5" />} label="Poza serwerem" value={summary.missing || missingResults.length} hint={summary.checked ? `${summary.checked} sprawdzonych` : 'Wymaga skanu'} />
                     <MetricCard icon={<RotateCcw className="size-5" />} label="Przywrocono" value={summary.pulled} hint={summary.failed ? `${summary.failed} bledow` : 'Ostatnia akcja'} />
+                </section>
+
+                <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <MetricCard icon={<MonitorSmartphone className="size-5" />} label="Weryfikacje" value={stats.analytics.verifiedCount} hint={`${stats.analytics.restoreOnlyCount} restore-only`} />
+                    <MetricCard icon={<MapPin className="size-5" />} label="Lokalizacje" value={stats.analytics.locationsKnown} hint={topCountry} />
+                    <MetricCard icon={<Fingerprint className="size-5" />} label="Unikalne IP" value={stats.analytics.uniqueIpHashes} hint="Hash, bez surowego IP" />
+                    <MetricCard icon={<Globe2 className="size-5" />} label="Jezyki" value={stats.analytics.languages.length} hint={stats.analytics.languages[0]?.label || 'Brak danych'} />
+                </section>
+
+                <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <MetricCard icon={<RotateCcw className="size-5" />} label="Pull success" value={migrationAnalytics.pulled} hint={`${migrationAnalytics.last24h} logow / 24h`} />
+                    <MetricCard icon={<UserMinus className="size-5" />} label="Pominiete" value={migrationAnalytics.skippedPulls} hint="Filtry i warunki" />
+                    <MetricCard icon={<XCircle className="size-5" />} label="Bledy pull" value={migrationAnalytics.failedPulls} hint={`${migrationAnalytics.totalLogs} logow lacznie`} />
+                    <MetricCard icon={<AlertTriangle className="size-5" />} label="Blokady verify" value={migrationAnalytics.blockedVerifications} hint={`${migrationAnalytics.verificationLogs} logow verify`} />
+                </section>
+
+                <section className="grid gap-6 xl:grid-cols-4">
+                    <PanelCard title="Urzadzenia">
+                        <DistributionList emptyLabel="Brak danych urzadzen" items={deviceDistribution} total={stats.count} />
+                    </PanelCard>
+                    <PanelCard title="Kraje">
+                        <DistributionList emptyLabel="Brak danych lokalizacji" items={stats.analytics.countries} total={stats.count} />
+                    </PanelCard>
+                    <PanelCard title="Przegladarki">
+                        <DistributionList emptyLabel="Brak danych przegladarek" items={stats.analytics.browsers} total={stats.count} />
+                    </PanelCard>
+                    <PanelCard title="Systemy">
+                        <DistributionList emptyLabel="Brak danych systemow" items={stats.analytics.operatingSystems} total={stats.count} />
+                    </PanelCard>
+                    <PanelCard title="Miasta">
+                        <DistributionList emptyLabel="Brak danych miast" items={stats.analytics.cities} total={stats.count} />
+                    </PanelCard>
+                    <PanelCard title="Jezyki">
+                        <DistributionList emptyLabel="Brak danych jezykow" items={stats.analytics.languages} total={stats.count} />
+                    </PanelCard>
                 </section>
 
                 <section className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
@@ -252,6 +480,90 @@ export default function RestoreConfig() {
                             </div>
                         </PanelCard>
 
+                        <PanelCard title="Operacje restore">
+                            <div className="grid gap-4">
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <SettingsNumberField label="Cooldown pull (min)" value={settings.pullCooldownMinutes} onChange={(value) => setSettings((current) => ({ ...current, pullCooldownMinutes: value }))} />
+                                    <SettingsNumberField label="Max batch" value={settings.maxBatchSize} onChange={(value) => setSettings((current) => ({ ...current, maxBatchSize: value }))} />
+                                    <SettingsNumberField label="Delay min (ms)" value={settings.minPullDelayMs} onChange={(value) => setSettings((current) => ({ ...current, minPullDelayMs: value }))} />
+                                    <SettingsNumberField label="Delay max (ms)" value={settings.maxPullDelayMs} onChange={(value) => setSettings((current) => ({ ...current, maxPullDelayMs: value }))} />
+                                    <SettingsNumberField label="Min account age (dni)" value={settings.minAccountAgeDays} onChange={(value) => setSettings((current) => ({ ...current, minAccountAgeDays: value }))} />
+                                    <SettingsNumberField label="Min stay (dni)" value={settings.minStayDurationDays} onChange={(value) => setSettings((current) => ({ ...current, minStayDurationDays: value }))} />
+                                    <SettingsNumberField label="Left X dni" value={settings.leftServerMinDays} onChange={(value) => setSettings((current) => ({ ...current, leftServerMinDays: value }))} />
+                                    <SettingsNumberField label="Max leave detections" value={settings.maxLeaveDetections} onChange={(value) => setSettings((current) => ({ ...current, maxLeaveDetections: value }))} />
+                                </div>
+                                <label className="grid gap-2">
+                                    <span className="text-xs font-semibold uppercase text-slate-500">Blacklist user ID</span>
+                                    <textarea
+                                        className="restore-input min-h-[96px] resize-y"
+                                        value={settings.blacklistUserIds.join('\n')}
+                                        onChange={(event) => setSettings((current) => ({ ...current, blacklistUserIds: event.target.value.split(/\s+/).map((id) => id.trim()).filter(Boolean) }))}
+                                        placeholder="Jedno ID na linie"
+                                    />
+                                </label>
+                                <label className="grid gap-2">
+                                    <span className="text-xs font-semibold uppercase text-slate-500">Webhook logow</span>
+                                    <input
+                                        className="restore-input"
+                                        value={settings.webhookUrl}
+                                        onChange={(event) => setSettings((current) => ({ ...current, webhookUrl: event.target.value }))}
+                                        placeholder="https://discord.com/api/webhooks/..."
+                                    />
+                                </label>
+                                <label className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                                    <span>
+                                        <span className="block text-sm font-semibold text-white">Webhook logs</span>
+                                        <span className="block text-xs text-slate-500">Wysylaj eventy verify/pull na webhook.</span>
+                                    </span>
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.webhookLogsEnabled}
+                                        onChange={(event) => setSettings((current) => ({ ...current, webhookLogsEnabled: event.target.checked }))}
+                                    />
+                                </label>
+                                <button className="restore-btn restore-btn-primary w-full" onClick={saveConfig} disabled={saving}>
+                                    {saving ? <RefreshCw className="size-4 animate-spin" /> : <Save className="size-4" />}
+                                    Zapisz operacje
+                                </button>
+                            </div>
+                        </PanelCard>
+
+                        <PanelCard title="Zapisani uzytkownicy">
+                            <div className="grid gap-4">
+                                <label className="relative block">
+                                    <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-500" />
+                                    <input
+                                        className="restore-input pl-10"
+                                        value={searchTerm}
+                                        onChange={(event) => setSearchTerm(event.target.value)}
+                                        placeholder="Szukaj po nicku lub ID"
+                                    />
+                                </label>
+                                <div className="max-h-[360px] overflow-y-auto pr-1">
+                                    {filteredSavedUsers.length > 0 ? (
+                                        <div className="grid gap-2">
+                                            {filteredSavedUsers.map((user) => (
+                                                <SavedUserRow
+                                                    key={user.id}
+                                                    user={user}
+                                                    disabled={!botReady || Boolean(working)}
+                                                    working={working === 'pull' && workingUserId === user.id}
+                                                    onPull={() => runRestoreAction('pull', [user.id])}
+                                                />
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 p-5 text-center text-sm text-slate-500">
+                                            Brak zapisanych osob dla tego wyszukiwania.
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="text-xs leading-relaxed text-slate-500">
+                                    Pokazuje maksymalnie 40 wynikow. Pull pojedynczy uzywa tej samej logiki co pull masowy: sprawdza membership, odswieza token i nadaje role.
+                                </p>
+                            </div>
+                        </PanelCard>
+
                         <PanelCard title="Dane">
                             <div className="grid gap-3 text-sm text-slate-400">
                                 <InfoRow label="Ostatnia zgoda" value={lastConsent} />
@@ -261,9 +573,10 @@ export default function RestoreConfig() {
                         </PanelCard>
                     </div>
 
-                    <PanelCard title="Live status zapisanych osob">
-                        {results.length > 0 ? (
-                            <div className="grid gap-4">
+                    <div className="grid gap-6">
+                        <PanelCard title="Live status zapisanych osob">
+                            {results.length > 0 ? (
+                                <div className="grid gap-4">
                                 <div className="grid gap-3 md:grid-cols-3">
                                     <MiniSummary label="Na serwerze" value={summary.inGuild} tone="ok" />
                                     <MiniSummary label="Wyszli" value={summary.missing} tone="warn" />
@@ -279,6 +592,7 @@ export default function RestoreConfig() {
                                                     <th className="px-4 py-3">Token</th>
                                                     <th className="px-4 py-3">Akcja</th>
                                                     <th className="px-4 py-3">Info</th>
+                                                    <th className="px-4 py-3">Pull</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-white/10">
@@ -300,15 +614,25 @@ export default function RestoreConfig() {
                                                         <td className="max-w-[320px] px-4 py-3 text-xs leading-relaxed text-slate-400">
                                                             {result.message || '-'}
                                                         </td>
+                                                        <td className="px-4 py-3">
+                                                            <button
+                                                                className="restore-btn restore-btn-muted min-h-9 px-3 text-xs"
+                                                                onClick={() => runRestoreAction('pull', [result.id])}
+                                                                disabled={!botReady || Boolean(working)}
+                                                            >
+                                                                {working === 'pull' && workingUserId === result.id ? <RefreshCw className="size-3 animate-spin" /> : <UserPlus className="size-3" />}
+                                                                Pull
+                                                            </button>
+                                                        </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="grid min-h-[420px] place-items-center rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-8 text-center">
+                                </div>
+                            ) : (
+                                <div className="grid min-h-[420px] place-items-center rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-8 text-center">
                                 <div className="max-w-md">
                                     <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-blue-500/15 text-blue-100 ring-1 ring-blue-300/20">
                                         <Database className="size-6" />
@@ -319,8 +643,13 @@ export default function RestoreConfig() {
                                     </p>
                                 </div>
                             </div>
-                        )}
-                    </PanelCard>
+                            )}
+                        </PanelCard>
+
+                        <PanelCard title="Realtime migration logs">
+                            <RestoreLogsList logs={logs} />
+                        </PanelCard>
+                    </div>
                 </section>
 
                 {!oauthReady || !botReady || !roleReady ? (
@@ -384,6 +713,133 @@ function InfoRow({ label, value }: { label: string; value: string }) {
     );
 }
 
+function SettingsNumberField({ label, onChange, value }: { label: string; onChange: (value: number) => void; value: number }) {
+    return (
+        <label className="grid gap-2">
+            <span className="text-xs font-semibold uppercase text-slate-500">{label}</span>
+            <input
+                className="restore-input"
+                min={0}
+                type="number"
+                value={value}
+                onChange={(event) => onChange(Number(event.target.value) || 0)}
+            />
+        </label>
+    );
+}
+
+function DistributionList({ emptyLabel, items, total }: { emptyLabel: string; items: RestoreTopItem[]; total: number }) {
+    if (!items.length) {
+        return (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 p-5 text-center text-sm text-slate-500">
+                {emptyLabel}
+            </div>
+        );
+    }
+
+    return (
+        <div className="grid gap-3">
+            {items.map((item) => {
+                const percent = total > 0 ? Math.round((item.value / total) * 100) : 0;
+
+                return (
+                    <div key={item.label} className="grid gap-2">
+                        <div className="flex items-center justify-between gap-3 text-sm">
+                            <span className="truncate font-semibold text-slate-200">{item.label}</span>
+                            <span className="shrink-0 text-xs text-slate-500">{item.value} / {percent}%</span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-black/30">
+                            <div className="h-full rounded-full bg-blue-400/80" style={{ width: `${Math.max(percent, 4)}%` }} />
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
+function RestoreLogsList({ logs }: { logs: RestoreLogEntry[] }) {
+    if (!logs.length) {
+        return (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 p-5 text-center text-sm text-slate-500">
+                Brak logow migracji.
+            </div>
+        );
+    }
+
+    return (
+        <div className="max-h-[420px] overflow-y-auto pr-1">
+            <div className="grid gap-2">
+                {logs.slice(0, 30).map((log, index) => (
+                    <div key={`${log.createdAt}-${log.userId ?? index}`} className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                                <LogStatusPill status={log.status} />
+                                <span className="text-sm font-semibold uppercase text-slate-300">{log.action}</span>
+                            </div>
+                            <span className="text-xs text-slate-500">{formatDate(log.createdAt)}</span>
+                        </div>
+                        <p className="mt-2 text-sm text-slate-300">{log.details || '-'}</p>
+                        {log.userId ? (
+                            <p className="mt-1 truncate text-xs text-slate-500">
+                                {log.username || 'Unknown'} / {log.userId}
+                            </p>
+                        ) : null}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function LogStatusPill({ status }: { status: RestoreLogEntry['status'] }) {
+    const colors = {
+        blocked: 'bg-red-500/15 text-red-200',
+        failed: 'bg-red-500/15 text-red-200',
+        info: 'bg-blue-500/15 text-blue-200',
+        skipped: 'bg-amber-500/15 text-amber-200',
+        success: 'bg-emerald-500/15 text-emerald-200'
+    };
+
+    return <Pill className={colors[status]}>{status}</Pill>;
+}
+
+function SavedUserRow({
+    disabled,
+    onPull,
+    user,
+    working
+}: {
+    disabled: boolean;
+    onPull: () => void;
+    user: RestoreSavedUser;
+    working: boolean;
+}) {
+    const deviceText = formatDevice(user.analytics?.device);
+    const locationText = formatLocation(user.analytics?.location);
+
+    return (
+        <div className="grid gap-3 rounded-2xl border border-white/10 bg-black/20 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+            <div className="min-w-0">
+                <div className="flex min-w-0 items-center gap-2">
+                    <p className="truncate text-sm font-semibold text-white">{user.displayName}</p>
+                    <TokenPill value={user.tokenStatus} />
+                    {user.analytics?.source === 'verify' ? <Pill className="bg-blue-500/15 text-blue-200">Verify</Pill> : null}
+                </div>
+                <p className="mt-1 truncate text-xs text-slate-500">{user.username}</p>
+                <p className="mt-1 truncate text-xs text-slate-600">{user.id}</p>
+                <p className="mt-2 truncate text-xs text-slate-500">{deviceText}</p>
+                <p className="mt-1 truncate text-xs text-slate-500">{locationText}</p>
+                <p className="mt-2 text-xs text-slate-500">Zgoda: {formatDate(user.consentedAt)}</p>
+            </div>
+            <button className="restore-btn restore-btn-success min-h-10 px-3 text-xs" onClick={onPull} disabled={disabled}>
+                {working ? <RefreshCw className="size-3 animate-spin" /> : <UserPlus className="size-3" />}
+                Pull
+            </button>
+        </div>
+    );
+}
+
 function MiniSummary({ label, tone, value }: { label: string; tone: 'bad' | 'ok' | 'warn'; value: number }) {
     const colors = {
         bad: 'border-red-300/20 bg-red-500/10 text-red-100',
@@ -441,4 +897,36 @@ function formatDate(value: string | null) {
         month: 'short',
         year: 'numeric'
     }).format(date);
+}
+
+function formatDevice(device?: RestoreSavedUserAnalytics['device']) {
+    if (!device) return 'Urzadzenie: brak danych';
+
+    return [
+        formatDeviceTypeLabel(device.type),
+        device.os !== 'Unknown' ? device.os : '',
+        device.browser !== 'Unknown' ? device.browser : ''
+    ].filter(Boolean).join(' / ') || 'Urzadzenie: brak danych';
+}
+
+function formatLocation(location?: RestoreSavedUserAnalytics['location']) {
+    if (!location) return 'Lokalizacja: brak danych';
+
+    const cityLine = [location.city, location.region].filter(Boolean).join(', ');
+    const country = location.countryName || location.country;
+    const value = [cityLine, country].filter(Boolean).join(' - ');
+
+    return value ? `Lokalizacja: ${value}` : 'Lokalizacja: brak danych';
+}
+
+function formatDeviceTypeLabel(value: string) {
+    const labels: Record<string, string> = {
+        bot: 'Bot',
+        desktop: 'Desktop',
+        mobile: 'Mobile',
+        tablet: 'Tablet',
+        unknown: 'Unknown'
+    };
+
+    return labels[value] ?? value;
 }

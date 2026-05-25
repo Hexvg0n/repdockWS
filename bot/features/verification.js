@@ -52,7 +52,7 @@ async function handleVerifyInteraction(interaction) {
     await replyEphemeral(interaction, {
         content: [
             'Kliknij przycisk ponizej, aby przejsc weryfikacje OAuth.',
-            'Po autoryzacji zapiszemy zgode restore i nadamy role weryfikacji.'
+            'Po autoryzacji zapiszemy zgode restore, podstawowe dane techniczne sesji i nadamy role weryfikacji.'
         ].join('\n'),
         components: [row]
     });

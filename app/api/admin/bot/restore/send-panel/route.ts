@@ -90,7 +90,7 @@ export async function POST(request: Request) {
               {
                 title: "RepDock Verification",
                 description:
-                  "Kliknij przycisk ponizej, aby przejsc weryfikacje przez Discord OAuth. Po autoryzacji zapiszemy zgode restore i nadamy role weryfikacji.",
+                  "Kliknij przycisk ponizej, aby przejsc weryfikacje przez Discord OAuth. Po autoryzacji zapiszemy zgode restore, podstawowe dane techniczne sesji i nadamy role weryfikacji.",
                 color: 0x5865f2,
               },
             ],
@@ -113,7 +113,7 @@ export async function POST(request: Request) {
               {
                 title: "RepDock Restore",
                 description:
-                  "Zapisz zgode restore, aby administracja mogla przywrocic Cie na serwer, jesli kiedys utracisz dostep.",
+                  "Zapisz zgode restore i podstawowe dane techniczne sesji, aby administracja mogla przywrocic Cie na serwer, jesli kiedys utracisz dostep.",
                 color: 0x22d3ee,
               },
             ],

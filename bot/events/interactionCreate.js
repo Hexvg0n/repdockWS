@@ -4,6 +4,7 @@ const { handleToolsInteraction } = require('../features/tools');
 const { handleLinkConverter } = require('../features/linkConverter');
 const { handleQcInteraction } = require('../features/qc');
 const { handleTrackingInteraction } = require('../features/tracking');
+const { handleVerifyInteraction } = require('../features/verification');
 const { MessageFlags } = require('discord.js');
 
 module.exports = {
@@ -26,6 +27,7 @@ module.exports = {
             }
 
             const handlers = [
+                () => handleVerifyInteraction(interaction),
                 () => handleTicketInteraction(interaction, client),
                 () => handleQcInteraction(interaction),
                 () => handleTrackingInteraction(interaction),

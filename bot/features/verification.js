@@ -40,8 +40,7 @@ async function handleVerifyInteraction(interaction) {
         return true;
     }
 
-    const guildId = process.env.RESTORE_GUILD_ID || process.env.DISCORD_GUILD_ID || interaction.guildId;
-    const authorizeUrl = `${baseUrl}/api/restore/authorize?guild_id=${encodeURIComponent(guildId)}&mode=verify`;
+    const authorizeUrl = `${baseUrl}/api/restore/verify`;
 
     const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()

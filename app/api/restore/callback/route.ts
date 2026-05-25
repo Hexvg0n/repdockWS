@@ -49,11 +49,12 @@ type DiscordUserResponse = {
 
 const statePath =
   process.env.RESTORE_STATES_PATH ??
-  path.normalize("C:/Users/hexag/OneDrive/Desktop/Projekt-RepDock/repdockbot/bot/restore_oauth_states.json");
+  path.join(process.cwd(), "bot", "restore_oauth_states.json");
 
 const usersPath =
   process.env.RESTORE_USERS_PATH ??
-  path.normalize("C:/Users/hexag/OneDrive/Desktop/Projekt-RepDock/repdockbot/bot/restore_users.json");
+  path.join(process.cwd(), "bot", "restore_users.json");
+const configPath = path.join(process.cwd(), "bot", "ticket_config.json");
 
 async function readJson<T>(filePath: string, fallback: T): Promise<T> {
   try {
@@ -95,25 +96,30 @@ function getRestoreRedirectUri(request: NextRequest) {
   return process.env.RESTORE_REDIRECT_URI ?? getPublicUrl(request, "/api/restore/callback").toString();
 }
 
-function getVerifyRoleId() {
-  return process.env.DISCORD_VERIFY_ROLE_ID ?? process.env.VERIFY_ROLE_ID ?? "";
+async function getVerifyRoleId() {
+  if (process.env.DISCORD_VERIFY_ROLE_ID || process.env.VERIFY_ROLE_ID) {
+    return process.env.DISCORD_VERIFY_ROLE_ID ?? process.env.VERIFY_ROLE_ID ?? "";
+  }
+
+  const config = await readJson<{ ids?: Record<string, unknown> }>(configPath, {});
+  return String(config.ids?.verifyRoleId ?? config.ids?.verifiedRoleId ?? "");
 }
 
 async function assignVerificationRole(guildId: string, userId: string) {
-  const roleId = getVerifyRoleId();
+  const roleId = await getVerifyRoleId();
   const botToken = process.env.DISCORD_BOT_TOKEN ?? process.env.DISCORD_TOKEN;
 
   if (!roleId) {
     return {
       ok: false,
-      message: "Brakuje DISCORD_VERIFY_ROLE_ID, więc nie nadano roli weryfikacji.",
+      message: "Brakuje DISCORD_VERIFY_ROLE_ID, wiec nie nadano roli weryfikacji.",
     };
   }
 
   if (!botToken) {
     return {
       ok: false,
-      message: "Brakuje DISCORD_BOT_TOKEN, więc nie nadano roli weryfikacji.",
+      message: "Brakuje DISCORD_BOT_TOKEN, wiec nie nadano roli weryfikacji.",
     };
   }
 
@@ -123,7 +129,7 @@ async function assignVerificationRole(guildId: string, userId: string) {
       method: "PUT",
       headers: {
         Authorization: `Bot ${botToken}`,
-        "X-Audit-Log-Reason": "RepDock OAuth verification",
+        "X-Audit-Log-Reason": encodeURIComponent("RepDock OAuth verification"),
       },
     },
   );

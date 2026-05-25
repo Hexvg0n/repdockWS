@@ -7,6 +7,7 @@ import {
   IconHome,
   IconMessage,
   IconRobot,
+  IconShieldCheck,
   IconTicket,
 } from "@tabler/icons-react";
 import type React from "react";
@@ -15,12 +16,13 @@ import { useState } from "react";
 import ComponentsV2Builder from "@/components/admin-bot/ComponentsV2Builder";
 import EmbedForm from "@/components/admin-bot/EmbedForm";
 import EmbedPreview from "@/components/admin-bot/EmbedPreview";
+import RestoreConfig from "@/components/admin-bot/RestoreConfig";
 import TemplateControls from "@/components/admin-bot/TemplateControls";
 import TicketConfig from "@/components/admin-bot/TicketConfig";
 import type { EmbedData } from "@/components/admin-bot/types";
 import { AdminLogo, Sidebar, SidebarBody, SidebarLink, useSidebar } from "@/components/ui/sidebar";
 
-type BotTab = "embeds" | "components" | "tickets";
+type BotTab = "embeds" | "components" | "tickets" | "restore";
 
 const initialEmbedData: EmbedData = {
   title: "Przykladowy Tytul",
@@ -117,6 +119,9 @@ export function AdminBotPanel() {
                     <BotNavButton active={activeTab === "tickets"} label="Tickets" onClick={() => setActiveTab("tickets")}>
                       <IconTicket className="size-5" />
                     </BotNavButton>
+                    <BotNavButton active={activeTab === "restore"} label="Restore" onClick={() => setActiveTab("restore")}>
+                      <IconShieldCheck className="size-5" />
+                    </BotNavButton>
                   </div>
 
                   {activeTab === "embeds" ? (
@@ -166,8 +171,10 @@ export function AdminBotPanel() {
                     </>
                   ) : activeTab === "components" ? (
                     <ComponentsV2Builder />
-                  ) : (
+                  ) : activeTab === "tickets" ? (
                     <TicketConfig />
+                  ) : (
+                    <RestoreConfig />
                   )}
                 </div>
               </div>
@@ -530,6 +537,38 @@ function BotPanelStyles() {
 .admin-bot-surface .v2-gallery-caption { padding: 6px 8px; color: #b5bac1; font-size: 12px; background: rgba(0, 0, 0, 0.18); }
 .admin-bot-surface .v2-file { display: flex; align-items: center; gap: 10px; width: fit-content; max-width: 100%; padding: 8px 10px; border: 1px solid #3f4147; border-radius: 6px; background: #2b2d31; color: #dbdee1; }
 .admin-bot-surface .v2-file code { max-width: 360px; overflow: hidden; text-overflow: ellipsis; color: #b5bac1; }
+.admin-bot-surface .restore-btn {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px 14px;
+  color: #f8fafc;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+  transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+}
+.admin-bot-surface .restore-btn:hover:not(:disabled) { transform: translateY(-1px); border-color: rgba(147, 197, 253, 0.45); }
+.admin-bot-surface .restore-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.admin-bot-surface .restore-btn-primary { background: linear-gradient(135deg, #2563eb, #4f46e5); }
+.admin-bot-surface .restore-btn-success { background: linear-gradient(135deg, #059669, #0f766e); }
+.admin-bot-surface .restore-btn-muted { background: rgba(255, 255, 255, 0.06); }
+.admin-bot-surface .restore-input {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(2, 6, 23, 0.45);
+  color: #f8fafc;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+}
+.admin-bot-surface .restore-input:focus { border-color: rgba(96, 165, 250, 0.65); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18); }
 @media (max-width: 920px) {
   .admin-bot-surface .app-container,
   .admin-bot-surface .components-v2-container,

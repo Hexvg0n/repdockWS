@@ -2,6 +2,8 @@ import type { NextRequest } from "next/server";
 
 export function getPublicOrigin(request: NextRequest) {
   const publicUrl =
+    process.env.PUBLIC_BASE_URL ??
+    process.env.NEXT_PUBLIC_BASE_URL ??
     process.env.NEXT_PUBLIC_SITE_URL ??
     process.env.SITE_URL ??
     process.env.APP_URL ??

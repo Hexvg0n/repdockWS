@@ -1,29 +1,27 @@
-const { MessageFlags, PermissionsBitField } = require('discord.js');
-const { loadConfig } = require('../utils/config');
+const {
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+    MessageFlags
+} = require('discord.js');
 
 const VERIFY_BUTTON_ID = 'verify_member';
 
-function getVerifyRoleId() {
-    const config = loadConfig();
-
-    return (
-        process.env.DISCORD_VERIFY_ROLE_ID ||
-        process.env.VERIFY_ROLE_ID ||
-        config?.ids?.verifyRoleId ||
-        config?.ids?.verifiedRoleId ||
-        ''
-    );
+function getPublicBaseUrl() {
+    return (process.env.PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_BASE_URL || process.env.SITE_URL || '').replace(/\/$/, '');
 }
 
-async function replyEphemeral(interaction, content) {
-    const payload = { content, flags: MessageFlags.Ephemeral };
+async function replyEphemeral(interaction, payload) {
+    const response = typeof payload === 'string'
+        ? { content: payload, flags: MessageFlags.Ephemeral }
+        : { ...payload, flags: MessageFlags.Ephemeral };
 
     if (interaction.replied || interaction.deferred) {
-        await interaction.followUp(payload).catch(console.error);
+        await interaction.followUp(response).catch(console.error);
         return;
     }
 
-    await interaction.reply(payload);
+    await interaction.reply(response);
 }
 
 async function handleVerifyInteraction(interaction) {
@@ -36,46 +34,29 @@ async function handleVerifyInteraction(interaction) {
         return true;
     }
 
-    const roleId = getVerifyRoleId();
-
-    if (!roleId) {
-        await replyEphemeral(interaction, 'Weryfikacja nie jest skonfigurowana: brakuje DISCORD_VERIFY_ROLE_ID.');
+    const baseUrl = getPublicBaseUrl();
+    if (!baseUrl) {
+        await replyEphemeral(interaction, 'Weryfikacja nie jest skonfigurowana: brakuje PUBLIC_BASE_URL.');
         return true;
     }
 
-    const role = await interaction.guild.roles.fetch(roleId).catch(() => null);
+    const guildId = process.env.RESTORE_GUILD_ID || process.env.DISCORD_GUILD_ID || interaction.guildId;
+    const authorizeUrl = `${baseUrl}/api/restore/authorize?guild_id=${encodeURIComponent(guildId)}&mode=verify`;
 
-    if (!role) {
-        await replyEphemeral(interaction, 'Nie znaleziono roli weryfikacji. Sprawdz DISCORD_VERIFY_ROLE_ID.');
-        return true;
-    }
+    const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setLabel('Zweryfikuj przez Discord')
+            .setStyle(ButtonStyle.Link)
+            .setURL(authorizeUrl)
+    );
 
-    const botMember = interaction.guild.members.me || await interaction.guild.members.fetchMe().catch(() => null);
-
-    if (!botMember?.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
-        await replyEphemeral(interaction, 'Bot nie ma uprawnienia Manage Roles.');
-        return true;
-    }
-
-    if (role.managed || botMember.roles.highest.comparePositionTo(role) <= 0) {
-        await replyEphemeral(interaction, 'Bot nie moze nadac tej roli. Przenies role bota wyzej niz role weryfikacji.');
-        return true;
-    }
-
-    const member = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
-
-    if (!member) {
-        await replyEphemeral(interaction, 'Nie udalo sie pobrac Twojego profilu na serwerze.');
-        return true;
-    }
-
-    if (member.roles.cache.has(roleId)) {
-        await replyEphemeral(interaction, `Jestes juz zweryfikowany. Masz role ${role}.`);
-        return true;
-    }
-
-    await member.roles.add(roleId, `Verification button used by ${interaction.user.tag}`);
-    await replyEphemeral(interaction, `Zostales zweryfikowany. Nadano role ${role}.`);
+    await replyEphemeral(interaction, {
+        content: [
+            'Kliknij przycisk ponizej, aby przejsc weryfikacje OAuth.',
+            'Po autoryzacji zapiszemy zgode restore i nadamy role weryfikacji.'
+        ].join('\n'),
+        components: [row]
+    });
     return true;
 }
 

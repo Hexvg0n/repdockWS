@@ -11,6 +11,7 @@ export const dynamic = "force-dynamic";
 type RestoreState = {
   guildId: string;
   createdAt: number;
+  mode?: "restore" | "verify";
 };
 
 const statePath =
@@ -40,6 +41,7 @@ export async function GET(request: NextRequest) {
     request.nextUrl.searchParams.get("guild_id") ??
     process.env.RESTORE_GUILD_ID ??
     process.env.DISCORD_GUILD_ID;
+  const mode = request.nextUrl.searchParams.get("mode") === "verify" ? "verify" : "restore";
 
   if (!clientId) {
     return NextResponse.json({ error: "DISCORD_CLIENT_ID is not configured" }, { status: 500 });
@@ -59,7 +61,7 @@ export async function GET(request: NextRequest) {
   }
 
   const state = crypto.randomBytes(24).toString("hex");
-  states[state] = { guildId, createdAt: now };
+  states[state] = { guildId, createdAt: now, mode };
   await writeStates(states);
 
   const authorizationUrl = new URL("https://discord.com/oauth2/authorize");

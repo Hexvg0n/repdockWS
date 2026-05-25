@@ -11,6 +11,7 @@ export const dynamic = "force-dynamic";
 type RestoreState = {
   guildId: string;
   createdAt: number;
+  mode?: "restore" | "verify";
 };
 
 type RestoreUser = {
@@ -92,6 +93,50 @@ function renderHtml(title: string, body: string, status = 200) {
 
 function getRestoreRedirectUri(request: NextRequest) {
   return process.env.RESTORE_REDIRECT_URI ?? getPublicUrl(request, "/api/restore/callback").toString();
+}
+
+function getVerifyRoleId() {
+  return process.env.DISCORD_VERIFY_ROLE_ID ?? process.env.VERIFY_ROLE_ID ?? "";
+}
+
+async function assignVerificationRole(guildId: string, userId: string) {
+  const roleId = getVerifyRoleId();
+  const botToken = process.env.DISCORD_BOT_TOKEN ?? process.env.DISCORD_TOKEN;
+
+  if (!roleId) {
+    return {
+      ok: false,
+      message: "Brakuje DISCORD_VERIFY_ROLE_ID, więc nie nadano roli weryfikacji.",
+    };
+  }
+
+  if (!botToken) {
+    return {
+      ok: false,
+      message: "Brakuje DISCORD_BOT_TOKEN, więc nie nadano roli weryfikacji.",
+    };
+  }
+
+  const response = await fetch(
+    `https://discord.com/api/v10/guilds/${guildId}/members/${userId}/roles/${roleId}`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bot ${botToken}`,
+        "X-Audit-Log-Reason": "RepDock OAuth verification",
+      },
+    },
+  );
+
+  if (response.ok || response.status === 204) {
+    return { ok: true, message: "Rola weryfikacji zostala nadana." };
+  }
+
+  const details = await response.text().catch(() => "");
+  return {
+    ok: false,
+    message: `Zgoda restore zostala zapisana, ale nie udalo sie nadac roli (${response.status}). ${details}`,
+  };
 }
 
 async function saveRestoreUser(user: RestoreUser) {
@@ -189,6 +234,18 @@ export async function GET(request: NextRequest) {
     consentedAt: now,
     updatedAt: now,
   });
+
+  if (savedState.mode === "verify") {
+    const verification = await assignVerificationRole(savedState.guildId, discordUser.id);
+
+    return renderHtml(
+      verification.ok ? "Weryfikacja zakonczona" : "Restore zapisany",
+      verification.ok
+        ? "Dziekujemy. Twoja zgoda restore zostala zapisana, a rola weryfikacji zostala nadana. Mozesz zamknac te strone."
+        : verification.message,
+      verification.ok ? 200 : 207,
+    );
+  }
 
   return renderHtml(
     "Restore zapisany",

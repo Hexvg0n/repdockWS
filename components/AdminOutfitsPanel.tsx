@@ -311,6 +311,18 @@ function AdminOutfitsSidebar() {
               label: "Bot",
             }}
           />
+          <SidebarLink
+            link={{
+              href: "/admin/restore",
+              icon: (
+                <span className="grid size-9 shrink-0 place-items-center rounded-2xl bg-white/[0.04] text-neutral-400 ring-1 ring-white/10">
+                  <IconShieldCheck className="size-5" />
+                </span>
+              ),
+              label: "Restore",
+            }}
+            onClick={() => setOpen(false)}
+          />
         </div>
       </div>
 

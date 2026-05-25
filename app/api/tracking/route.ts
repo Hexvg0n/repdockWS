@@ -191,7 +191,7 @@ async function checkTrackingUrl(
 
 export async function POST(req: NextRequest) {
   try {
-    const ip = req.headers.get("x-forwarded-for") ?? req.ip ?? "unknown";
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
     if (isRateLimited(ip)) {
       return NextResponse.json({ error: "Too many tracking requests. Please try again later." }, { status: 429 });
     }

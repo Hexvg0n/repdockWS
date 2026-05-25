@@ -145,6 +145,16 @@ type RestorePullSummary = {
     skipped: number;
 };
 
+type RestoreView = 'overview' | 'users' | 'operations' | 'analytics' | 'logs';
+
+const RESTORE_VIEWS: { description: string; id: RestoreView; label: string }[] = [
+    { id: 'overview', label: 'Przeglad', description: 'Najwazniejsze statusy i szybkie akcje' },
+    { id: 'users', label: 'Uzytkownicy', description: 'Wyszukiwarka i pojedynczy pull' },
+    { id: 'operations', label: 'Operacje', description: 'Filtry, limity i konfiguracja' },
+    { id: 'analytics', label: 'Analityka', description: 'Lokalizacja, urzadzenia i zrodla' },
+    { id: 'logs', label: 'Logi', description: 'Migracje i ostatnie eventy' }
+];
+
 const DEFAULT_CONFIG: RestoreConfigState = {
     restorePanelChannelId: '',
     verifyRoleId: ''
@@ -223,16 +233,18 @@ export default function RestoreConfig() {
     const [migrationAnalytics, setMigrationAnalytics] = useState<RestoreMigrationAnalytics>(DEFAULT_MIGRATION_ANALYTICS);
     const [results, setResults] = useState<RestorePullResult[]>([]);
     const [summary, setSummary] = useState<RestorePullSummary>(DEFAULT_SUMMARY);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [working, setWorking] = useState<'scan' | 'pull' | null>(null);
     const [workingUserId, setWorkingUserId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusMsg, setStatusMsg] = useState('');
+    const [activeView, setActiveView] = useState<RestoreView>('overview');
 
     const oauthReady = env.hasClientId && env.hasClientSecret && Boolean(env.publicBaseUrl) && Boolean(env.restoreRedirectUri);
     const botReady = env.hasBotToken;
     const roleReady = Boolean(config.verifyRoleId.trim());
+    const needsConfig = !oauthReady || !botReady || !roleReady;
     const missingResults = results.filter((result) => result.membership === 'missing');
     const failedResults = results.filter((result) => result.action === 'failed' || result.tokenStatus === 'refresh_failed');
     const lastConsent = useMemo(() => formatDate(stats.latestConsentAt), [stats.latestConsentAt]);
@@ -376,31 +388,34 @@ export default function RestoreConfig() {
     };
 
     return (
-        <div className="h-full w-full overflow-y-auto bg-black/40 p-5 text-white md:p-7">
-            <div className="mx-auto grid w-full max-w-7xl gap-6">
-                <header className="flex flex-col gap-4 rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/20 lg:flex-row lg:items-end lg:justify-between">
-                    <div>
-                        <p className="text-sm font-semibold text-blue-200">Restore analytics</p>
-                        <h2 className="mt-2 font-['Poppins'] text-3xl font-medium text-white">
-                            Zarzadzanie restore i pull
-                        </h2>
-                        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
-                            Monitoruj zgody OAuth, sprawdzaj kto opuscil serwer i przywracaj osoby z zapisanym restore.
-                        </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        <button className="restore-btn restore-btn-muted" onClick={loadConfig} disabled={loading || Boolean(working)}>
-                            <RefreshCw className={loading ? 'size-4 animate-spin' : 'size-4'} />
-                            Odswiez
-                        </button>
-                        <button className="restore-btn restore-btn-primary" onClick={() => runRestoreAction('scan')} disabled={Boolean(working) || !botReady}>
-                            {working === 'scan' && !workingUserId ? <RefreshCw className="size-4 animate-spin" /> : <UserMinus className="size-4" />}
-                            Skanuj osoby
-                        </button>
-                        <button className="restore-btn restore-btn-success" onClick={() => runRestoreAction('pull')} disabled={Boolean(working) || !botReady || stats.count === 0}>
-                            {working === 'pull' && !workingUserId ? <RefreshCw className="size-4 animate-spin" /> : <RotateCcw className="size-4" />}
-                            Pulluj wyszlych
-                        </button>
+        <div className="restore-panel h-full w-full overflow-y-auto text-white">
+            <div className="mx-auto grid w-full max-w-[1500px] gap-6">
+                <header className="relative overflow-hidden rounded-[30px] border border-white/10 bg-white/[0.045] p-6 shadow-2xl shadow-black/25 lg:p-7">
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(70%_80%_at_50%_0%,rgba(96,165,250,0.22),transparent_72%)]" />
+                    <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                        <div>
+                            <p className="text-sm font-semibold text-blue-200">Admin / Restore</p>
+                            <h2 className="mt-2 font-['Poppins'] text-3xl font-medium text-white md:text-4xl">
+                                Restore i migracje
+                            </h2>
+                            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
+                                Osobne centrum do analityki OAuth, wyszukiwania zapisanych osob i pullowania uzytkownikow, ktorzy wyszli z serwera.
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <button className="restore-btn restore-btn-muted" onClick={loadConfig} disabled={loading || Boolean(working)}>
+                                <RefreshCw className={loading ? 'size-4 animate-spin' : 'size-4'} />
+                                Odswiez
+                            </button>
+                            <button className="restore-btn restore-btn-primary" onClick={() => runRestoreAction('scan')} disabled={Boolean(working) || !botReady}>
+                                {working === 'scan' && !workingUserId ? <RefreshCw className="size-4 animate-spin" /> : <UserMinus className="size-4" />}
+                                Skanuj
+                            </button>
+                            <button className="restore-btn restore-btn-success" onClick={() => runRestoreAction('pull')} disabled={Boolean(working) || !botReady || stats.count === 0}>
+                                {working === 'pull' && !workingUserId ? <RefreshCw className="size-4 animate-spin" /> : <RotateCcw className="size-4" />}
+                                Pulluj
+                            </button>
+                        </div>
                     </div>
                 </header>
 
@@ -417,117 +432,87 @@ export default function RestoreConfig() {
                     <MetricCard icon={<RotateCcw className="size-5" />} label="Przywrocono" value={summary.pulled} hint={summary.failed ? `${summary.failed} bledow` : 'Ostatnia akcja'} />
                 </section>
 
-                <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <MetricCard icon={<MonitorSmartphone className="size-5" />} label="Weryfikacje" value={stats.analytics.verifiedCount} hint={`${stats.analytics.restoreOnlyCount} restore-only`} />
-                    <MetricCard icon={<MapPin className="size-5" />} label="Lokalizacje" value={stats.analytics.locationsKnown} hint={topCountry} />
-                    <MetricCard icon={<Fingerprint className="size-5" />} label="Unikalne IP" value={stats.analytics.uniqueIpHashes} hint="Hash, bez surowego IP" />
-                    <MetricCard icon={<Globe2 className="size-5" />} label="Jezyki" value={stats.analytics.languages.length} hint={stats.analytics.languages[0]?.label || 'Brak danych'} />
-                </section>
+                <RestoreViewTabs
+                    activeView={activeView}
+                    counts={{ analytics: stats.analytics.locationsKnown, logs: logs.length, users: stats.count }}
+                    onChange={setActiveView}
+                />
 
-                <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <MetricCard icon={<RotateCcw className="size-5" />} label="Pull success" value={migrationAnalytics.pulled} hint={`${migrationAnalytics.last24h} logow / 24h`} />
-                    <MetricCard icon={<UserMinus className="size-5" />} label="Pominiete" value={migrationAnalytics.skippedPulls} hint="Filtry i warunki" />
-                    <MetricCard icon={<XCircle className="size-5" />} label="Bledy pull" value={migrationAnalytics.failedPulls} hint={`${migrationAnalytics.totalLogs} logow lacznie`} />
-                    <MetricCard icon={<AlertTriangle className="size-5" />} label="Blokady verify" value={migrationAnalytics.blockedVerifications} hint={`${migrationAnalytics.verificationLogs} logow verify`} />
-                </section>
-
-                <section className="grid gap-6 xl:grid-cols-4">
-                    <PanelCard title="Urzadzenia">
-                        <DistributionList emptyLabel="Brak danych urzadzen" items={deviceDistribution} total={stats.count} />
-                    </PanelCard>
-                    <PanelCard title="Kraje">
-                        <DistributionList emptyLabel="Brak danych lokalizacji" items={stats.analytics.countries} total={stats.count} />
-                    </PanelCard>
-                    <PanelCard title="Przegladarki">
-                        <DistributionList emptyLabel="Brak danych przegladarek" items={stats.analytics.browsers} total={stats.count} />
-                    </PanelCard>
-                    <PanelCard title="Systemy">
-                        <DistributionList emptyLabel="Brak danych systemow" items={stats.analytics.operatingSystems} total={stats.count} />
-                    </PanelCard>
-                    <PanelCard title="Miasta">
-                        <DistributionList emptyLabel="Brak danych miast" items={stats.analytics.cities} total={stats.count} />
-                    </PanelCard>
-                    <PanelCard title="Jezyki">
-                        <DistributionList emptyLabel="Brak danych jezykow" items={stats.analytics.languages} total={stats.count} />
-                    </PanelCard>
-                </section>
-
-                <section className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
-                    <div className="grid gap-6">
-                        <PanelCard title="Konfiguracja">
-                            <div className="grid gap-4">
-                                <label className="grid gap-2">
-                                    <span className="text-xs font-semibold uppercase text-slate-500">ID roli weryfikacji</span>
-                                    <input
-                                        className="restore-input"
-                                        value={config.verifyRoleId}
-                                        onChange={(event) => setConfig((current) => ({ ...current, verifyRoleId: event.target.value }))}
-                                        placeholder="123456789012345678"
-                                    />
-                                </label>
-                                <button className="restore-btn restore-btn-primary w-full" onClick={saveConfig} disabled={saving}>
-                                    {saving ? <RefreshCw className="size-4 animate-spin" /> : <Save className="size-4" />}
-                                    Zapisz role
-                                </button>
-                            </div>
-                        </PanelCard>
-
-                        <PanelCard title="Gotowosc systemu">
-                            <div className="grid gap-3">
-                                <ReadinessRow ok={oauthReady} label="OAuth" detail={oauthReady ? 'Skonfigurowany' : 'Brakuje PUBLIC_BASE_URL lub danych Discord app'} />
-                                <ReadinessRow ok={botReady} label="Bot" detail={botReady ? 'Token dostepny' : 'Brakuje DISCORD_BOT_TOKEN'} />
-                                <ReadinessRow ok={roleReady} label="Rola" detail={roleReady ? config.verifyRoleId : 'Ustaw role weryfikacji'} />
-                            </div>
-                        </PanelCard>
-
-                        <PanelCard title="Operacje restore">
-                            <div className="grid gap-4">
-                                <div className="grid gap-3 sm:grid-cols-2">
-                                    <SettingsNumberField label="Cooldown pull (min)" value={settings.pullCooldownMinutes} onChange={(value) => setSettings((current) => ({ ...current, pullCooldownMinutes: value }))} />
-                                    <SettingsNumberField label="Max batch" value={settings.maxBatchSize} onChange={(value) => setSettings((current) => ({ ...current, maxBatchSize: value }))} />
-                                    <SettingsNumberField label="Delay min (ms)" value={settings.minPullDelayMs} onChange={(value) => setSettings((current) => ({ ...current, minPullDelayMs: value }))} />
-                                    <SettingsNumberField label="Delay max (ms)" value={settings.maxPullDelayMs} onChange={(value) => setSettings((current) => ({ ...current, maxPullDelayMs: value }))} />
-                                    <SettingsNumberField label="Min account age (dni)" value={settings.minAccountAgeDays} onChange={(value) => setSettings((current) => ({ ...current, minAccountAgeDays: value }))} />
-                                    <SettingsNumberField label="Min stay (dni)" value={settings.minStayDurationDays} onChange={(value) => setSettings((current) => ({ ...current, minStayDurationDays: value }))} />
-                                    <SettingsNumberField label="Left X dni" value={settings.leftServerMinDays} onChange={(value) => setSettings((current) => ({ ...current, leftServerMinDays: value }))} />
-                                    <SettingsNumberField label="Max leave detections" value={settings.maxLeaveDetections} onChange={(value) => setSettings((current) => ({ ...current, maxLeaveDetections: value }))} />
+                {activeView === 'overview' ? (
+                    <section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
+                        <div className="grid gap-6">
+                            <PanelCard title="Gotowosc systemu">
+                                <div className="grid gap-3">
+                                    <ReadinessRow ok={oauthReady} label="OAuth" detail={oauthReady ? 'Skonfigurowany' : 'Brakuje PUBLIC_BASE_URL lub danych Discord app'} />
+                                    <ReadinessRow ok={botReady} label="Bot" detail={botReady ? 'Token dostepny' : 'Brakuje DISCORD_BOT_TOKEN'} />
+                                    <ReadinessRow ok={roleReady} label="Rola" detail={roleReady ? config.verifyRoleId : 'Ustaw role weryfikacji'} />
                                 </div>
-                                <label className="grid gap-2">
-                                    <span className="text-xs font-semibold uppercase text-slate-500">Blacklist user ID</span>
-                                    <textarea
-                                        className="restore-input min-h-[96px] resize-y"
-                                        value={settings.blacklistUserIds.join('\n')}
-                                        onChange={(event) => setSettings((current) => ({ ...current, blacklistUserIds: event.target.value.split(/\s+/).map((id) => id.trim()).filter(Boolean) }))}
-                                        placeholder="Jedno ID na linie"
-                                    />
-                                </label>
-                                <label className="grid gap-2">
-                                    <span className="text-xs font-semibold uppercase text-slate-500">Webhook logow</span>
-                                    <input
-                                        className="restore-input"
-                                        value={settings.webhookUrl}
-                                        onChange={(event) => setSettings((current) => ({ ...current, webhookUrl: event.target.value }))}
-                                        placeholder="https://discord.com/api/webhooks/..."
-                                    />
-                                </label>
-                                <label className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                                    <span>
-                                        <span className="block text-sm font-semibold text-white">Webhook logs</span>
-                                        <span className="block text-xs text-slate-500">Wysylaj eventy verify/pull na webhook.</span>
-                                    </span>
-                                    <input
-                                        type="checkbox"
-                                        checked={settings.webhookLogsEnabled}
-                                        onChange={(event) => setSettings((current) => ({ ...current, webhookLogsEnabled: event.target.checked }))}
-                                    />
-                                </label>
-                                <button className="restore-btn restore-btn-primary w-full" onClick={saveConfig} disabled={saving}>
-                                    {saving ? <RefreshCw className="size-4 animate-spin" /> : <Save className="size-4" />}
-                                    Zapisz operacje
-                                </button>
-                            </div>
-                        </PanelCard>
+                            </PanelCard>
 
+                            <PanelCard title="Ostatni skan">
+                                {results.length > 0 ? (
+                                    <div className="grid gap-4">
+                                        <div className="grid gap-3 md:grid-cols-3">
+                                            <MiniSummary label="Na serwerze" value={summary.inGuild} tone="ok" />
+                                            <MiniSummary label="Wyszli" value={summary.missing} tone="warn" />
+                                            <MiniSummary label="Bledy" value={failedResults.length || summary.failed} tone="bad" />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            {results.slice(0, 5).map((result) => (
+                                                <div key={result.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                                                    <div className="min-w-0">
+                                                        <p className="truncate text-sm font-semibold text-white">{result.displayName}</p>
+                                                        <p className="truncate text-xs text-slate-500">{result.id}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <StatusPill value={result.membership} />
+                                                        <ActionPill value={result.action} />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <EmptyState
+                                        icon={<Database className="size-6" />}
+                                        title="Zrob pierwszy skan"
+                                        text="Skan porowna zapisane zgody restore z aktualnymi czlonkami serwera i pokaze, kogo da sie przywrocic."
+                                    />
+                                )}
+                            </PanelCard>
+                        </div>
+
+                        <div className="grid gap-6">
+                            <PanelCard title="Szybkie akcje">
+                                <div className="grid gap-3">
+                                    <button className="restore-btn restore-btn-primary w-full" onClick={() => runRestoreAction('scan')} disabled={Boolean(working) || !botReady}>
+                                        {working === 'scan' && !workingUserId ? <RefreshCw className="size-4 animate-spin" /> : <UserMinus className="size-4" />}
+                                        Skanuj zapisanych
+                                    </button>
+                                    <button className="restore-btn restore-btn-success w-full" onClick={() => runRestoreAction('pull')} disabled={Boolean(working) || !botReady || stats.count === 0}>
+                                        {working === 'pull' && !workingUserId ? <RefreshCw className="size-4 animate-spin" /> : <RotateCcw className="size-4" />}
+                                        Pulluj osoby poza serwerem
+                                    </button>
+                                    <button className="restore-btn restore-btn-muted w-full" onClick={saveConfig} disabled={saving}>
+                                        {saving ? <RefreshCw className="size-4 animate-spin" /> : <Save className="size-4" />}
+                                        Zapisz ustawienia
+                                    </button>
+                                </div>
+                            </PanelCard>
+
+                            <PanelCard title="Dane">
+                                <div className="grid gap-3 text-sm text-slate-400">
+                                    <InfoRow label="Ostatnia zgoda" value={lastConsent} />
+                                    <InfoRow label="Callback OAuth" value={env.restoreRedirectUri || 'Brak'} />
+                                    <InfoRow label="Plik zgod" value={stats.usersPath || 'Brak'} />
+                                </div>
+                            </PanelCard>
+                        </div>
+                    </section>
+                ) : null}
+
+                {activeView === 'users' ? (
+                    <section className="grid gap-6 xl:grid-cols-[430px_minmax(0,1fr)]">
                         <PanelCard title="Zapisani uzytkownicy">
                             <div className="grid gap-4">
                                 <label className="relative block">
@@ -536,10 +521,10 @@ export default function RestoreConfig() {
                                         className="restore-input pl-10"
                                         value={searchTerm}
                                         onChange={(event) => setSearchTerm(event.target.value)}
-                                        placeholder="Szukaj po nicku lub ID"
+                                        placeholder="Szukaj po nicku, ID, kraju lub urzadzeniu"
                                     />
                                 </label>
-                                <div className="max-h-[360px] overflow-y-auto pr-1">
+                                <div className="max-h-[650px] overflow-y-auto pr-1">
                                     {filteredSavedUsers.length > 0 ? (
                                         <div className="grid gap-2">
                                             {filteredSavedUsers.map((user) => (
@@ -559,100 +544,180 @@ export default function RestoreConfig() {
                                     )}
                                 </div>
                                 <p className="text-xs leading-relaxed text-slate-500">
-                                    Pokazuje maksymalnie 40 wynikow. Pull pojedynczy uzywa tej samej logiki co pull masowy: sprawdza membership, odswieza token i nadaje role.
+                                    Pokazuje maksymalnie 40 wynikow. Pull pojedynczy uzywa tej samej logiki co pull masowy: membership, refresh tokenu i rola.
                                 </p>
                             </div>
                         </PanelCard>
 
-                        <PanelCard title="Dane">
-                            <div className="grid gap-3 text-sm text-slate-400">
-                                <InfoRow label="Ostatnia zgoda" value={lastConsent} />
-                                <InfoRow label="Callback OAuth" value={env.restoreRedirectUri || 'Brak'} />
-                                <InfoRow label="Plik zgod" value={stats.usersPath || 'Brak'} />
-                            </div>
-                        </PanelCard>
-                    </div>
-
-                    <div className="grid gap-6">
                         <PanelCard title="Live status zapisanych osob">
                             {results.length > 0 ? (
-                                <div className="grid gap-4">
-                                <div className="grid gap-3 md:grid-cols-3">
-                                    <MiniSummary label="Na serwerze" value={summary.inGuild} tone="ok" />
-                                    <MiniSummary label="Wyszli" value={summary.missing} tone="warn" />
-                                    <MiniSummary label="Bledy" value={failedResults.length || summary.failed} tone="bad" />
-                                </div>
-                                <div className="overflow-hidden rounded-2xl border border-white/10">
-                                    <div className="max-h-[560px] overflow-y-auto">
-                                        <table className="w-full min-w-[720px] text-left text-sm">
-                                            <thead className="sticky top-0 bg-[#10131c] text-xs uppercase text-slate-500">
-                                                <tr>
-                                                    <th className="px-4 py-3">Uzytkownik</th>
-                                                    <th className="px-4 py-3">Status</th>
-                                                    <th className="px-4 py-3">Token</th>
-                                                    <th className="px-4 py-3">Akcja</th>
-                                                    <th className="px-4 py-3">Info</th>
-                                                    <th className="px-4 py-3">Pull</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-white/10">
-                                                {results.map((result) => (
-                                                    <tr key={result.id} className="bg-white/[0.02]">
-                                                        <td className="px-4 py-3">
-                                                            <div className="font-semibold text-white">{result.displayName}</div>
-                                                            <div className="text-xs text-slate-500">{result.id}</div>
-                                                        </td>
-                                                        <td className="px-4 py-3">
-                                                            <StatusPill value={result.membership} />
-                                                        </td>
-                                                        <td className="px-4 py-3">
-                                                            <TokenPill value={result.tokenStatus} />
-                                                        </td>
-                                                        <td className="px-4 py-3">
-                                                            <ActionPill value={result.action} />
-                                                        </td>
-                                                        <td className="max-w-[320px] px-4 py-3 text-xs leading-relaxed text-slate-400">
-                                                            {result.message || '-'}
-                                                        </td>
-                                                        <td className="px-4 py-3">
-                                                            <button
-                                                                className="restore-btn restore-btn-muted min-h-9 px-3 text-xs"
-                                                                onClick={() => runRestoreAction('pull', [result.id])}
-                                                                disabled={!botReady || Boolean(working)}
-                                                            >
-                                                                {working === 'pull' && workingUserId === result.id ? <RefreshCw className="size-3 animate-spin" /> : <UserPlus className="size-3" />}
-                                                                Pull
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                </div>
+                                <RestoreResultsTable
+                                    botReady={botReady}
+                                    failedCount={failedResults.length || summary.failed}
+                                    onPull={(id) => runRestoreAction('pull', [id])}
+                                    results={results}
+                                    summary={summary}
+                                    working={working}
+                                    workingUserId={workingUserId}
+                                />
                             ) : (
-                                <div className="grid min-h-[420px] place-items-center rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-8 text-center">
-                                <div className="max-w-md">
-                                    <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-blue-500/15 text-blue-100 ring-1 ring-blue-300/20">
-                                        <Database className="size-6" />
-                                    </span>
-                                    <h3 className="mt-5 text-xl font-semibold text-white">Zrob pierwszy skan</h3>
-                                    <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                                        Skan porowna zapisane zgody restore z aktualnymi czlonkami serwera. Potem mozesz pullowac tylko osoby, ktore wyszly.
-                                    </p>
-                                </div>
-                            </div>
+                                <EmptyState
+                                    icon={<Database className="size-6" />}
+                                    title="Brak wyniku skanu"
+                                    text="Uruchom skan z naglowka albo z przegladu, zeby zobaczyc status zapisanych osob."
+                                />
                             )}
                         </PanelCard>
+                    </section>
+                ) : null}
 
-                        <PanelCard title="Realtime migration logs">
-                            <RestoreLogsList logs={logs} />
+                {activeView === 'operations' ? (
+                    <section className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
+                        <div className="grid gap-6">
+                            <PanelCard title="Konfiguracja roli">
+                                <div className="grid gap-4">
+                                    <label className="grid gap-2">
+                                        <span className="text-xs font-semibold uppercase text-slate-500">ID roli weryfikacji</span>
+                                        <input
+                                            className="restore-input"
+                                            value={config.verifyRoleId}
+                                            onChange={(event) => setConfig((current) => ({ ...current, verifyRoleId: event.target.value }))}
+                                            placeholder="123456789012345678"
+                                        />
+                                    </label>
+                                    <button className="restore-btn restore-btn-primary w-full" onClick={saveConfig} disabled={saving}>
+                                        {saving ? <RefreshCw className="size-4 animate-spin" /> : <Save className="size-4" />}
+                                        Zapisz role
+                                    </button>
+                                </div>
+                            </PanelCard>
+
+                            <PanelCard title="Gotowosc systemu">
+                                <div className="grid gap-3">
+                                    <ReadinessRow ok={oauthReady} label="OAuth" detail={oauthReady ? 'Skonfigurowany' : 'Brakuje PUBLIC_BASE_URL lub danych Discord app'} />
+                                    <ReadinessRow ok={botReady} label="Bot" detail={botReady ? 'Token dostepny' : 'Brakuje DISCORD_BOT_TOKEN'} />
+                                    <ReadinessRow ok={roleReady} label="Rola" detail={roleReady ? config.verifyRoleId : 'Ustaw role weryfikacji'} />
+                                </div>
+                            </PanelCard>
+                        </div>
+
+                        <PanelCard title="Filtry i limity pullowania">
+                            <div className="grid gap-4">
+                                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                                    <SettingsNumberField label="Cooldown pull (min)" value={settings.pullCooldownMinutes} onChange={(value) => setSettings((current) => ({ ...current, pullCooldownMinutes: value }))} />
+                                    <SettingsNumberField label="Max batch" value={settings.maxBatchSize} onChange={(value) => setSettings((current) => ({ ...current, maxBatchSize: value }))} />
+                                    <SettingsNumberField label="Delay min (ms)" value={settings.minPullDelayMs} onChange={(value) => setSettings((current) => ({ ...current, minPullDelayMs: value }))} />
+                                    <SettingsNumberField label="Delay max (ms)" value={settings.maxPullDelayMs} onChange={(value) => setSettings((current) => ({ ...current, maxPullDelayMs: value }))} />
+                                    <SettingsNumberField label="Min account age (dni)" value={settings.minAccountAgeDays} onChange={(value) => setSettings((current) => ({ ...current, minAccountAgeDays: value }))} />
+                                    <SettingsNumberField label="Min stay (dni)" value={settings.minStayDurationDays} onChange={(value) => setSettings((current) => ({ ...current, minStayDurationDays: value }))} />
+                                    <SettingsNumberField label="Left X dni" value={settings.leftServerMinDays} onChange={(value) => setSettings((current) => ({ ...current, leftServerMinDays: value }))} />
+                                    <SettingsNumberField label="Max leave detections" value={settings.maxLeaveDetections} onChange={(value) => setSettings((current) => ({ ...current, maxLeaveDetections: value }))} />
+                                </div>
+                                <label className="grid gap-2">
+                                    <span className="text-xs font-semibold uppercase text-slate-500">Blacklist user ID</span>
+                                    <textarea
+                                        className="restore-input min-h-[110px] resize-y"
+                                        value={settings.blacklistUserIds.join('\n')}
+                                        onChange={(event) => setSettings((current) => ({ ...current, blacklistUserIds: event.target.value.split(/\s+/).map((id) => id.trim()).filter(Boolean) }))}
+                                        placeholder="Jedno ID na linie"
+                                    />
+                                </label>
+                                <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_260px]">
+                                    <label className="grid gap-2">
+                                        <span className="text-xs font-semibold uppercase text-slate-500">Webhook logow</span>
+                                        <input
+                                            className="restore-input"
+                                            value={settings.webhookUrl}
+                                            onChange={(event) => setSettings((current) => ({ ...current, webhookUrl: event.target.value }))}
+                                            placeholder="https://discord.com/api/webhooks/..."
+                                        />
+                                    </label>
+                                    <label className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                                        <span>
+                                            <span className="block text-sm font-semibold text-white">Webhook logs</span>
+                                            <span className="block text-xs text-slate-500">Verify i pull.</span>
+                                        </span>
+                                        <input
+                                            type="checkbox"
+                                            checked={settings.webhookLogsEnabled}
+                                            onChange={(event) => setSettings((current) => ({ ...current, webhookLogsEnabled: event.target.checked }))}
+                                        />
+                                    </label>
+                                </div>
+                                <button className="restore-btn restore-btn-primary w-full" onClick={saveConfig} disabled={saving}>
+                                    {saving ? <RefreshCw className="size-4 animate-spin" /> : <Save className="size-4" />}
+                                    Zapisz operacje
+                                </button>
+                            </div>
                         </PanelCard>
-                    </div>
-                </section>
+                    </section>
+                ) : null}
 
-                {!oauthReady || !botReady || !roleReady ? (
+                {activeView === 'analytics' ? (
+                    <>
+                        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                            <MetricCard icon={<MonitorSmartphone className="size-5" />} label="Weryfikacje" value={stats.analytics.verifiedCount} hint={`${stats.analytics.restoreOnlyCount} restore-only`} />
+                            <MetricCard icon={<MapPin className="size-5" />} label="Lokalizacje" value={stats.analytics.locationsKnown} hint={topCountry} />
+                            <MetricCard icon={<Fingerprint className="size-5" />} label="Unikalne IP" value={stats.analytics.uniqueIpHashes} hint="Hash, bez surowego IP" />
+                            <MetricCard icon={<Globe2 className="size-5" />} label="Jezyki" value={stats.analytics.languages.length} hint={stats.analytics.languages[0]?.label || 'Brak danych'} />
+                        </section>
+
+                        <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                            <PanelCard title="Urzadzenia">
+                                <DistributionList emptyLabel="Brak danych urzadzen" items={deviceDistribution} total={stats.count} />
+                            </PanelCard>
+                            <PanelCard title="Kraje">
+                                <DistributionList emptyLabel="Brak danych lokalizacji" items={stats.analytics.countries} total={stats.count} />
+                            </PanelCard>
+                            <PanelCard title="Przegladarki">
+                                <DistributionList emptyLabel="Brak danych przegladarek" items={stats.analytics.browsers} total={stats.count} />
+                            </PanelCard>
+                            <PanelCard title="Systemy">
+                                <DistributionList emptyLabel="Brak danych systemow" items={stats.analytics.operatingSystems} total={stats.count} />
+                            </PanelCard>
+                            <PanelCard title="Miasta">
+                                <DistributionList emptyLabel="Brak danych miast" items={stats.analytics.cities} total={stats.count} />
+                            </PanelCard>
+                            <PanelCard title="Jezyki">
+                                <DistributionList emptyLabel="Brak danych jezykow" items={stats.analytics.languages} total={stats.count} />
+                            </PanelCard>
+                        </section>
+                    </>
+                ) : null}
+
+                {activeView === 'logs' ? (
+                    <>
+                        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                            <MetricCard icon={<RotateCcw className="size-5" />} label="Pull success" value={migrationAnalytics.pulled} hint={`${migrationAnalytics.last24h} logow / 24h`} />
+                            <MetricCard icon={<UserMinus className="size-5" />} label="Pominiete" value={migrationAnalytics.skippedPulls} hint="Filtry i warunki" />
+                            <MetricCard icon={<XCircle className="size-5" />} label="Bledy pull" value={migrationAnalytics.failedPulls} hint={`${migrationAnalytics.totalLogs} logow lacznie`} />
+                            <MetricCard icon={<AlertTriangle className="size-5" />} label="Blokady verify" value={migrationAnalytics.blockedVerifications} hint={`${migrationAnalytics.verificationLogs} logow verify`} />
+                        </section>
+
+                        <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+                            <PanelCard title="Realtime migration logs">
+                                <RestoreLogsList logs={logs} />
+                            </PanelCard>
+                            <PanelCard title="Ostatni wynik">
+                                {results.length > 0 ? (
+                                    <div className="grid gap-3">
+                                        <MiniSummary label="Sprawdzone" value={summary.checked} tone="ok" />
+                                        <MiniSummary label="Wyszli" value={summary.missing} tone="warn" />
+                                        <MiniSummary label="Bledy" value={failedResults.length || summary.failed} tone="bad" />
+                                    </div>
+                                ) : (
+                                    <EmptyState
+                                        icon={<Database className="size-6" />}
+                                        title="Brak ostatniej akcji"
+                                        text="Po skanie albo pullowaniu zobaczysz tutaj podsumowanie ostatniej operacji."
+                                    />
+                                )}
+                            </PanelCard>
+                        </section>
+                    </>
+                ) : null}
+
+                {needsConfig ? (
                     <div className="rounded-[24px] border border-amber-300/20 bg-amber-500/10 p-5 text-sm leading-relaxed text-amber-100">
                         <div className="mb-2 flex items-center gap-2 font-semibold">
                             <AlertTriangle className="size-4" />
@@ -663,6 +728,141 @@ export default function RestoreConfig() {
                         {!roleReady ? <p>Ustaw role weryfikacji, jezeli pull ma od razu synchronizowac role.</p> : null}
                     </div>
                 ) : null}
+            </div>
+
+            <RestorePanelStyles />
+        </div>
+    );
+}
+
+function RestoreViewTabs({
+    activeView,
+    counts,
+    onChange
+}: {
+    activeView: RestoreView;
+    counts: Partial<Record<RestoreView, number>>;
+    onChange: (view: RestoreView) => void;
+}) {
+    return (
+        <nav className="grid gap-2 rounded-[24px] border border-white/10 bg-white/[0.035] p-2 md:grid-cols-5">
+            {RESTORE_VIEWS.map((view) => {
+                const isActive = activeView === view.id;
+                const count = counts[view.id];
+
+                return (
+                    <button
+                        key={view.id}
+                        type="button"
+                        onClick={() => onChange(view.id)}
+                        className={[
+                            'min-h-[76px] rounded-[18px] px-4 py-3 text-left transition',
+                            isActive
+                                ? 'bg-blue-500/20 text-white ring-1 ring-blue-300/30'
+                                : 'text-slate-400 hover:bg-white/[0.04] hover:text-white'
+                        ].join(' ')}
+                    >
+                        <span className="flex items-center justify-between gap-3">
+                            <span className="text-sm font-bold">{view.label}</span>
+                            {typeof count === 'number' ? (
+                                <span className="rounded-full bg-black/25 px-2 py-0.5 text-xs font-bold text-blue-100">
+                                    {count}
+                                </span>
+                            ) : null}
+                        </span>
+                        <span className="mt-1 block text-xs leading-relaxed text-slate-500">{view.description}</span>
+                    </button>
+                );
+            })}
+        </nav>
+    );
+}
+
+function EmptyState({ icon, text, title }: { icon: React.ReactNode; text: string; title: string }) {
+    return (
+        <div className="grid min-h-[320px] place-items-center rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-8 text-center">
+            <div className="max-w-md">
+                <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-blue-500/15 text-blue-100 ring-1 ring-blue-300/20">
+                    {icon}
+                </span>
+                <h3 className="mt-5 text-xl font-semibold text-white">{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-500">{text}</p>
+            </div>
+        </div>
+    );
+}
+
+function RestoreResultsTable({
+    botReady,
+    failedCount,
+    onPull,
+    results,
+    summary,
+    working,
+    workingUserId
+}: {
+    botReady: boolean;
+    failedCount: number;
+    onPull: (id: string) => void;
+    results: RestorePullResult[];
+    summary: RestorePullSummary;
+    working: 'scan' | 'pull' | null;
+    workingUserId: string | null;
+}) {
+    return (
+        <div className="grid gap-4">
+            <div className="grid gap-3 md:grid-cols-3">
+                <MiniSummary label="Na serwerze" value={summary.inGuild} tone="ok" />
+                <MiniSummary label="Wyszli" value={summary.missing} tone="warn" />
+                <MiniSummary label="Bledy" value={failedCount} tone="bad" />
+            </div>
+            <div className="overflow-hidden rounded-2xl border border-white/10">
+                <div className="max-h-[640px] overflow-y-auto">
+                    <table className="w-full min-w-[760px] text-left text-sm">
+                        <thead className="sticky top-0 bg-[#10131c] text-xs uppercase text-slate-500">
+                            <tr>
+                                <th className="px-4 py-3">Uzytkownik</th>
+                                <th className="px-4 py-3">Status</th>
+                                <th className="px-4 py-3">Token</th>
+                                <th className="px-4 py-3">Akcja</th>
+                                <th className="px-4 py-3">Info</th>
+                                <th className="px-4 py-3">Pull</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/10">
+                            {results.map((result) => (
+                                <tr key={result.id} className="bg-white/[0.02]">
+                                    <td className="px-4 py-3">
+                                        <div className="font-semibold text-white">{result.displayName}</div>
+                                        <div className="text-xs text-slate-500">{result.id}</div>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <StatusPill value={result.membership} />
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <TokenPill value={result.tokenStatus} />
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <ActionPill value={result.action} />
+                                    </td>
+                                    <td className="max-w-[320px] px-4 py-3 text-xs leading-relaxed text-slate-400">
+                                        {result.message || '-'}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <button
+                                            className="restore-btn restore-btn-muted min-h-9 px-3 text-xs"
+                                            onClick={() => onPull(result.id)}
+                                            disabled={!botReady || Boolean(working)}
+                                        >
+                                            {working === 'pull' && workingUserId === result.id ? <RefreshCw className="size-3 animate-spin" /> : <UserPlus className="size-3" />}
+                                            Pull
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );
@@ -881,6 +1081,60 @@ function Pill({ children, className }: { children: React.ReactNode; className: s
         <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${className}`}>
             {children}
         </span>
+    );
+}
+
+function RestorePanelStyles() {
+    return (
+        <style>{`
+.restore-panel .restore-btn {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 10px 14px;
+  color: #f8fafc;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+  transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+}
+.restore-panel .restore-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(147, 197, 253, 0.45);
+}
+.restore-panel .restore-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.restore-panel .restore-btn-primary {
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+}
+.restore-panel .restore-btn-success {
+  background: linear-gradient(135deg, #059669, #0f766e);
+}
+.restore-panel .restore-btn-muted {
+  background: rgba(255, 255, 255, 0.06);
+}
+.restore-panel .restore-input {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  background: rgba(2, 6, 23, 0.45);
+  color: #f8fafc;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+}
+.restore-panel .restore-input:focus {
+  border-color: rgba(96, 165, 250, 0.65);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+`}</style>
     );
 }
 

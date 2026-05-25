@@ -16,13 +16,12 @@ import { useState } from "react";
 import ComponentsV2Builder from "@/components/admin-bot/ComponentsV2Builder";
 import EmbedForm from "@/components/admin-bot/EmbedForm";
 import EmbedPreview from "@/components/admin-bot/EmbedPreview";
-import RestoreConfig from "@/components/admin-bot/RestoreConfig";
 import TemplateControls from "@/components/admin-bot/TemplateControls";
 import TicketConfig from "@/components/admin-bot/TicketConfig";
 import type { EmbedData } from "@/components/admin-bot/types";
 import { AdminLogo, Sidebar, SidebarBody, SidebarLink, useSidebar } from "@/components/ui/sidebar";
 
-type BotTab = "embeds" | "components" | "tickets" | "restore";
+type BotTab = "embeds" | "components" | "tickets";
 
 const initialEmbedData: EmbedData = {
   title: "Przykladowy Tytul",
@@ -119,9 +118,6 @@ export function AdminBotPanel() {
                     <BotNavButton active={activeTab === "tickets"} label="Tickets" onClick={() => setActiveTab("tickets")}>
                       <IconTicket className="size-5" />
                     </BotNavButton>
-                    <BotNavButton active={activeTab === "restore"} label="Restore" onClick={() => setActiveTab("restore")}>
-                      <IconShieldCheck className="size-5" />
-                    </BotNavButton>
                   </div>
 
                   {activeTab === "embeds" ? (
@@ -171,10 +167,8 @@ export function AdminBotPanel() {
                     </>
                   ) : activeTab === "components" ? (
                     <ComponentsV2Builder />
-                  ) : activeTab === "tickets" ? (
-                    <TicketConfig />
                   ) : (
-                    <RestoreConfig />
+                    <TicketConfig />
                   )}
                 </div>
               </div>
@@ -253,6 +247,18 @@ function AdminBotSidebar() {
               label: "Bot",
             }}
             className="bg-blue-500/15"
+            onClick={() => setOpen(false)}
+          />
+          <SidebarLink
+            link={{
+              href: "/admin/restore",
+              icon: (
+                <span className="grid size-9 shrink-0 place-items-center rounded-2xl bg-white/[0.04] text-neutral-400 ring-1 ring-white/10">
+                  <IconShieldCheck className="size-5" />
+                </span>
+              ),
+              label: "Restore",
+            }}
             onClick={() => setOpen(false)}
           />
         </div>

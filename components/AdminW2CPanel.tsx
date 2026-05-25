@@ -13,6 +13,7 @@ import {
   IconPlus,
   IconRefresh,
   IconRobot,
+  IconShieldCheck,
   IconSparkles,
   IconTags,
   IconTrash,
@@ -1108,6 +1109,11 @@ function AdminSidebar({
       href: "/admin/bot",
       icon: <IconRobot className="size-5 shrink-0" />,
       label: "Bot",
+    },
+    {
+      href: "/admin/restore",
+      icon: <IconShieldCheck className="size-5 shrink-0" />,
+      label: "Restore",
     },
   ];
 

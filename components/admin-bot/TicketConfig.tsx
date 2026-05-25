@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import EmbedForm from './EmbedForm';
 import EmbedPreview from './EmbedPreview';
 import { EmbedData } from './types';
-import { Save, Send, Trash2 } from 'lucide-react';
+import { ImageIcon, Save, Send, Trash2, X } from 'lucide-react';
 
 interface TicketCategory {
     id: string;
@@ -98,6 +98,55 @@ function normalizeConfig(ids: Partial<TicketConfigIds> = {}): TicketConfigIds {
     };
 }
 
+function TicketBottomGraphic({
+    imageUrl,
+    label,
+    onChange
+}: {
+    imageUrl: string;
+    label: string;
+    onChange: (value: string) => void;
+}) {
+    return (
+        <div className="section" style={{ background: 'var(--background-secondary)', border: '1px solid var(--background-tertiary)', borderRadius: '8px', padding: '14px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <ImageIcon size={16} />
+                <h3 className="section-title" style={{ margin: 0 }}>{label}</h3>
+            </div>
+            <div className="form-group" style={{ marginBottom: imageUrl ? '12px' : 0 }}>
+                <label className="form-label">URL grafiki</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                        className="form-input"
+                        placeholder="https://..."
+                        type="text"
+                        value={imageUrl}
+                        onChange={(event) => onChange(event.target.value)}
+                    />
+                    {imageUrl ? (
+                        <button className="btn btn-outline" type="button" onClick={() => onChange('')} title="Usun grafike">
+                            <X size={16} />
+                        </button>
+                    ) : null}
+                </div>
+            </div>
+            {imageUrl ? (
+                <div style={{ overflow: 'hidden', borderRadius: '8px', border: '1px solid var(--background-tertiary)', background: 'var(--background-tertiary)' }}>
+                    <img
+                        alt="Podglad grafiki ticketow"
+                        src={imageUrl}
+                        style={{ display: 'block', width: '100%', maxHeight: '180px', objectFit: 'cover' }}
+                    />
+                </div>
+            ) : (
+                <p className="text-muted text-small" style={{ margin: 0 }}>
+                    Wklej link do obrazka, ktory ma pojawic sie na dole embeda.
+                </p>
+            )}
+        </div>
+    );
+}
+
 export default function TicketConfig() {
     const [config, setConfig] = useState<TicketConfigIds>(DEFAULT_CONFIG);
     const [panelEmbed, setPanelEmbed] = useState<EmbedData>(DEFAULT_PANEL_EMBED);
@@ -152,6 +201,17 @@ export default function TicketConfig() {
             ...prev,
             ticketCategories: prev.ticketCategories.filter((category) => category.id !== id)
         }));
+    };
+
+    const activeGraphicUrl = activeTab === 'panel' ? panelEmbed.image_url || '' : welcomeEmbed.image_url || '';
+
+    const setActiveGraphicUrl = (value: string) => {
+        if (activeTab === 'panel') {
+            setPanelEmbed((prev) => ({ ...prev, image_url: value }));
+            return;
+        }
+
+        setWelcomeEmbed((prev) => ({ ...prev, image_url: value }));
     };
 
     const handleSaveConfig = async () => {
@@ -313,6 +373,12 @@ export default function TicketConfig() {
                         Wyglad Powitania (W Ticketach)
                     </button>
                 </div>
+
+                <TicketBottomGraphic
+                    imageUrl={activeGraphicUrl}
+                    label={activeTab === 'panel' ? 'Grafika na dole panelu' : 'Grafika na dole powitania'}
+                    onChange={setActiveGraphicUrl}
+                />
 
                 {activeTab === 'panel' ? (
                     <div>

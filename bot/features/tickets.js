@@ -397,6 +397,8 @@ async function createTicket(interaction, guild, user, client, config, categoryNa
             embed.setFooter({ text: 'RepDock Support' });
         }
 
+        if (welcomeEmbedData.thumbnail_url) embed.setThumbnail(welcomeEmbedData.thumbnail_url);
+        if (welcomeEmbedData.image_url) embed.setImage(welcomeEmbedData.image_url);
         if (welcomeEmbedData.timestamp !== false) embed.setTimestamp();
 
         const row = new ActionRowBuilder()

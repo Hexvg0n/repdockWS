@@ -189,27 +189,63 @@ function normalizeExtension(extension: string) {
 }
 
 function runRembg(inputPath: string, outputPath: string) {
-  const command = process.env.REMBG_COMMAND || "rembg";
+  const commands = getRembgCommands();
 
   return new Promise<void>((resolve, reject) => {
     const processId = randomUUID();
-    const child = spawn(/*turbopackIgnore: true*/ command, ["i", inputPath, outputPath], {
-      shell: process.platform === "win32",
-      stdio: ["ignore", "ignore", "pipe"],
-    });
-    const stderr: string[] = [];
+    const errors: string[] = [];
 
-    child.stderr.on("data", (chunk) => stderr.push(String(chunk)));
-    child.on("error", () => {
-      reject(new Error(`rembg command failed to start (${processId}). Install rembg or set REMBG_COMMAND.`));
-    });
-    child.on("close", (code) => {
-      if (code === 0) {
-        resolve();
+    const tryCommand = (index: number) => {
+      const command = commands[index];
+
+      if (!command) {
+        reject(
+          new Error(
+            `rembg command failed to start (${processId}). Tried: ${commands.join(", ")}. ${errors.join(" ")} Install rembg or set REMBG_COMMAND to an absolute path.`,
+          ),
+        );
         return;
       }
 
-      reject(new Error(stderr.join("").trim() || `rembg exited with code ${code}`));
-    });
+      const child = spawn(/*turbopackIgnore: true*/ command, ["i", inputPath, outputPath], {
+        shell: process.platform === "win32",
+        stdio: ["ignore", "ignore", "pipe"],
+      });
+      const stderr: string[] = [];
+      let spawnFailed = false;
+
+      child.stderr.on("data", (chunk) => stderr.push(String(chunk)));
+      child.on("error", (error: NodeJS.ErrnoException) => {
+        spawnFailed = true;
+        errors.push(`${command}: ${error.code ?? "ERROR"} ${error.message}`);
+        tryCommand(index + 1);
+      });
+      child.on("close", (code) => {
+        if (spawnFailed) {
+          return;
+        }
+
+        if (code === 0) {
+          resolve();
+          return;
+        }
+
+        reject(new Error(stderr.join("").trim() || `rembg exited with code ${code}`));
+      });
+    };
+
+    tryCommand(0);
   });
+}
+
+function getRembgCommands() {
+  if (process.env.REMBG_COMMAND?.trim()) {
+    return [process.env.REMBG_COMMAND.trim()];
+  }
+
+  if (process.platform === "win32") {
+    return ["rembg"];
+  }
+
+  return ["rembg", "/usr/local/bin/rembg", "/root/.local/bin/rembg", "/opt/repdock-rembg/bin/rembg"];
 }

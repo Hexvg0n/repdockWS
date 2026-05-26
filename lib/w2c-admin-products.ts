@@ -102,9 +102,9 @@ export function buildW2CProductLinks(
 
   return {
     original: originalLink,
-    ACBUY: byKey.get("acbuy") ?? originalLink,
-    KAKOBUY: byKey.get("kakobuy") ?? originalLink,
-    BBDBUY: byKey.get("bbdbuy") ?? originalLink,
-    USFANS: byKey.get("usfans") ?? originalLink,
+    ACBUY: byKey.get("acbuy"),
+    KAKOBUY: byKey.get("kakobuy"),
+    BBDBUY: byKey.get("bbdbuy"),
+    USFANS: byKey.get("usfans"),
   };
 }

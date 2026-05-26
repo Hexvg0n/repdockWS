@@ -42,7 +42,7 @@ const bentoCopy = {
       shipping: "Wysyłka",
       totalEstimate: "Szacowana suma",
       warehouse: "Link",
-      workflow: ["Konwerter", "Galeria QC", "Kalkulator", "Tracking", "Outfity", "Sprzedawcy"],
+      workflow: ["Konwerter", "Galeria QC", "Kalkulator", "Tracking", "Outfity", "TikTok Items"],
     },
   },
   EN: {
@@ -75,7 +75,7 @@ const bentoCopy = {
       shipping: "Shipping",
       totalEstimate: "Total estimate",
       warehouse: "Warehouse",
-      workflow: ["Converter", "QC Gallery", "Calculator", "Tracking", "Outfits", "Sellers"],
+      workflow: ["Converter", "QC Gallery", "Calculator", "Tracking", "Outfits", "TikTok Items"],
     },
   },
 } as const;

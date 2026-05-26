@@ -2,6 +2,7 @@
 
 import {
   IconArrowLeft,
+  IconBrandTiktok,
   IconDatabase,
   IconHanger,
   IconHome,
@@ -298,6 +299,18 @@ function AdminOutfitsSidebar() {
               label: "Outfits",
             }}
             className="bg-blue-500/15"
+            onClick={() => setOpen(false)}
+          />
+          <SidebarLink
+            link={{
+              href: "/admin/tiktok-items",
+              icon: (
+                <span className="grid size-9 shrink-0 place-items-center rounded-2xl bg-white/[0.04] text-neutral-400 ring-1 ring-white/10">
+                  <IconBrandTiktok className="size-5" />
+                </span>
+              ),
+              label: "TikTok Items",
+            }}
             onClick={() => setOpen(false)}
           />
           <SidebarLink

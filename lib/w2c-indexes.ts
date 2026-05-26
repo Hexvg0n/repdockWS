@@ -17,10 +17,23 @@ export function ensureW2CIndexes(db: Db) {
       .collection("w2c_interactions")
       .createIndex({ productId: 1, anonymousId: 1, type: 1 }, { unique: true }),
     db.collection("w2c_interactions").createIndex({ productId: 1, type: 1 }),
+    db.collection("w2c_favorites").createIndex({ userId: 1, productId: 1 }, { unique: true }),
+    db.collection("w2c_favorites").createIndex({ userId: 1, createdAt: -1 }),
     db.collection("outfits").createIndex({ status: 1, createdAt: -1 }),
     db.collection("outfits").createIndex({ title: "text", description: "text", createdBy: "text" }),
     db.collection("outfit_views").createIndex({ outfitId: 1, anonymousId: 1 }, { unique: true }),
     db.collection("outfit_views").createIndex({ outfitId: 1 }),
+    db.collection("tiktok_items").createIndex({ status: 1, createdAt: -1 }),
+    db.collection("tiktok_items").createIndex({
+      title: "text",
+      description: "text",
+      createdBy: "text",
+      "products.name": "text",
+      "products.metadata.brand": "text",
+      "products.metadata.category": "text",
+    }),
+    db.collection("tiktok_item_views").createIndex({ itemId: 1, anonymousId: 1 }, { unique: true }),
+    db.collection("tiktok_item_views").createIndex({ itemId: 1 }),
   ])
     .then(() => undefined)
     .catch((error) => {

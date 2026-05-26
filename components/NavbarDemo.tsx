@@ -14,15 +14,22 @@ import {
   IconChevronDown,
   IconCurrencyYuan,
   IconFlagQuestion,
+  IconHeart,
+  IconHeartFilled,
+  IconLoader2,
   IconLogout,
+  IconShoppingBag,
   IconUser,
   IconTruck,
 } from "@tabler/icons-react";
+import { LoginRequiredDialog } from "@/components/LoginRequiredDialog";
 import SmoothDrawer from "@/components/kokonutui/smooth-drawer";
+import { getWebpImageUrl } from "@/lib/cloudinary-image";
 import {
   settingsStorageKey,
   useLanguageCopy,
 } from "@/lib/use-repdock-language";
+import type { W2CProduct } from "@/types/w2c";
 import { useEffect, useRef, useState } from "react";
 
 const navLinks = [
@@ -35,8 +42,8 @@ const navLinks = [
     link: "/outfits",
   },
   {
-    key: "sellers",
-    link: "/sellers",
+    key: "tiktokItems",
+    link: "/tiktok-items",
   },
 ] as const;
 
@@ -66,11 +73,21 @@ const navbarCopy = {
       login: "Zaloguj",
       logout: "Wyloguj",
       profile: "Profil",
+      profileDisabled: "Profil chwilowo niedostepny",
+    },
+    favorites: {
+      close: "Zamknij",
+      empty: "Nie masz jeszcze ulubionych itemow.",
+      loginAction: "Zaloguj przez Discord",
+      loginDescription: "Ulubione sa przypisane do konta. Zaloguj sie, zeby zapisywac i przegladac itemy.",
+      loginTitle: "Ulubione wymagaja logowania",
+      open: "Ulubione",
+      title: "Ulubione W2C",
     },
     nav: {
       w2c: "W2C",
       outfits: "Outfity",
-      sellers: "Sprzedawcy",
+      tiktokItems: "TikTok Items",
     },
     settings: {
       agentDescription: "Preferowany agent dla linków, zamówień i trackingu.",
@@ -98,11 +115,21 @@ const navbarCopy = {
       login: "Login",
       logout: "Logout",
       profile: "Profile",
+      profileDisabled: "Profile is temporarily unavailable",
+    },
+    favorites: {
+      close: "Close",
+      empty: "You do not have favorite items yet.",
+      loginAction: "Login with Discord",
+      loginDescription: "Favorites are tied to your account. Login to save and preview items.",
+      loginTitle: "Favorites require login",
+      open: "Favorites",
+      title: "W2C Favorites",
     },
     nav: {
       w2c: "W2C",
       outfits: "Outfits",
-      sellers: "Sellers",
+      tiktokItems: "TikTok Items",
     },
     settings: {
       agentDescription: "Preferred agent for links, orders and tracking.",
@@ -180,6 +207,14 @@ type DiscordUser = {
   isAdmin: boolean;
 };
 
+type FavoritePreviewCache = {
+  productIds?: string[];
+  products?: W2CProduct[];
+  savedAt?: number;
+};
+
+const favoritePreviewStorageKey = "repdock-w2c-favorites-preview";
+
 export function NavbarDemo() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const copy = useLanguageCopy(navbarCopy);
@@ -204,6 +239,7 @@ export function NavbarDemo() {
             toolsLabel={copy.toolsLabel}
           />
           <div className="relative z-30 flex items-center gap-4">
+            <FavoritesPreviewButton />
             <SettingsDrawerTrigger />
             <AuthControl />
           </div>
@@ -249,13 +285,17 @@ export function NavbarDemo() {
               </div>
             </div>
             <a
-              href="/sellers"
+              href="/tiktok-items"
               onClick={() => setIsMobileMenuOpen(false)}
               className="relative text-neutral-300"
             >
-              <span className="block">{copy.nav.sellers}</span>
+              <span className="block">{copy.nav.tiktokItems}</span>
             </a>
             <div className="flex w-full flex-col gap-4">
+              <FavoritesPreviewButton
+                mobile
+                onNavigate={() => setIsMobileMenuOpen(false)}
+              />
               <SettingsDrawerTrigger
                 className="flex w-full items-center justify-center gap-2 rounded-md border border-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10"
                 label={copy.settings.trigger}
@@ -272,6 +312,237 @@ export function NavbarDemo() {
       {/* Navbar */}
     </div>
   );
+}
+
+function FavoritesPreviewButton({
+  mobile = false,
+  onNavigate,
+}: {
+  mobile?: boolean;
+  onNavigate?: () => void;
+}) {
+  const copy = useLanguageCopy(navbarCopy).favorites;
+  const [open, setOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [products, setProducts] = useState<W2CProduct[]>([]);
+  const [favoriteCount, setFavoriteCount] = useState(0);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const applyCachedFavorites = () => {
+    const cached = readFavoritePreviewCache();
+
+    if (!cached) {
+      return;
+    }
+
+    const cachedProducts = cached.products ?? [];
+    setProducts(cachedProducts);
+    setFavoriteCount(cached.productIds?.length ?? cachedProducts.length);
+  };
+
+  const loadFavorites = async ({
+    promptLogin = false,
+    showLoading = false,
+  }: {
+    promptLogin?: boolean;
+    showLoading?: boolean;
+  } = {}) => {
+    if (showLoading) {
+      setLoading(true);
+    }
+
+    try {
+      const response = await fetch("/api/w2c/favorites");
+
+      if (response.status === 401) {
+        setOpen(false);
+        if (promptLogin) {
+          setLoginOpen(true);
+        }
+        setProducts([]);
+        setFavoriteCount(0);
+        clearFavoritePreviewCache();
+        return false;
+      }
+
+      if (!response.ok) {
+        return true;
+      }
+
+      const data = (await response.json()) as { productIds?: string[]; products?: W2CProduct[] };
+      const nextProducts = data.products ?? [];
+      setProducts(nextProducts);
+      setFavoriteCount(data.productIds?.length ?? nextProducts.length);
+      writeFavoritePreviewCache({
+        productIds: data.productIds ?? nextProducts.map((product) => product.id),
+        products: nextProducts,
+        savedAt: Date.now(),
+      });
+      return true;
+    } finally {
+      if (showLoading) {
+        setLoading(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    applyCachedFavorites();
+    void loadFavorites();
+  }, []);
+
+  useEffect(() => {
+    const onPointerDown = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, []);
+
+  useEffect(() => {
+    const onFavoritesUpdated = () => {
+      void loadFavorites();
+    };
+
+    globalThis.addEventListener("repdock-favorites-updated", onFavoritesUpdated);
+    globalThis.addEventListener("focus", onFavoritesUpdated);
+    return () => {
+      globalThis.removeEventListener("repdock-favorites-updated", onFavoritesUpdated);
+      globalThis.removeEventListener("focus", onFavoritesUpdated);
+    };
+  }, []);
+
+  const toggleOpen = async () => {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+
+    const canOpen = await loadFavorites({ promptLogin: true, showLoading: true });
+    if (canOpen) {
+      setOpen(true);
+    }
+  };
+
+  return (
+    <div className={mobile ? "relative w-full" : "relative"} ref={menuRef}>
+      <button
+        type="button"
+        onClick={toggleOpen}
+        aria-label={copy.open}
+        className={
+          mobile
+            ? "relative flex w-full items-center justify-center gap-2 rounded-md border border-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10"
+            : "relative grid size-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white transition hover:bg-white/[0.08]"
+        }
+      >
+        {favoriteCount ? <IconHeartFilled className="size-5 text-red-400" /> : <IconHeart className="size-5" />}
+        {favoriteCount ? (
+          <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-red-500 px-1.5 text-[10px] font-black text-white">
+            {favoriteCount}
+          </span>
+        ) : null}
+        {mobile ? <span>{copy.open}</span> : null}
+      </button>
+
+      {open ? (
+        <div
+          className={`absolute z-50 mt-3 w-80 rounded-2xl border border-white/10 bg-neutral-950/95 p-3 text-sm text-white shadow-2xl backdrop-blur-xl ${
+            mobile ? "left-0 right-0 w-full" : "right-0"
+          }`}
+        >
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="font-semibold text-white">{copy.title}</p>
+            <span className="rounded-full bg-white/[0.06] px-2 py-1 text-xs font-bold text-slate-400">
+              {favoriteCount}
+            </span>
+          </div>
+
+          {loading ? (
+            <div className="grid place-items-center py-8 text-slate-500">
+              <IconLoader2 className="size-5 animate-spin" />
+            </div>
+          ) : products.length ? (
+            <div className="grid max-h-96 gap-2 overflow-y-auto pr-1">
+              {products.map((product) => (
+                <a
+                  key={product.id}
+                  href={`/w2c/${encodeURIComponent(product.id)}`}
+                  onClick={onNavigate}
+                  className="grid grid-cols-[54px_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-2 transition hover:border-blue-300/30 hover:bg-blue-500/10"
+                >
+                  <img src={getWebpImageUrl(product.image)} alt="" className="size-14 rounded-xl object-cover" />
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold text-white">{product.name}</span>
+                    <span className="mt-1 block truncate text-xs text-slate-500">
+                      {product.metadata.brand} / {product.metadata.category}
+                    </span>
+                  </span>
+                  <IconShoppingBag className="size-4 text-slate-500" />
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-500">
+              {copy.empty}
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      <LoginRequiredDialog
+        open={loginOpen}
+        title={copy.loginTitle}
+        description={copy.loginDescription}
+        actionLabel={copy.loginAction}
+        closeLabel={copy.close}
+        onClose={() => setLoginOpen(false)}
+      />
+    </div>
+  );
+}
+
+function readFavoritePreviewCache() {
+  try {
+    const rawValue = globalThis.localStorage?.getItem(favoritePreviewStorageKey);
+
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsedValue = JSON.parse(rawValue) as FavoritePreviewCache;
+    const products = Array.isArray(parsedValue.products) ? parsedValue.products : [];
+    const productIds = Array.isArray(parsedValue.productIds) ? parsedValue.productIds : products.map((product) => product.id);
+
+    return {
+      productIds,
+      products,
+      savedAt: Number(parsedValue.savedAt) || 0,
+    } satisfies FavoritePreviewCache;
+  } catch {
+    clearFavoritePreviewCache();
+    return null;
+  }
+}
+
+function writeFavoritePreviewCache(cache: FavoritePreviewCache) {
+  try {
+    globalThis.localStorage?.setItem(favoritePreviewStorageKey, JSON.stringify(cache));
+  } catch {
+    // Cache is only a fast visual hint for the navbar.
+  }
+}
+
+function clearFavoritePreviewCache() {
+  try {
+    globalThis.localStorage?.removeItem(favoritePreviewStorageKey);
+  } catch {
+    // Cache cleanup should never block rendering.
+  }
 }
 
 function AuthControl({
@@ -389,14 +660,15 @@ function AuthControl({
               {copy.admin}
             </a>
           ) : null}
-          <a
-            href="/profile"
-            onClick={onNavigate}
-            className="flex items-center gap-2 rounded-xl px-3 py-2 text-neutral-300 transition hover:bg-white/[0.06] hover:text-white"
+          <button
+            type="button"
+            disabled
+            title={copy.profileDisabled}
+            className="flex w-full cursor-not-allowed items-center gap-2 rounded-xl px-3 py-2 text-left text-neutral-600 opacity-60"
           >
             <IconUser className="size-4" stroke={1.8} />
             {copy.profile}
-          </a>
+          </button>
           <button
             type="button"
             onClick={logout}
@@ -703,7 +975,7 @@ function DesktopNav({
           ))}
         </div>
       </div>
-      <NavLink href="/sellers">{navItems[2]?.name ?? "Sellers"}</NavLink>
+      <NavLink href="/tiktok-items">{navItems[2]?.name ?? "TikTok Items"}</NavLink>
     </div>
   );
 }

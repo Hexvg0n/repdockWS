@@ -26,6 +26,7 @@ import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
+import { LoginRequiredDialog } from "@/components/LoginRequiredDialog";
 import { Button } from "@/components/ui/button";
 import { getWebpImageUrl } from "@/lib/cloudinary-image";
 import { currencies, fallbackCurrencyRates, formatPrice, readClientRate } from "@/lib/currency";
@@ -37,7 +38,6 @@ import {
 import { cn } from "@/lib/utils";
 import type { W2CGender, W2CProduct, W2CProductsResponse } from "@/types/w2c";
 
-const favoritesStorageKey = "repdock-w2c-favorites";
 const agents = ["BBDBUY", "KAKOBUY", "USFANS", "ACBUY"] as const;
 const seasonOptions = ["All", "SS", "FW"];
 
@@ -117,6 +117,11 @@ const w2cCopy = {
     labels: {
       all: "Wszystkie",
       finds: "znalezisk",
+      favoriteError: "Nie udalo sie zapisac ulubionych.",
+      favoriteLoginAction: "Zaloguj przez Discord",
+      favoriteLoginClose: "Zamknij",
+      favoriteLoginDescription: "Ulubione sa zapisywane na Twoim koncie, dlatego musisz byc zalogowany.",
+      favoriteLoginTitle: "Zaloguj sie, zeby zapisac item",
       loading: "Ładowanie produktów",
       noMore: "Nie ma więcej produktów",
       settingsFollow: "Ceny i linki korzystają z Ustawień",
@@ -169,6 +174,11 @@ const w2cCopy = {
     labels: {
       all: "All",
       finds: "finds",
+      favoriteError: "Could not save favorites.",
+      favoriteLoginAction: "Login with Discord",
+      favoriteLoginClose: "Close",
+      favoriteLoginDescription: "Favorites are saved to your account, so you need to be logged in.",
+      favoriteLoginTitle: "Login to save this item",
       loading: "Loading products",
       noMore: "No more products",
       settingsFollow: "Prices and links follow Settings",
@@ -199,6 +209,8 @@ export function W2CCatalog() {
   const [loading, setLoading] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [favoriteLoginOpen, setFavoriteLoginOpen] = useState(false);
+  const [favoriteStatus, setFavoriteStatus] = useState("");
   const [currency, setCurrency] = useState<(typeof currencies)[number]>("CNY");
   const [currencyRates, setCurrencyRates] = useState(fallbackCurrencyRates);
   const [agent, setAgent] = useState<(typeof agents)[number]>("BBDBUY");
@@ -229,16 +241,6 @@ export function W2CCatalog() {
       }
     };
 
-    try {
-      setFavorites(
-        new Set(
-          JSON.parse(globalThis.localStorage.getItem(favoritesStorageKey) ?? "[]"),
-        ),
-      );
-    } catch {
-      setFavorites(new Set());
-    }
-
     loadSettings();
     globalThis.addEventListener("focus", loadSettings);
     globalThis.addEventListener("storage", loadSettings);
@@ -248,6 +250,49 @@ export function W2CCatalog() {
       globalThis.removeEventListener("focus", loadSettings);
       globalThis.removeEventListener("storage", loadSettings);
       globalThis.removeEventListener("repdock-settings-updated", loadSettings);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadFavorites = async () => {
+      try {
+        const response = await fetch("/api/w2c/favorites");
+
+        if (cancelled) {
+          return;
+        }
+
+        if (response.status === 401) {
+          setFavorites(new Set());
+          return;
+        }
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as { productIds?: string[] };
+        setFavorites(new Set(data.productIds ?? []));
+      } catch {
+        if (!cancelled) {
+          setFavorites(new Set());
+        }
+      }
+    };
+
+    void loadFavorites();
+
+    const onFavoritesUpdated = () => {
+      void loadFavorites();
+    };
+
+    globalThis.addEventListener("repdock-favorites-updated", onFavoritesUpdated);
+
+    return () => {
+      cancelled = true;
+      globalThis.removeEventListener("repdock-favorites-updated", onFavoritesUpdated);
     };
   }, []);
 
@@ -370,22 +415,41 @@ export function W2CCatalog() {
     [filters],
   );
 
-  const toggleFavorite = (productId: string) => {
-    setFavorites((current) => {
-      const next = new Set(current);
+  const toggleFavorite = async (productId: string) => {
+    const isFavorite = favorites.has(productId);
+    setFavoriteStatus("");
 
-      if (next.has(productId)) {
-        next.delete(productId);
-      } else {
-        next.add(productId);
+    try {
+      const response = await fetch("/api/w2c/favorites", {
+        body: JSON.stringify({ productId }),
+        headers: { "Content-Type": "application/json" },
+        method: isFavorite ? "DELETE" : "POST",
+      });
+
+      if (response.status === 401) {
+        setFavoriteLoginOpen(true);
+        return;
       }
 
-      globalThis.localStorage.setItem(
-        favoritesStorageKey,
-        JSON.stringify([...next]),
-      );
-      return next;
-    });
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      setFavorites((current) => {
+        const next = new Set(current);
+
+        if (isFavorite) {
+          next.delete(productId);
+        } else {
+          next.add(productId);
+        }
+
+        return next;
+      });
+      globalThis.dispatchEvent(new Event("repdock-favorites-updated"));
+    } catch {
+      setFavoriteStatus(copy.labels.favoriteError);
+    }
   };
 
   const recordInteraction = (productId: string, type: "view" | "buy") => {
@@ -553,6 +617,11 @@ export function W2CCatalog() {
           <span>{total} {copy.labels.finds}</span>
           <span>{copy.labels.settingsFollow}</span>
         </div>
+        {favoriteStatus ? (
+          <div className="mb-5 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+            {favoriteStatus}
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {products.map((product) => (
@@ -594,6 +663,14 @@ export function W2CCatalog() {
         seasons={seasons}
         onClose={() => setFilterPanelOpen(false)}
         onChange={setFilters}
+      />
+      <LoginRequiredDialog
+        open={favoriteLoginOpen}
+        title={copy.labels.favoriteLoginTitle}
+        description={copy.labels.favoriteLoginDescription}
+        actionLabel={copy.labels.favoriteLoginAction}
+        closeLabel={copy.labels.favoriteLoginClose}
+        onClose={() => setFavoriteLoginOpen(false)}
       />
     </main>
   );

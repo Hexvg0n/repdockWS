@@ -18,7 +18,9 @@ import {
 import Link from "next/link";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
+import { LoginRequiredDialog } from "@/components/LoginRequiredDialog";
 import { getWebpImageUrl } from "@/lib/cloudinary-image";
 import { currencies, fallbackCurrencyRates, formatPrice, readClientRate } from "@/lib/currency";
 import {
@@ -29,7 +31,6 @@ import {
 import { cn } from "@/lib/utils";
 import type { W2CBBDBuyProductDetails, W2CBBDBuySkuProp, W2CProduct } from "@/types/w2c";
 
-const favoritesStorageKey = "repdock-w2c-favorites";
 const agents = ["BBDBUY", "KAKOBUY", "USFANS", "ACBUY"] as const;
 const collapsedVariantLimit = 12;
 
@@ -47,6 +48,11 @@ const productDetailCopy = {
     delivery: "Dostawa",
     detailImages: "Opis produktu",
     favorite: "Przelacz ulubione",
+    favoriteError: "Nie udalo sie zapisac ulubionych.",
+    favoriteLoginAction: "Zaloguj przez Discord",
+    favoriteLoginClose: "Zamknij",
+    favoriteLoginDescription: "Ulubione sa zapisywane na Twoim koncie, dlatego musisz byc zalogowany.",
+    favoriteLoginTitle: "Zaloguj sie, zeby zapisac item",
     gender: {
       men: "Meskie",
       women: "Damskie",
@@ -89,6 +95,11 @@ const productDetailCopy = {
     delivery: "Delivery",
     detailImages: "Product details",
     favorite: "Toggle favorite",
+    favoriteError: "Could not save favorites.",
+    favoriteLoginAction: "Login with Discord",
+    favoriteLoginClose: "Close",
+    favoriteLoginDescription: "Favorites are saved to your account, so you need to be logged in.",
+    favoriteLoginTitle: "Login to save this item",
     gender: {
       men: "Men",
       women: "Women",
@@ -143,6 +154,8 @@ export function W2CProductDetail({
   const [rates, setRates] = useState(fallbackCurrencyRates);
   const [agent, setAgent] = useState<(typeof agents)[number]>("BBDBUY");
   const [favorite, setFavorite] = useState(false);
+  const [favoriteLoginOpen, setFavoriteLoginOpen] = useState(false);
+  const [favoriteStatus, setFavoriteStatus] = useState("");
   const recordedViewRef = useRef(false);
 
   const galleryImages = useMemo(
@@ -198,10 +211,6 @@ export function W2CProductDetail({
           setAgent(savedSettings.agent as (typeof agents)[number]);
         }
 
-        const favorites = JSON.parse(
-          globalThis.localStorage.getItem(favoritesStorageKey) ?? "[]",
-        ) as string[];
-        setFavorite(favorites.includes(product.id));
       } catch {
         setCurrency("CNY");
         setAgent("BBDBUY");
@@ -217,6 +226,49 @@ export function W2CProductDetail({
       globalThis.removeEventListener("focus", loadSettings);
       globalThis.removeEventListener("storage", loadSettings);
       globalThis.removeEventListener("repdock-settings-updated", loadSettings);
+    };
+  }, [product.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadFavorite = async () => {
+      try {
+        const response = await fetch("/api/w2c/favorites");
+
+        if (cancelled) {
+          return;
+        }
+
+        if (response.status === 401) {
+          setFavorite(false);
+          return;
+        }
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as { productIds?: string[] };
+        setFavorite(Boolean(data.productIds?.includes(product.id)));
+      } catch {
+        if (!cancelled) {
+          setFavorite(false);
+        }
+      }
+    };
+
+    void loadFavorite();
+
+    const onFavoritesUpdated = () => {
+      void loadFavorite();
+    };
+
+    globalThis.addEventListener("repdock-favorites-updated", onFavoritesUpdated);
+
+    return () => {
+      cancelled = true;
+      globalThis.removeEventListener("repdock-favorites-updated", onFavoritesUpdated);
     };
   }, [product.id]);
 
@@ -270,28 +322,30 @@ export function W2CProductDetail({
       .catch(() => undefined);
   }, [product.id]);
 
-  const toggleFavorite = () => {
-    setFavorite((current) => {
-      const next = !current;
+  const toggleFavorite = async () => {
+    setFavoriteStatus("");
 
-      try {
-        const favorites = new Set(
-          JSON.parse(globalThis.localStorage.getItem(favoritesStorageKey) ?? "[]") as string[],
-        );
+    try {
+      const response = await fetch("/api/w2c/favorites", {
+        body: JSON.stringify({ productId: product.id }),
+        headers: { "Content-Type": "application/json" },
+        method: favorite ? "DELETE" : "POST",
+      });
 
-        if (next) {
-          favorites.add(product.id);
-        } else {
-          favorites.delete(product.id);
-        }
-
-        globalThis.localStorage.setItem(favoritesStorageKey, JSON.stringify([...favorites]));
-      } catch {
-        // Local favorites are progressive enhancement only.
+      if (response.status === 401) {
+        setFavoriteLoginOpen(true);
+        return;
       }
 
-      return next;
-    });
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      setFavorite((current) => !current);
+      globalThis.dispatchEvent(new Event("repdock-favorites-updated"));
+    } catch {
+      setFavoriteStatus(copy.favoriteError);
+    }
   };
 
   const recordBuy = () => {
@@ -390,6 +444,12 @@ export function W2CProductDetail({
               </button>
             </div>
 
+            {favoriteStatus ? (
+              <div className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                {favoriteStatus}
+              </div>
+            ) : null}
+
             <div className="grid gap-3 rounded-3xl border border-white/10 bg-black/25 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{copy.price}</p>
               <p className="text-4xl font-black text-white">{formatPrice(selectedPrice, currency, rates)}</p>
@@ -472,6 +532,14 @@ export function W2CProductDetail({
           </aside>
         </div>
       </section>
+      <LoginRequiredDialog
+        open={favoriteLoginOpen}
+        title={copy.favoriteLoginTitle}
+        description={copy.favoriteLoginDescription}
+        actionLabel={copy.favoriteLoginAction}
+        closeLabel={copy.favoriteLoginClose}
+        onClose={() => setFavoriteLoginOpen(false)}
+      />
     </main>
   );
 }
@@ -659,10 +727,22 @@ function QuickQCViewer({
   onToggleZoom: () => void;
   zoomed: boolean;
 }) {
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const previousIndex = imageIndex === 0 ? group.images.length - 1 : imageIndex - 1;
   const nextIndex = imageIndex === group.images.length - 1 ? 0 : imageIndex + 1;
 
-  return (
+  useEffect(() => {
+    setPortalRoot(document.body);
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  const viewer = (
     <div className="fixed inset-0 z-[100] grid place-items-center bg-black/80 p-4 backdrop-blur-md" onClick={onClose}>
       <div
         className="relative grid max-h-[92vh] w-full max-w-6xl overflow-hidden rounded-[32px] border border-white/10 bg-[#0d0e14] shadow-2xl shadow-black lg:grid-cols-[minmax(0,1fr)_260px]"
@@ -763,6 +843,8 @@ function QuickQCViewer({
       </div>
     </div>
   );
+
+  return portalRoot ? createPortal(viewer, portalRoot) : null;
 }
 
 function VariantPicker({

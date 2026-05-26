@@ -97,7 +97,7 @@ const heroCopy = {
   PL: {
     actions: {
       primary: "Sprawdź spreadsheet",
-      secondary: "Lista sprzedawców",
+      secondary: "TikTok Items",
     },
     hero: {
       title: "Twój ostatni przystanek w świecie repów",
@@ -109,7 +109,7 @@ const heroCopy = {
   EN: {
     actions: {
       primary: "Check Spreadsheet",
-      secondary: "Seller list",
+      secondary: "TikTok Items",
     },
     hero: {
       title: "Your last stop in the replica world",
@@ -133,7 +133,7 @@ function HeroActions({ copy }: { copy: HeroActionCopy }) {
       >
         {copy.primary}
       </a>
-      <a className={`${styles.button} ${styles.buttonSecondary}`} href="/sellers">
+      <a className={`${styles.button} ${styles.buttonSecondary}`} href="/tiktok-items">
         {copy.secondary}
       </a>
     </div>

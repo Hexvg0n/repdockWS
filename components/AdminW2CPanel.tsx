@@ -2,6 +2,7 @@
 
 import {
   IconCategory,
+  IconBrandTiktok,
   IconClipboard,
   IconCloudUpload,
   IconDatabase,
@@ -1099,6 +1100,11 @@ function AdminSidebar({
       icon: <IconTags className="size-5 shrink-0" />,
       label: "Categories",
       tab: "categories",
+    },
+    {
+      href: "/admin/tiktok-items",
+      icon: <IconBrandTiktok className="size-5 shrink-0" />,
+      label: "TikTok Items",
     },
     {
       href: "/admin/outfits",

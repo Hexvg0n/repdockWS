@@ -1,4 +1,3 @@
-import fs from "fs/promises";
 import { NextResponse } from "next/server";
 import path from "path";
 
@@ -8,33 +7,30 @@ import {
   buildTicketPanelComponents,
   getDiscordBotToken,
 } from "@/lib/discord-bot";
+import { readJsonFile } from "@/lib/json-file-store";
 
 export const runtime = "nodejs";
 
-const configPath = path.join(process.cwd(), "bot", "ticket_config.json");
+const configPath = path.join(/*turbopackIgnore: true*/ process.cwd(), "bot", "ticket_config.json");
 
 async function readTicketCategories() {
-  try {
-    const configData = JSON.parse(await fs.readFile(configPath, "utf8"));
-    const rawCategories = configData.ids?.ticketCategories;
+  const configData = await readJsonFile<{ ids?: { ticketCategories?: unknown } }>(configPath, {});
+  const rawCategories = configData.ids?.ticketCategories;
 
-    if (Array.isArray(rawCategories)) {
-      return rawCategories;
-    }
+  if (Array.isArray(rawCategories)) {
+    return rawCategories;
+  }
 
-    if (typeof rawCategories === "string") {
-      return rawCategories
-        .split(",")
-        .map((category: string) => category.trim())
-        .filter(Boolean)
-        .map((category: string) => ({
-          label: category,
-          value: category.toLowerCase().replace(/\s+/g, "-"),
-          description: "Ticket",
-        }));
-    }
-  } catch (error) {
-    console.error("Could not read ticket config for panel send", error);
+  if (typeof rawCategories === "string") {
+    return rawCategories
+      .split(",")
+      .map((category: string) => category.trim())
+      .filter(Boolean)
+      .map((category: string) => ({
+        label: category,
+        value: category.toLowerCase().replace(/\s+/g, "-"),
+        description: "Ticket",
+      }));
   }
 
   return [];

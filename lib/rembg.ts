@@ -27,17 +27,17 @@ export async function removeImageBackgroundFromBuffer(
 ): Promise<ProcessedImage> {
   const temporaryRoot = process.env.REPDOCK_TMP_DIR || (process.platform === "win32" ? "C:\\tmp" : "/tmp");
 
-  await mkdir(temporaryRoot, { recursive: true });
+  await mkdir(/*turbopackIgnore: true*/ temporaryRoot, { recursive: true });
 
-  const directory = await mkdtemp(`${temporaryRoot}${path.sep}repdock-w2c-`);
-  const inputPath = path.join(directory, `input${normalizeExtension(extension)}`);
-  const outputPath = path.join(directory, "output.png");
+  const directory = await mkdtemp(/*turbopackIgnore: true*/ `${temporaryRoot}${path.sep}repdock-w2c-`);
+  const inputPath = path.join(/*turbopackIgnore: true*/ directory, `input${normalizeExtension(extension)}`);
+  const outputPath = path.join(/*turbopackIgnore: true*/ directory, "output.png");
 
-  await writeFile(inputPath, buffer);
+  await writeFile(/*turbopackIgnore: true*/ inputPath, buffer);
   await runRembg(inputPath, outputPath);
 
   return {
-    cleanup: () => rm(directory, { force: true, recursive: true }),
+    cleanup: () => rm(/*turbopackIgnore: true*/ directory, { force: true, recursive: true }),
     inputPath,
     outputPath,
   };
@@ -193,7 +193,7 @@ function runRembg(inputPath: string, outputPath: string) {
 
   return new Promise<void>((resolve, reject) => {
     const processId = randomUUID();
-    const child = spawn(command, ["i", inputPath, outputPath], {
+    const child = spawn(/*turbopackIgnore: true*/ command, ["i", inputPath, outputPath], {
       shell: process.platform === "win32",
       stdio: ["ignore", "ignore", "pipe"],
     });

@@ -1,12 +1,11 @@
-const fs = require('fs').promises;
-const fsSync = require('fs');
+const fs = require('fs');
 const path = require('path');
 
-async function readJson(filePath, fallback) {
+function readJson(filePath, fallback) {
     try {
-        if (!fsSync.existsSync(filePath)) return fallback;
+        if (!fs.existsSync(filePath)) return fallback;
 
-        const data = await fs.readFile(filePath, 'utf8');
+        const data = fs.readFileSync(filePath, 'utf8');
         return JSON.parse(data);
     } catch (error) {
         console.error(`Error reading JSON from ${filePath}:`, error);
@@ -14,13 +13,13 @@ async function readJson(filePath, fallback) {
     }
 }
 
-async function writeJsonAtomic(filePath, value) {
+function writeJsonAtomic(filePath, value) {
     const directory = path.dirname(filePath);
     const tempPath = path.join(directory, `.${path.basename(filePath)}.${process.pid}.tmp`);
 
-    await fs.mkdir(directory, { recursive: true });
-    await fs.writeFile(tempPath, JSON.stringify(value, null, 2), 'utf8');
-    await fs.rename(tempPath, filePath);
+    fs.mkdirSync(directory, { recursive: true });
+    fs.writeFileSync(tempPath, JSON.stringify(value, null, 2), 'utf8');
+    fs.renameSync(tempPath, filePath);
 }
 
 module.exports = { readJson, writeJsonAtomic };

@@ -1,14 +1,14 @@
-import fs from "fs/promises";
 import { NextResponse } from "next/server";
 import path from "path";
 
 import { getAdminSession } from "@/lib/admin-auth";
+import { mutateJsonFile, readJsonFile } from "@/lib/json-file-store";
 
 export const runtime = "nodejs";
 
-const configPath = path.join(process.cwd(), "bot", "ticket_config.json");
-const defaultRestoreUsersPath = path.join(process.cwd(), "bot", "restore_users.json");
-const restoreLogsPath = process.env.RESTORE_LOGS_PATH ?? path.join(process.cwd(), "bot", "restore_migration_logs.json");
+const configPath = path.join(/*turbopackIgnore: true*/ process.cwd(), "bot", "ticket_config.json");
+const defaultRestoreUsersPath = path.join(/*turbopackIgnore: true*/ process.cwd(), "bot", "restore_users.json");
+const restoreLogsPath = process.env.RESTORE_LOGS_PATH ?? path.join(/*turbopackIgnore: true*/ process.cwd(), "bot", "restore_migration_logs.json");
 
 const DEFAULT_RESTORE_SETTINGS = {
   blacklistUserIds: [] as string[],
@@ -80,16 +80,7 @@ async function requireAdmin() {
 }
 
 async function readJson<T>(filePath: string, fallback: T): Promise<T> {
-  try {
-    return JSON.parse(await fs.readFile(filePath, "utf8")) as T;
-  } catch {
-    return fallback;
-  }
-}
-
-async function writeJson(filePath: string, value: unknown) {
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, JSON.stringify(value, null, 2), "utf8");
+  return readJsonFile(filePath, fallback);
 }
 
 async function getRestoreLogs() {
@@ -298,17 +289,21 @@ export async function POST(request: Request) {
       restorePanelChannelId?: unknown;
       verifyRoleId?: unknown;
     };
-    const config = await readJson<BotConfig>(configPath, {});
-    const ids = {
-      ...(config.ids ?? {}),
-      restorePanelChannelId: typeof body.restorePanelChannelId === "string" ? body.restorePanelChannelId.trim() : "",
-      verifyRoleId: typeof body.verifyRoleId === "string" ? body.verifyRoleId.trim() : "",
-    };
+    await mutateJsonFile<BotConfig, void>(configPath, {}, (config) => {
+      const ids = {
+        ...(config.ids ?? {}),
+        restorePanelChannelId: typeof body.restorePanelChannelId === "string" ? body.restorePanelChannelId.trim() : "",
+        verifyRoleId: typeof body.verifyRoleId === "string" ? body.verifyRoleId.trim() : "",
+      };
 
-    await writeJson(configPath, {
-      ...config,
-      ids,
-      restore: normalizeRestoreSettings(body.restoreSettings ?? config.restore),
+      return {
+        next: {
+          ...config,
+          ids,
+          restore: normalizeRestoreSettings(body.restoreSettings ?? config.restore),
+        },
+        result: undefined,
+      };
     });
 
     return NextResponse.json({ success: true });

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getBBDBuyProductDetails } from "@/lib/bbdbuy-product";
 import { getMongoClient } from "@/lib/mongodb";
 import { buildW2CProductFilter, normalizeW2CProduct } from "@/lib/w2c-products";
 import type { W2CProduct } from "@/types/w2c";
@@ -26,7 +27,10 @@ export async function GET(
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ product: normalizeW2CProduct(product) });
+    const normalizedProduct = normalizeW2CProduct(product);
+    const bbdbuyDetails = await getBBDBuyProductDetails(normalizedProduct);
+
+    return NextResponse.json({ bbdbuyDetails, product: normalizedProduct });
   } catch (error) {
     console.error("W2C product GET failed", error);
     return NextResponse.json({ error: "Failed to load product" }, { status: 500 });

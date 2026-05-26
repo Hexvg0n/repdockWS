@@ -1,12 +1,12 @@
-import fs from "fs/promises";
 import { NextResponse } from "next/server";
 import path from "path";
 
 import { getAdminSession } from "@/lib/admin-auth";
+import { readJsonFile, writeJsonFileAtomic } from "@/lib/json-file-store";
 
 export const runtime = "nodejs";
 
-const configPath = path.join(process.cwd(), "bot", "ticket_config.json");
+const configPath = path.join(/*turbopackIgnore: true*/ process.cwd(), "bot", "ticket_config.json");
 
 async function requireAdmin() {
   const session = await getAdminSession();
@@ -17,19 +17,8 @@ export async function GET() {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
 
-  try {
-    const data = await fs.readFile(configPath, "utf8");
-    return NextResponse.json({ config: JSON.parse(data) });
-  } catch (error) {
-    const code = (error as NodeJS.ErrnoException).code;
-
-    if (code === "ENOENT") {
-      return NextResponse.json({ config: {} });
-    }
-
-    console.error("Ticket config read failed", error);
-    return NextResponse.json({ error: "Failed to read configuration" }, { status: 500 });
-  }
+  const config = await readJsonFile<Record<string, unknown>>(configPath, {});
+  return NextResponse.json({ config });
 }
 
 export async function POST(request: Request) {
@@ -39,8 +28,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    await fs.mkdir(path.dirname(configPath), { recursive: true });
-    await fs.writeFile(configPath, JSON.stringify(body, null, 2), "utf8");
+    await writeJsonFileAtomic(configPath, body);
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -1,9 +1,9 @@
 import crypto from "crypto";
-import fs from "fs/promises";
 import path from "path";
 import { NextRequest, NextResponse } from "next/server";
 
 import { getPublicUrl } from "@/lib/discord-oauth";
+import { mutateJsonFile, readJsonFile } from "@/lib/json-file-store";
 import { getMongoClient } from "@/lib/mongodb";
 
 export const runtime = "nodejs";
@@ -77,13 +77,13 @@ type DiscordUserResponse = {
 
 const statePath =
   process.env.RESTORE_STATES_PATH ??
-  path.join(process.cwd(), "bot", "restore_oauth_states.json");
+  path.join(/*turbopackIgnore: true*/ process.cwd(), "bot", "restore_oauth_states.json");
 
 const usersPath =
   process.env.RESTORE_USERS_PATH ??
-  path.join(process.cwd(), "bot", "restore_users.json");
-const configPath = path.join(process.cwd(), "bot", "ticket_config.json");
-const restoreLogsPath = process.env.RESTORE_LOGS_PATH ?? path.join(process.cwd(), "bot", "restore_migration_logs.json");
+  path.join(/*turbopackIgnore: true*/ process.cwd(), "bot", "restore_users.json");
+const configPath = path.join(/*turbopackIgnore: true*/ process.cwd(), "bot", "ticket_config.json");
+const restoreLogsPath = process.env.RESTORE_LOGS_PATH ?? path.join(/*turbopackIgnore: true*/ process.cwd(), "bot", "restore_migration_logs.json");
 const DISCORD_EPOCH = BigInt("1420070400000");
 
 const DEFAULT_RESTORE_SETTINGS = {
@@ -112,16 +112,7 @@ type RestoreLogEntry = {
 };
 
 async function readJson<T>(filePath: string, fallback: T): Promise<T> {
-  try {
-    return JSON.parse(await fs.readFile(filePath, "utf8")) as T;
-  } catch {
-    return fallback;
-  }
-}
-
-async function writeJson(filePath: string, value: unknown) {
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, JSON.stringify(value, null, 2), "utf8");
+  return readJsonFile(filePath, fallback);
 }
 
 function clampNumber(value: unknown, min: number, max: number, fallback: number) {
@@ -156,9 +147,10 @@ async function getRestoreSettings() {
 }
 
 async function appendRestoreLog(entry: RestoreLogEntry, settings?: RestoreSettings) {
-  const data = await readJson<{ logs?: RestoreLogEntry[] }>(restoreLogsPath, { logs: [] });
-  const logs = [...(data.logs ?? []), entry].slice(-500);
-  await writeJson(restoreLogsPath, { logs });
+  await mutateJsonFile<{ logs?: RestoreLogEntry[] }, void>(restoreLogsPath, { logs: [] }, (data) => {
+    const logs = [...(data.logs ?? []), entry].slice(-500);
+    return { next: { logs }, result: undefined };
+  });
 
   if (settings?.webhookLogsEnabled && settings.webhookUrl) {
     await sendWebhookLog(settings.webhookUrl, entry);
@@ -444,17 +436,23 @@ async function assignVerificationRole(guildId: string, userId: string) {
 }
 
 async function saveRestoreUser(user: RestoreUser) {
-  const data = await readJson<RestoreUsersFile>(usersPath, { users: {} });
-  const existing = data.users[user.id];
-  const mergedUser = {
-    ...existing,
-    ...user,
-    firstConsentedAt: existing?.firstConsentedAt ?? existing?.consentedAt ?? user.consentedAt,
-    verifiedAt: user.verifiedAt ?? existing?.verifiedAt ?? null,
-  };
+  const mergedUser = await mutateJsonFile<RestoreUsersFile, RestoreUser>(
+    usersPath,
+    { users: {} },
+    (data) => {
+      const existing = data.users[user.id];
+      const nextUsers = { ...data.users };
+      const nextUser = {
+        ...existing,
+        ...user,
+        firstConsentedAt: existing?.firstConsentedAt ?? existing?.consentedAt ?? user.consentedAt,
+        verifiedAt: user.verifiedAt ?? existing?.verifiedAt ?? null,
+      };
 
-  data.users[user.id] = mergedUser;
-  await writeJson(usersPath, data);
+      nextUsers[user.id] = nextUser;
+      return { next: { users: nextUsers }, result: nextUser };
+    },
+  );
 
   const client = getMongoClient();
   if (!client) return;
@@ -474,6 +472,19 @@ async function saveRestoreUser(user: RestoreUser) {
   }
 }
 
+async function consumeRestoreState(state: string) {
+  return mutateJsonFile<Record<string, RestoreState>, RestoreState | undefined>(
+    statePath,
+    {},
+    (states) => {
+      const savedState = states[state];
+      const nextStates = { ...states };
+      delete nextStates[state];
+      return { next: nextStates, result: savedState };
+    },
+  );
+}
+
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   const state = request.nextUrl.searchParams.get("state");
@@ -488,10 +499,7 @@ export async function GET(request: NextRequest) {
     return renderHtml("Restore nieudany", "Discord OAuth nie jest skonfigurowany.", 500);
   }
 
-  const states = await readJson<Record<string, RestoreState>>(statePath, {});
-  const savedState = states[state];
-  delete states[state];
-  await writeJson(statePath, states);
+  const savedState = await consumeRestoreState(state);
 
   if (!savedState || savedState.createdAt < Date.now() - 10 * 60 * 1000) {
     return renderHtml("Restore nieudany", "Sesja autoryzacji wygasla. Sprobuj ponownie.", 400);

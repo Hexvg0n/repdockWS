@@ -1,10 +1,10 @@
 import crypto from "crypto";
-import fs from "fs/promises";
 import path from "path";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { getPublicUrl } from "@/lib/discord-oauth";
+import { mutateJsonFile } from "@/lib/json-file-store";
 
 export type RestoreOAuthMode = "restore" | "verify";
 
@@ -17,19 +17,6 @@ type RestoreState = {
 const statePath =
   process.env.RESTORE_STATES_PATH ??
   path.join(/*turbopackIgnore: true*/ process.cwd(), "bot", "restore_oauth_states.json");
-
-async function readStates(): Promise<Record<string, RestoreState>> {
-  try {
-    return JSON.parse(await fs.readFile(statePath, "utf8")) as Record<string, RestoreState>;
-  } catch {
-    return {};
-  }
-}
-
-async function writeStates(states: Record<string, RestoreState>) {
-  await fs.mkdir(path.dirname(statePath), { recursive: true });
-  await fs.writeFile(statePath, JSON.stringify(states, null, 2), "utf8");
-}
 
 function getRestoreRedirectUri(request: NextRequest) {
   return process.env.RESTORE_REDIRECT_URI ?? getPublicUrl(request, "/api/restore/callback").toString();
@@ -52,17 +39,18 @@ export async function startRestoreOAuth(request: NextRequest, mode: RestoreOAuth
   }
 
   const now = Date.now();
-  const states = await readStates();
-
-  for (const [key, value] of Object.entries(states)) {
-    if (!value.createdAt || value.createdAt < now - 10 * 60 * 1000) {
-      delete states[key];
-    }
-  }
-
   const state = crypto.randomBytes(24).toString("hex");
-  states[state] = { guildId, createdAt: now, mode };
-  await writeStates(states);
+
+  await mutateJsonFile<Record<string, RestoreState>, void>(statePath, {}, (states) => {
+    for (const [key, value] of Object.entries(states)) {
+      if (!value.createdAt || value.createdAt < now - 10 * 60 * 1000) {
+        delete states[key];
+      }
+    }
+
+    states[state] = { guildId, createdAt: now, mode };
+    return { next: states, result: undefined };
+  });
 
   const authorizationUrl = new URL("https://discord.com/oauth2/authorize");
   authorizationUrl.searchParams.set("client_id", clientId);

@@ -1,12 +1,12 @@
-import fs from "fs/promises";
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 
 import { getAdminSession } from "@/lib/admin-auth";
+import { mutateJsonFile, readJsonFile } from "@/lib/json-file-store";
 
 export const runtime = "nodejs";
 
-const templatesPath = path.join(process.cwd(), "bot", "panel_templates.json");
+const templatesPath = path.join(/*turbopackIgnore: true*/ process.cwd(), "bot", "panel_templates.json");
 const validKinds = new Set(["embed", "components-v2"]);
 
 type TemplateStore = Record<string, Record<string, unknown>>;
@@ -17,18 +17,7 @@ async function requireAdmin() {
 }
 
 async function readTemplates(): Promise<TemplateStore> {
-  try {
-    const data = await fs.readFile(templatesPath, "utf8");
-    const parsed = JSON.parse(data);
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-async function writeTemplates(store: TemplateStore) {
-  await fs.mkdir(path.dirname(templatesPath), { recursive: true });
-  await fs.writeFile(templatesPath, JSON.stringify(store, null, 2), "utf8");
+  return readJsonFile<TemplateStore>(templatesPath, {});
 }
 
 function getKind(request: NextRequest) {
@@ -64,13 +53,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Template name is required" }, { status: 400 });
   }
 
-  const store = await readTemplates();
-  store[kind] = store[kind] || {};
-  store[kind][name] = {
-    payload,
-    updatedAt: new Date().toISOString(),
-  };
-  await writeTemplates(store);
+  await mutateJsonFile<TemplateStore, void>(templatesPath, {}, (store) => {
+    const next = { ...store, [kind]: { ...(store[kind] ?? {}) } };
+    next[kind][name] = {
+      payload,
+      updatedAt: new Date().toISOString(),
+    };
+
+    return { next, result: undefined };
+  });
 
   return NextResponse.json({ success: true });
 }
@@ -89,11 +80,12 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Template name is required" }, { status: 400 });
   }
 
-  const store = await readTemplates();
-  if (store[kind]) {
-    delete store[kind][name];
-  }
-  await writeTemplates(store);
+  await mutateJsonFile<TemplateStore, void>(templatesPath, {}, (store) => {
+    const next = { ...store, [kind]: { ...(store[kind] ?? {}) } };
+    delete next[kind][name];
+
+    return { next, result: undefined };
+  });
 
   return NextResponse.json({ success: true });
 }

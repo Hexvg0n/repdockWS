@@ -1,13 +1,13 @@
-import fs from "fs/promises";
 import { NextResponse } from "next/server";
 import path from "path";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { getDiscordBotToken, getDiscordGuildId } from "@/lib/discord-bot";
+import { readJsonFile } from "@/lib/json-file-store";
 
 export const runtime = "nodejs";
 
-const configPath = path.join(process.cwd(), "bot", "ticket_config.json");
+const configPath = path.join(/*turbopackIgnore: true*/ process.cwd(), "bot", "ticket_config.json");
 
 type BotConfig = {
   ids?: Record<string, unknown>;
@@ -16,14 +16,6 @@ type BotConfig = {
 async function requireAdmin() {
   const session = await getAdminSession();
   return session ? null : new NextResponse("Unauthorized", { status: 401 });
-}
-
-async function readJson<T>(filePath: string, fallback: T): Promise<T> {
-  try {
-    return JSON.parse(await fs.readFile(filePath, "utf8")) as T;
-  } catch {
-    return fallback;
-  }
 }
 
 function getPublicBaseUrl() {
@@ -68,7 +60,7 @@ export async function POST(request: Request) {
       channelId?: unknown;
       panelType?: unknown;
     };
-    const config = await readJson<BotConfig>(configPath, {});
+    const config = await readJsonFile<BotConfig>(configPath, {});
     const ids = config.ids ?? {};
     const channelId = String(body.channelId || ids.restorePanelChannelId || "").trim();
     const panelType = body.panelType === "restore" ? "restore" : "verify";

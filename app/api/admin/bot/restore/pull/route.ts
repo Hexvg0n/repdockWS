@@ -1,17 +1,17 @@
-import fs from "fs/promises";
 import { NextResponse } from "next/server";
 import path from "path";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { getDiscordBotToken, getDiscordGuildId } from "@/lib/discord-bot";
+import { mutateJsonFile, readJsonFile } from "@/lib/json-file-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const usersPath = process.env.RESTORE_USERS_PATH ?? path.join(process.cwd(), "bot", "restore_users.json");
-const configPath = path.join(process.cwd(), "bot", "ticket_config.json");
-const restoreLogsPath = process.env.RESTORE_LOGS_PATH ?? path.join(process.cwd(), "bot", "restore_migration_logs.json");
-const restoreRuntimePath = process.env.RESTORE_RUNTIME_PATH ?? path.join(process.cwd(), "bot", "restore_runtime.json");
+const usersPath = process.env.RESTORE_USERS_PATH ?? path.join(/*turbopackIgnore: true*/ process.cwd(), "bot", "restore_users.json");
+const configPath = path.join(/*turbopackIgnore: true*/ process.cwd(), "bot", "ticket_config.json");
+const restoreLogsPath = process.env.RESTORE_LOGS_PATH ?? path.join(/*turbopackIgnore: true*/ process.cwd(), "bot", "restore_migration_logs.json");
+const restoreRuntimePath = process.env.RESTORE_RUNTIME_PATH ?? path.join(/*turbopackIgnore: true*/ process.cwd(), "bot", "restore_runtime.json");
 const DISCORD_EPOCH = BigInt("1420070400000");
 
 const DEFAULT_RESTORE_SETTINGS = {
@@ -78,16 +78,7 @@ async function requireAdmin() {
 }
 
 async function readJson<T>(filePath: string, fallback: T): Promise<T> {
-  try {
-    return JSON.parse(await fs.readFile(filePath, "utf8")) as T;
-  } catch {
-    return fallback;
-  }
-}
-
-async function writeJson(filePath: string, value: unknown) {
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, JSON.stringify(value, null, 2), "utf8");
+  return readJsonFile(filePath, fallback);
 }
 
 function clampNumber(value: unknown, min: number, max: number, fallback: number) {
@@ -214,9 +205,10 @@ async function addVerifyRole(token: string, guildId: string, userId: string, rol
 }
 
 async function appendRestoreLog(entry: RestoreLogEntry, settings?: RestoreSettings) {
-  const data = await readJson<{ logs?: RestoreLogEntry[] }>(restoreLogsPath, { logs: [] });
-  const logs = [...(data.logs ?? []), entry].slice(-500);
-  await writeJson(restoreLogsPath, { logs });
+  await mutateJsonFile<{ logs?: RestoreLogEntry[] }, void>(restoreLogsPath, { logs: [] }, (data) => {
+    const logs = [...(data.logs ?? []), entry].slice(-500);
+    return { next: { logs }, result: undefined };
+  });
 
   if (settings?.webhookLogsEnabled && settings.webhookUrl) {
     await sendWebhookLog(settings.webhookUrl, entry);
@@ -484,11 +476,22 @@ export async function POST(request: Request) {
     }
 
     if (changed) {
-      await writeJson(usersPath, data);
+      await mutateJsonFile<RestoreUsersFile, void>(usersPath, { users: {} }, (currentData) => ({
+        next: {
+          users: {
+            ...(currentData.users ?? {}),
+            ...data.users,
+          },
+        },
+        result: undefined,
+      }));
     }
 
     if (isBulkPull) {
-      await writeJson(restoreRuntimePath, { ...runtime, lastBulkPullAt: new Date().toISOString() });
+      await mutateJsonFile<{ lastBulkPullAt?: string }, void>(restoreRuntimePath, {}, (currentRuntime) => ({
+        next: { ...currentRuntime, lastBulkPullAt: new Date().toISOString() },
+        result: undefined,
+      }));
     }
 
     const summary = {

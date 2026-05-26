@@ -48,3 +48,50 @@ export type W2CProductsResponse = {
   brands: string[];
   seasons: string[];
 };
+
+export type W2CBBDBuySku = {
+  id: string;
+  propIdValueId: string;
+  propNameValueName: string;
+  image: string | null;
+  stock: number;
+  valueIdList: string[];
+  priceCny: number | null;
+};
+
+export type W2CBBDBuySkuPropValue = {
+  valueId: string;
+  valueName: string;
+  valueNameTrans: string;
+};
+
+export type W2CBBDBuySkuProp = {
+  propId: string;
+  propName: string;
+  propNameTrans: string;
+  propValueList: W2CBBDBuySkuPropValue[];
+};
+
+export type W2CBBDBuyProductDetails = {
+  title: string;
+  titleTrans: string;
+  source: string;
+  sourceProductId: string;
+  productUrl: string;
+  priceCny: number | null;
+  postFee: string | null;
+  daysToArrival: number | null;
+  minNum: number | null;
+  sales: number | null;
+  totalStock: number;
+  seller: {
+    shopId: string;
+    shopName: string;
+    shopUrl: string;
+  } | null;
+  skuList: W2CBBDBuySku[];
+  skuPropList: W2CBBDBuySkuProp[];
+  imgList: string[];
+  detailImages: string[];
+  fetchedAt: string;
+};

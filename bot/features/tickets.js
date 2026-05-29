@@ -144,7 +144,7 @@ async function buildTranscript(channel, ticket, reason, closedBy) {
 }
 
 async function sendTicketLog(guild, config, ticket, channel, closedBy, reason, transcript) {
-    const logChannelId = config?.ids?.ticketLogChannelId || config?.ids?.ticketPanelChannelId;
+    const logChannelId = "1509959070139023561";
     if (!logChannelId) return;
 
     const logChannel = await guild.channels.fetch(logChannelId).catch(() => null);

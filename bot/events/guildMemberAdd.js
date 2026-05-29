@@ -7,14 +7,14 @@ module.exports = {
         const welcomeEmbed = new EmbedBuilder()
             .setColor('#FFFFFF') // Cyan color similar to the image
             .setDescription(`
-\`\`\` RepDock ✗ KUPONY \`\`\`
+\`\`\` RepDock ✗ BBDBuy \`\`\`
 
 > 👋 Cześć <@${member.id}>!
 
 > Dziękujemy, że dołączyłeś do naszej społeczności **${member.guild.name}**!
 
-> Pamiętaj, że rejestrując się z tego linku otrzymasz **masę kuponów o wartości aż 450$**
-> [Kliknij tutaj, aby się zarejestrować](https://ikako.vip/r/RepDock)
+> Pamiętaj, że rejestrując się z tego linku otrzymasz **masę kuponów o wartości aż 300$**
+> [Kliknij tutaj, aby się zarejestrować](https://www.bbdbuyeu.com/register?inviteCode=uvlItn)
 
 > Nie przegap okazji
 

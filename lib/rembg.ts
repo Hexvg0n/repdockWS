@@ -11,7 +11,7 @@ export type ProcessedImage = {
   outputPath: string;
 };
 
-const maxDownloadedImageSize = 12 * 1024 * 1024;
+export const maxProcessableImageSize = 25 * 1024 * 1024;
 const imageDownloadTimeoutMs = 10_000;
 
 export async function removeImageBackground(imageUrl: string): Promise<ProcessedImage> {
@@ -79,15 +79,15 @@ async function downloadImage(url: URL) {
 
   const contentLength = Number(response.headers.get("content-length") ?? 0);
 
-  if (contentLength > maxDownloadedImageSize) {
-    throw new Error("Image is too large. Max size is 12MB.");
+  if (contentLength > maxProcessableImageSize) {
+    throw new Error("Image is too large. Max size is 25MB.");
   }
 
   if (!response.body) {
     const buffer = Buffer.from(await response.arrayBuffer());
 
-    if (buffer.byteLength > maxDownloadedImageSize) {
-      throw new Error("Image is too large. Max size is 12MB.");
+    if (buffer.byteLength > maxProcessableImageSize) {
+      throw new Error("Image is too large. Max size is 25MB.");
     }
 
     return buffer;
@@ -106,8 +106,8 @@ async function downloadImage(url: URL) {
 
     totalBytes += value.byteLength;
 
-    if (totalBytes > maxDownloadedImageSize) {
-      throw new Error("Image is too large. Max size is 12MB.");
+    if (totalBytes > maxProcessableImageSize) {
+      throw new Error("Image is too large. Max size is 25MB.");
     }
 
     chunks.push(Buffer.from(value));
@@ -239,13 +239,14 @@ function runRembg(inputPath: string, outputPath: string) {
 }
 
 function getRembgCommands() {
+  const fallbackCommands =
+    process.platform === "win32"
+      ? ["rembg"]
+      : ["rembg", "/usr/local/bin/rembg", "/root/.local/bin/rembg", "/opt/repdock-rembg/bin/rembg"];
+
   if (process.env.REMBG_COMMAND?.trim()) {
-    return [process.env.REMBG_COMMAND.trim()];
+    return [...new Set([process.env.REMBG_COMMAND.trim(), ...fallbackCommands])];
   }
 
-  if (process.platform === "win32") {
-    return ["rembg"];
-  }
-
-  return ["rembg", "/usr/local/bin/rembg", "/root/.local/bin/rembg", "/opt/repdock-rembg/bin/rembg"];
+  return fallbackCommands;
 }

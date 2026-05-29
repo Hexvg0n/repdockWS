@@ -130,7 +130,7 @@ install_rembg() {
   info "Installing rembg into a local Python virtualenv"
   python3 -m venv "$APP_DIR/.venv/rembg"
   "$APP_DIR/.venv/rembg/bin/python" -m pip install --upgrade pip wheel
-  "$APP_DIR/.venv/rembg/bin/python" -m pip install "rembg[cli]" onnxruntime
+  "$APP_DIR/.venv/rembg/bin/python" -m pip install "rembg[cpu,cli]"
 
   mkdir -p "$APP_DIR/.local-bin"
   cat > "$APP_DIR/.local-bin/rembg" <<EOF
@@ -138,6 +138,8 @@ install_rembg() {
 exec "$APP_DIR/.venv/rembg/bin/rembg" "\$@"
 EOF
   chmod +x "$APP_DIR/.local-bin/rembg"
+
+  sudo ln -sf "$APP_DIR/.local-bin/rembg" /usr/local/bin/rembg
 }
 
 create_env_file() {
@@ -167,7 +169,7 @@ CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 ACBUY_APP_ID=
 ACBUY_SECRET_KEY=
-REMBG_COMMAND=${APP_DIR}/.local-bin/rembg
+REMBG_COMMAND=/usr/local/bin/rembg
 REPDOCK_TMP_DIR=/tmp
 PORT=${APP_PORT}
 EOF
@@ -184,6 +186,10 @@ install_node_dependencies() {
 build_app() {
   info "Building Next.js app"
   cd "$APP_DIR"
+  sudo systemctl stop "${APP_NAME}.service" >/dev/null 2>&1 || true
+  if command -v pm2 >/dev/null 2>&1; then
+    pm2 stop "$APP_NAME" >/dev/null 2>&1 || true
+  fi
   NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=4096}" npm run build
 }
 

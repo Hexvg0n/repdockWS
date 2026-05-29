@@ -75,6 +75,7 @@ const initialForm: ProductForm = {
 };
 
 const seasons = ["SS", "FW"];
+const maxProcessableImageSize = 25 * 1024 * 1024;
 
 export function AdminW2CPanel() {
   const [activeTab, setActiveTab] = useState<AdminTab>("products");
@@ -346,6 +347,11 @@ export function AdminW2CPanel() {
 
     if (!file.type.startsWith("image/")) {
       setStatus({ tone: "error", text: "Selected file is not an image." });
+      return;
+    }
+
+    if (file.size > maxProcessableImageSize) {
+      setStatus({ tone: "error", text: "Image is too large. Max size is 25MB." });
       return;
     }
 

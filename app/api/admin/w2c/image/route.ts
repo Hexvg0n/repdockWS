@@ -3,13 +3,13 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import {
   getImageExtensionFromName,
+  maxProcessableImageSize,
   removeImageBackground,
   removeImageBackgroundFromBuffer,
 } from "@/lib/rembg";
 import { uploadW2CImage } from "@/lib/cloudinary";
 
 export const runtime = "nodejs";
-const maxImageSize = 12 * 1024 * 1024;
 
 export async function POST(request: Request) {
   const session = await getAdminSession();
@@ -59,8 +59,8 @@ async function readImageSource(request: Request) {
       throw new Error("Uploaded file is not an image");
     }
 
-    if (image.size > maxImageSize) {
-      throw new Error("Image is too large. Max size is 12MB.");
+    if (image.size > maxProcessableImageSize) {
+      throw new Error("Image is too large. Max size is 25MB.");
     }
 
     return {

@@ -1,5 +1,6 @@
 "use client";
 
+import SmartImage from "@/components/SmartImage";
 import {
   IconCalculator,
   IconLink,
@@ -267,7 +268,7 @@ function AgentBadge({
   return (
     <span className={`${styles.agentBadge} ${styles[color]} ${className}`}>
       {src ? (
-        <img className={styles.agentImage} src={src} alt="" />
+        <SmartImage className={styles.agentImage} src={src} alt="" />
       ) : (
         <span className={styles.agentIcon} />
       )}

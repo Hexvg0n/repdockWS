@@ -1,5 +1,6 @@
 "use client";
 
+import SmartImage from "@/components/SmartImage";
 import {
   ArrowLeft,
   Compass,
@@ -133,7 +134,7 @@ export default function NotFound404({
             href="/"
             className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.035] px-3 py-2 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/[0.07]"
           >
-            <img src="/RepDock-25.png" alt="" className="size-8 object-contain" />
+            <SmartImage src="/RepDock-25.png" alt="" className="size-8 object-contain" />
             <span>RepDock</span>
           </a>
           <span className="hidden rounded-lg border border-blue-300/20 bg-blue-500/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-blue-100 sm:inline-flex">

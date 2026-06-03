@@ -80,8 +80,8 @@ export default function TemplateControls<T>({ kind, currentPayload, onLoad }: Te
                             <option key={name} value={name}>{name}</option>
                         ))}
                     </select>
-                    <button className="btn btn-secondary" onClick={loadTemplate} aria-disabled={!selectedName}>Wczytaj</button>
-                    <button className="btn-icon-danger" onClick={deleteTemplate} aria-disabled={!selectedName} title="Usun szablon">
+                    <button type="button" className="btn btn-secondary" onClick={loadTemplate} aria-disabled={!selectedName}>Wczytaj</button>
+                    <button type="button" className="btn-icon-danger" onClick={deleteTemplate} aria-disabled={!selectedName} title="Usun szablon">
                         <Trash2 size={16} />
                     </button>
                 </div>
@@ -93,7 +93,7 @@ export default function TemplateControls<T>({ kind, currentPayload, onLoad }: Te
                     placeholder="Nazwa nowego szablonu"
                     onChange={(e) => setNewName(e.target.value)}
                 />
-                <button className="btn btn-secondary" onClick={saveTemplate}>
+                <button type="button" className="btn btn-secondary" onClick={saveTemplate}>
                     <Save size={16} /> Zapisz
                 </button>
             </div>

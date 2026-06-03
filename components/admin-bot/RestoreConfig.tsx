@@ -403,15 +403,15 @@ export default function RestoreConfig() {
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                            <button className="restore-btn restore-btn-muted" onClick={loadConfig} disabled={loading || Boolean(working)}>
+                            <button type="button" className="restore-btn restore-btn-muted" onClick={loadConfig} disabled={loading || Boolean(working)}>
                                 <RefreshCw className={loading ? 'size-4 animate-spin' : 'size-4'} />
                                 Odswiez
                             </button>
-                            <button className="restore-btn restore-btn-primary" onClick={() => runRestoreAction('scan')} disabled={Boolean(working) || !botReady}>
+                            <button type="button" className="restore-btn restore-btn-primary" onClick={() => runRestoreAction('scan')} disabled={Boolean(working) || !botReady}>
                                 {working === 'scan' && !workingUserId ? <RefreshCw className="size-4 animate-spin" /> : <UserMinus className="size-4" />}
                                 Skanuj
                             </button>
-                            <button className="restore-btn restore-btn-success" onClick={() => runRestoreAction('pull')} disabled={Boolean(working) || !botReady || stats.count === 0}>
+                            <button type="button" className="restore-btn restore-btn-success" onClick={() => runRestoreAction('pull')} disabled={Boolean(working) || !botReady || stats.count === 0}>
                                 {working === 'pull' && !workingUserId ? <RefreshCw className="size-4 animate-spin" /> : <RotateCcw className="size-4" />}
                                 Pulluj
                             </button>
@@ -485,15 +485,15 @@ export default function RestoreConfig() {
                         <div className="grid gap-6">
                             <PanelCard title="Szybkie akcje">
                                 <div className="grid gap-3">
-                                    <button className="restore-btn restore-btn-primary w-full" onClick={() => runRestoreAction('scan')} disabled={Boolean(working) || !botReady}>
+                                    <button type="button" className="restore-btn restore-btn-primary w-full" onClick={() => runRestoreAction('scan')} disabled={Boolean(working) || !botReady}>
                                         {working === 'scan' && !workingUserId ? <RefreshCw className="size-4 animate-spin" /> : <UserMinus className="size-4" />}
                                         Skanuj zapisanych
                                     </button>
-                                    <button className="restore-btn restore-btn-success w-full" onClick={() => runRestoreAction('pull')} disabled={Boolean(working) || !botReady || stats.count === 0}>
+                                    <button type="button" className="restore-btn restore-btn-success w-full" onClick={() => runRestoreAction('pull')} disabled={Boolean(working) || !botReady || stats.count === 0}>
                                         {working === 'pull' && !workingUserId ? <RefreshCw className="size-4 animate-spin" /> : <RotateCcw className="size-4" />}
                                         Pulluj osoby poza serwerem
                                     </button>
-                                    <button className="restore-btn restore-btn-muted w-full" onClick={saveConfig} disabled={saving}>
+                                    <button type="button" className="restore-btn restore-btn-muted w-full" onClick={saveConfig} disabled={saving}>
                                         {saving ? <RefreshCw className="size-4 animate-spin" /> : <Save className="size-4" />}
                                         Zapisz ustawienia
                                     </button>
@@ -585,7 +585,7 @@ export default function RestoreConfig() {
                                             placeholder="123456789012345678"
                                         />
                                     </label>
-                                    <button className="restore-btn restore-btn-primary w-full" onClick={saveConfig} disabled={saving}>
+                                    <button type="button" className="restore-btn restore-btn-primary w-full" onClick={saveConfig} disabled={saving}>
                                         {saving ? <RefreshCw className="size-4 animate-spin" /> : <Save className="size-4" />}
                                         Zapisz role
                                     </button>
@@ -618,7 +618,13 @@ export default function RestoreConfig() {
                                     <textarea
                                         className="restore-input min-h-[110px] resize-y"
                                         value={settings.blacklistUserIds.join('\n')}
-                                        onChange={(event) => setSettings((current) => ({ ...current, blacklistUserIds: event.target.value.split(/\s+/).map((id) => id.trim()).filter(Boolean) }))}
+                                        onChange={(event) => setSettings((current) => ({
+                                            ...current,
+                                            blacklistUserIds: event.target.value.split(/\s+/).flatMap((id) => {
+                                                const trimmedId = id.trim();
+                                                return trimmedId ? [trimmedId] : [];
+                                            })
+                                        }))}
                                         placeholder="Jedno ID na linie"
                                     />
                                 </label>
@@ -644,7 +650,7 @@ export default function RestoreConfig() {
                                         />
                                     </label>
                                 </div>
-                                <button className="restore-btn restore-btn-primary w-full" onClick={saveConfig} disabled={saving}>
+                                <button type="button" className="restore-btn restore-btn-primary w-full" onClick={saveConfig} disabled={saving}>
                                     {saving ? <RefreshCw className="size-4 animate-spin" /> : <Save className="size-4" />}
                                     Zapisz operacje
                                 </button>
@@ -849,7 +855,7 @@ function RestoreResultsTable({
                                         {result.message || '-'}
                                     </td>
                                     <td className="px-4 py-3">
-                                        <button
+                                        <button type="button"
                                             className="restore-btn restore-btn-muted min-h-9 px-3 text-xs"
                                             onClick={() => onPull(result.id)}
                                             disabled={!botReady || Boolean(working)}
@@ -970,8 +976,8 @@ function RestoreLogsList({ logs }: { logs: RestoreLogEntry[] }) {
     return (
         <div className="max-h-[420px] overflow-y-auto pr-1">
             <div className="grid gap-2">
-                {logs.slice(0, 30).map((log, index) => (
-                    <div key={`${log.createdAt}-${log.userId ?? index}`} className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                {logs.slice(0, 30).map((log) => (
+                    <div key={`${log.createdAt}-${log.userId ?? log.action}-${log.status}-${log.details ?? ''}`} className="rounded-2xl border border-white/10 bg-black/20 p-3">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
                                 <LogStatusPill status={log.status} />
@@ -1032,7 +1038,7 @@ function SavedUserRow({
                 <p className="mt-1 truncate text-xs text-slate-500">{locationText}</p>
                 <p className="mt-2 text-xs text-slate-500">Zgoda: {formatDate(user.consentedAt)}</p>
             </div>
-            <button className="restore-btn restore-btn-success min-h-10 px-3 text-xs" onClick={onPull} disabled={disabled}>
+            <button type="button" className="restore-btn restore-btn-success min-h-10 px-3 text-xs" onClick={onPull} disabled={disabled}>
                 {working ? <RefreshCw className="size-3 animate-spin" /> : <UserPlus className="size-3" />}
                 Pull
             </button>

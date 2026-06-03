@@ -1,5 +1,6 @@
 "use client";
 
+import SmartImage from "@/components/SmartImage";
 import {
   IconArrowRight,
   IconEye,
@@ -572,7 +573,7 @@ function OutfitCard({
       )}
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-white/[0.04]">
-        <img src={outfit.image} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+        <SmartImage src={outfit.image} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent" />
         <div className="absolute left-4 top-4 rounded-full border border-white/15 bg-black/35 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
           {outfit.items.length} {itemLabel}
@@ -723,7 +724,7 @@ function SubmitOutfitModal({
           <div className="sticky top-5">
             <div className="aspect-[4/5] overflow-hidden rounded-[28px] bg-white/[0.04]">
               {form.image ? (
-                <img src={form.image} alt="" className="h-full w-full object-cover" />
+                <SmartImage src={form.image} alt="" className="h-full w-full object-cover" />
               ) : (
                 <div className="grid h-full place-items-center text-slate-600">
                   <IconShoppingBag className="size-10" />
@@ -779,7 +780,7 @@ function OutfitPostModal({
         </button>
 
         <div className="relative min-h-[62vh] overflow-hidden bg-black md:min-h-[720px]">
-          <img src={outfit.image} alt="" className="h-full min-h-[62vh] w-full object-cover md:max-h-[92vh]" />
+          <SmartImage src={outfit.image} alt="" className="h-full min-h-[62vh] w-full object-cover md:max-h-[92vh]" />
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-5 md:hidden">
             <h2 className="font-['Poppins'] text-2xl font-medium text-white">{outfit.title}</h2>
           </div>
@@ -817,7 +818,7 @@ function OutfitPostModal({
                   className="group grid grid-cols-[74px_minmax(0,1fr)_auto] items-center gap-3 rounded-3xl border border-white/10 bg-white/[0.035] p-3 transition hover:border-blue-300/30 hover:bg-blue-500/10"
                 >
                   <div className="aspect-square overflow-hidden rounded-2xl bg-white/[0.04]">
-                    <img src={item.image} alt="" className="h-full w-full object-cover" />
+                    <SmartImage src={item.image} alt="" className="h-full w-full object-cover" />
                   </div>
                   <div className="min-w-0">
                     <h3 className="line-clamp-2 text-sm font-semibold text-white">{item.title}</h3>
@@ -912,7 +913,7 @@ function AuthorAvatar({
 
   if (outfit.createdByAvatarUrl) {
     return (
-      <img
+      <SmartImage
         src={outfit.createdByAvatarUrl}
         alt=""
         className={cn(dimensions, "shrink-0 border border-white/10 bg-white/[0.04] object-cover")}

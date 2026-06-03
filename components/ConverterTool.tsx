@@ -1,5 +1,6 @@
 "use client";
 
+import SmartImage from "@/components/SmartImage";
 import {
   IconAlertCircle,
   IconArrowRight,
@@ -432,7 +433,7 @@ function AgentIcon({ agentKey }: Readonly<{ agentKey: string }>) {
   return (
     <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white text-black">
       {icon ? (
-        <img src={icon} alt="" className="max-h-8 max-w-8 object-contain" />
+        <SmartImage src={icon} alt="" className="max-h-8 max-w-8 object-contain" />
       ) : (
         <span className="text-xs font-black uppercase">{agentKey.slice(0, 2)}</span>
       )}

@@ -1,4 +1,5 @@
 
+import SmartImage from "@/components/SmartImage";
 import React from 'react';
 import { EmbedData } from './types';
 import Markdown from './Markdown';
@@ -43,7 +44,7 @@ export default function EmbedPreview({ content, embedData, children }: EmbedPrev
 
                         {embedData.author.name && (
                             <div className="embed-author">
-                                {embedData.author.icon_url && <img src={embedData.author.icon_url} alt="" className="embed-author-icon" />}
+                                {embedData.author.icon_url && <SmartImage src={embedData.author.icon_url} alt="" className="embed-author-icon" />}
                                 <span className="embed-author-name">{embedData.author.name}</span>
                             </div>
                         )}
@@ -71,13 +72,13 @@ export default function EmbedPreview({ content, embedData, children }: EmbedPrev
 
                         {embedData.image_url && (
                             <div className="embed-image">
-                                <img src={embedData.image_url} alt="Embed Image" />
+                                <SmartImage src={embedData.image_url} alt="Embed Image" />
                             </div>
                         )}
 
                         {embedData.footer.text && (
                             <div className="embed-footer">
-                                {embedData.footer.icon_url && <img src={embedData.footer.icon_url} alt="" className="embed-footer-icon" />}
+                                {embedData.footer.icon_url && <SmartImage src={embedData.footer.icon_url} alt="" className="embed-footer-icon" />}
                                 <span className="embed-footer-text">
                                     {embedData.footer.text}
                                     {embedData.timestamp && ` • ${timeString}`}
@@ -94,16 +95,16 @@ export default function EmbedPreview({ content, embedData, children }: EmbedPrev
                     </div>
 
                     {embedData.thumbnail_url && (
-                        <img src={embedData.thumbnail_url} alt="Thumbnail" className="embed-thumbnail" />
+                        <SmartImage src={embedData.thumbnail_url} alt="Thumbnail" className="embed-thumbnail" />
                     )}
                 </div>
 
                 {embedData.buttons && embedData.buttons.length > 0 && (
                     <div className="components-container">
                         <div className="action-row">
-                            {embedData.buttons.map((btn, i) => (
-                                <button
-                                    key={i}
+                            {embedData.buttons.map((btn) => (
+                                <button type="button"
+                                    key={btn.id || btn.custom_id || btn.url || `${btn.type}-${btn.label}`}
                                     className={`discord-btn discord-btn-${btn.type.toLowerCase()}`}
                                 >
                                     {btn.emoji && <span style={{ marginRight: '4px' }}>{btn.emoji}</span>}
@@ -118,4 +119,3 @@ export default function EmbedPreview({ content, embedData, children }: EmbedPrev
         </div>
     );
 }
-

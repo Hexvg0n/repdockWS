@@ -324,11 +324,10 @@ function convertLink(url) {
     const baseUrl = originalUrl || url;
     const platform = identifyPlatform(baseUrl);
     const convertedLinks = Object.entries(middlemen)
-        .map(([key, { name }]) => {
+        .flatMap(([key, { name }]) => {
             const convertedUrl = convertUrlToMiddleman(baseUrl, key);
-            return convertedUrl ? { key, name, url: convertedUrl } : null;
-        })
-        .filter(Boolean);
+            return convertedUrl ? [{ key, name, url: convertedUrl }] : [];
+        });
 
     return {
         originalUrl: originalUrl || null,

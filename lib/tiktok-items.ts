@@ -119,8 +119,10 @@ function readStringArray(value: unknown) {
   return Array.from(
     new Set(
       value
-        .map(readString)
-        .filter(Boolean),
+        .flatMap((item) => {
+          const text = readString(item);
+          return text ? [text] : [];
+        }),
     ),
   );
 }

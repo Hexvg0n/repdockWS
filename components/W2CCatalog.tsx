@@ -1,5 +1,6 @@
 "use client";
 
+import SmartImage from "@/components/SmartImage";
 import {
   IconArrowDown,
   IconArrowUp,
@@ -40,6 +41,16 @@ import type { W2CGender, W2CProduct, W2CProductsResponse } from "@/types/w2c";
 
 const agents = ["BBDBUY", "KAKOBUY", "USFANS", "ACBUY"] as const;
 const seasonOptions = ["All", "SS", "FW"];
+const productSkeletonKeys = [
+  "product-skeleton-1",
+  "product-skeleton-2",
+  "product-skeleton-3",
+  "product-skeleton-4",
+  "product-skeleton-5",
+  "product-skeleton-6",
+  "product-skeleton-7",
+  "product-skeleton-8",
+];
 
 const agentLogos: Record<(typeof agents)[number], string> = {
   BBDBUY: "/agents/BBDBUY_icon.png",
@@ -493,7 +504,7 @@ export function W2CCatalog() {
     <main className="relative min-h-screen overflow-hidden bg-black px-4 pb-24 pt-28 text-white sm:px-6 lg:px-8">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[520px] bg-[radial-gradient(70%_45%_at_50%_0%,rgba(41,52,255,0.34),transparent_70%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[430px] overflow-hidden opacity-45 [mask-image:linear-gradient(to_bottom,black,transparent_88%)]">
-        <img
+        <SmartImage
           src="https://framerusercontent.com/images/eVPQSYBoVqwchmpN78sjyYtovY.svg?width=513&height=272"
           srcSet="
             https://framerusercontent.com/images/eVPQSYBoVqwchmpN78sjyYtovY.svg?scale-down-to=512&width=513&height=272 512w,
@@ -639,7 +650,7 @@ export function W2CCatalog() {
             />
           ))}
           {loading && products.length === 0
-            ? Array.from({ length: 8 }).map((_, index) => <ProductCardSkeleton key={index} />)
+            ? productSkeletonKeys.map((skeletonKey) => <ProductCardSkeleton key={skeletonKey} />)
             : null}
         </div>
 
@@ -713,7 +724,7 @@ function ProductCard({
       />
       {/* Image area — white rounded bg */}
       <div className="relative m-3 mb-0 overflow-hidden rounded-2xl bg-zinc-900">
-        <img
+        <SmartImage
           src={imageUrl}
           alt={product.name}
           className="h-52 w-full object-contain p-2 transition-transform duration-300 group-hover:scale-105"
@@ -768,7 +779,7 @@ function ProductCard({
           onClick={onRecordBuy}
           className="relative z-20 inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 text-sm font-bold text-black transition hover:bg-blue-100"
         >
-          <img src={agentLogos[agent]} alt="" className="size-5 rounded-md object-contain" />
+          <SmartImage src={agentLogos[agent]} alt="" className="size-5 rounded-md object-contain" />
           {copy.product.buyNow}
         </a>
 
@@ -803,7 +814,7 @@ function AgentPill({
         compact ? "min-w-0" : "min-w-36 justify-center",
       )}
     >
-      <img
+      <SmartImage
         src={agentLogos[agent]}
         alt=""
         className={cn("shrink-0 object-contain", compact ? "size-5" : "size-6")}

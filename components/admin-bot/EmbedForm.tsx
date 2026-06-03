@@ -1,3 +1,4 @@
+import SmartImage from "@/components/SmartImage";
 import React, { useCallback, useEffect, useState } from 'react';
 import { EmbedData, EmbedField } from './types';
 import { Plus, Trash2, Send, RefreshCw } from 'lucide-react';
@@ -157,7 +158,7 @@ export default function EmbedForm({
                                         <option key={ch.id} value={ch.id}>#{ch.name}</option>
                                     ))}
                                 </select>
-                                <button className="btn btn-secondary" onClick={fetchChannels} disabled={isLoadingChannels} title="Odśwież kanały">
+                                <button type="button" className="btn btn-secondary" onClick={fetchChannels} disabled={isLoadingChannels} title="Odśwież kanały">
                                     <RefreshCw size={18} className={isLoadingChannels ? "spin" : ""} />
                                 </button>
                             </div>
@@ -351,7 +352,7 @@ export default function EmbedForm({
                 <div className="form-group">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                         <label className="form-label" style={{ marginBottom: 0 }}>Pola (Fields)</label>
-                        <button className="btn btn-outline btn-sm" onClick={addField}>
+                        <button type="button" className="btn btn-outline btn-sm" onClick={addField}>
                             <Plus size={14} style={{ marginRight: '4px' }} /> Dodaj Pole
                         </button>
                     </div>
@@ -369,7 +370,7 @@ export default function EmbedForm({
                                     <input type="checkbox" checked={field.inline} onChange={e => handleFieldChange(field.id, 'inline', e.target.checked)} />
                                     Inline
                                 </label>
-                                <button className="btn-icon-danger" onClick={() => removeField(field.id)}>
+                                <button type="button" className="btn-icon-danger" onClick={() => removeField(field.id)}>
                                     <Trash2 size={16} />
                                 </button>
                             </div>
@@ -380,7 +381,7 @@ export default function EmbedForm({
                 <div className="form-group">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                         <label className="form-label" style={{ marginBottom: 0 }}>Przyciski</label>
-                        <button className="btn btn-outline btn-sm" onClick={() => {
+                        <button type="button" className="btn btn-outline btn-sm" onClick={() => {
                             setEmbedData(prev => ({
                                 ...prev,
                                 buttons: [...(prev.buttons || []), {
@@ -490,7 +491,7 @@ export default function EmbedForm({
                                                         if (match) {
                                                             return (
                                                                 <>
-                                                                    <img src={`https://cdn.discordapp.com/emojis/${match[2]}.webp?size=24&quality=lossless`} alt={match[1]} style={{ width: '20px', height: '20px' }} />
+                                                                    <SmartImage src={`https://cdn.discordapp.com/emojis/${match[2]}.webp?size=24&quality=lossless`} alt={match[1]} style={{ width: '20px', height: '20px' }} />
                                                                     <span style={{ fontSize: '12px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', maxWidth: '80px' }}>{match[1]}</span>
                                                                 </>
                                                             );
@@ -526,7 +527,7 @@ export default function EmbedForm({
                                                                 style={{ cursor: 'pointer', padding: '4px', textAlign: 'center', borderRadius: '4px' }}
                                                                 className="emoji-item"
                                                             >
-                                                                <img src={`https://cdn.discordapp.com/emojis/${emoji.id}.webp?size=32&quality=lossless`} alt={emoji.name} style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+                                                                <SmartImage src={`https://cdn.discordapp.com/emojis/${emoji.id}.webp?size=32&quality=lossless`} alt={emoji.name} style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
                                                             </div>
                                                         ))}
                                                     </div>
@@ -556,7 +557,7 @@ export default function EmbedForm({
                                 </div>
                             </div>
                             <div className="field-options">
-                                <button className="btn-icon-danger" onClick={() => setEmbedData(prev => ({
+                                <button type="button" className="btn-icon-danger" onClick={() => setEmbedData(prev => ({
                                     ...prev,
                                     buttons: prev.buttons.filter(b => b.id !== btn.id)
                                 }))}>
@@ -587,7 +588,7 @@ export default function EmbedForm({
 
             {!hideActionBar && (
                 <div className="action-bar sticky-bottom">
-                    <button className="btn btn-primary btn-block" onClick={onSend} disabled={isSending}>
+                    <button type="button" className="btn btn-primary btn-block" onClick={onSend} disabled={isSending}>
                         {isSending ? (
                             <>
                                 <RefreshCw size={18} className="spin" style={{ marginRight: '8px' }} /> Wysyłanie...
@@ -608,4 +609,3 @@ export default function EmbedForm({
         </div >
     );
 }
-

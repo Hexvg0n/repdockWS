@@ -367,7 +367,10 @@ function mapACBuyDetails(
 
 function mapACBuySku(sku: ACBuySku) {
   const propItems = readACBuySkuProps(sku).sort(compareACBuyPropIndex);
-  const valueIdList = propItems.map(getACBuyValueId).filter(Boolean);
+  const valueIdList = propItems.flatMap((prop) => {
+    const valueId = getACBuyValueId(prop);
+    return valueId ? [valueId] : [];
+  });
 
   return {
     id: readString(sku.skuId) || readString(sku.thirdSkuId),
@@ -499,7 +502,10 @@ function mapSkuProp(prop: BBDBuySkuProp) {
 }
 
 function readValueIds(sku: BBDBuySku) {
-  const list = readArray(sku.valueIdList).map(readString).filter(Boolean);
+  const list = readArray(sku.valueIdList).flatMap((value) => {
+    const text = readString(value);
+    return text ? [text] : [];
+  });
 
   if (list.length > 0) {
     return list;
@@ -507,8 +513,10 @@ function readValueIds(sku: BBDBuySku) {
 
   return readString(sku.propId_valueId)
     .split(";")
-    .map((pair) => pair.split(":")[1])
-    .filter(Boolean);
+    .flatMap((pair) => {
+      const valueId = pair.split(":")[1];
+      return valueId ? [valueId] : [];
+    });
 }
 
 function mapSeller(sellerInfo: unknown) {

@@ -8,7 +8,7 @@ const {
     TextInputBuilder,
     TextInputStyle
 } = require('discord.js');
-const { convertLink, getConverterAgents } = require('../utils/converter');
+const { postSiteJson } = require('../utils/siteApi');
 
 function chunk(items, size) {
     const chunks = [];
@@ -28,7 +28,7 @@ function buildLinkRows(convertedLinks) {
 }
 
 async function handleLinkConverter(interaction) {
-    if (interaction.customId === 'tools_open_link') {
+    if (interaction.customId === 'tools_open_link' || interaction.customId === 'ConverterButton') {
         const modal = new ModalBuilder()
             .setCustomId('tools_link_modal')
             .setTitle('Link Converter');
@@ -48,16 +48,25 @@ async function handleLinkConverter(interaction) {
     if (interaction.customId !== 'tools_link_modal') return false;
 
     const url = interaction.fields.getTextInputValue('link_input');
-    const converted = convertLink(url);
+    let converted;
 
-    if (!converted.originalUrl || !converted.platform || converted.convertedLinks.length === 0) {
+    try {
+        converted = await postSiteJson('/api/converter', { url });
+    } catch (error) {
+        return interaction.reply({
+            content: `Nie udalo sie polaczyc z API convertera: ${error.message}`,
+            flags: MessageFlags.Ephemeral
+        });
+    }
+
+    if (!converted.originalUrl || !converted.platform || !Array.isArray(converted.convertedLinks) || converted.convertedLinks.length === 0) {
         return interaction.reply({
             content: 'Nie udalo sie rozpoznac linku. Upewnij sie, ze format jest obslugiwany.',
             flags: MessageFlags.Ephemeral
         });
     }
 
-    const agents = getConverterAgents().map((agent) => agent.name).join(', ');
+    const agents = converted.convertedLinks.map((agent) => agent.name).join(', ');
     const embed = new EmbedBuilder()
         .setTitle('Konwersja gotowa')
         .setColor('#57f287')

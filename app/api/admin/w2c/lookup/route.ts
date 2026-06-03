@@ -48,12 +48,12 @@ export async function GET(req: Request) {
 
   try {
     const detailUrl = `https://www.acbuy.com/prefix-api/store-product/product/api/item/detail?itemId=${itemId}&source=${source}`;
-    const detailRes = await fetch(detailUrl);
+    const detailRes = await fetch(detailUrl, { cache: "no-store" });
     const detailJson = await detailRes.json();
 
     const spuId = `${source}${itemId}`;
     const weightUrl = `https://www.acbuy.com/prefix-api/store-product/product/api/getMeasureBySpuIds?spuIds=${spuId}`;
-    const weightRes = await fetch(weightUrl);
+    const weightRes = await fetch(weightUrl, { cache: "no-store" });
     const weightJson = await weightRes.json();
 
     let price = 0;
@@ -84,7 +84,7 @@ export async function GET(req: Request) {
     if (weight === 0) {
       try {
         const usfansUrl = `https://www.usfans.com/api/goods/estimate-info?goodsId=${itemId}`;
-        const usfansRes = await fetch(usfansUrl);
+        const usfansRes = await fetch(usfansUrl, { cache: "no-store" });
         const usfansJson = await usfansRes.json();
 
         if (usfansJson?.success && usfansJson.data?.weight) {
@@ -99,6 +99,7 @@ export async function GET(req: Request) {
       try {
         const cnfansUrl = `https://cnfans.com/wp-json/openapi/v1/product/detail?skupid=${itemId}&site=cnfans&lang=en&wmc-currency=USD`;
         const cnfansRes = await fetch(cnfansUrl, {
+          cache: "no-store",
           headers: {
             "From-Source-Type": "PC",
           },

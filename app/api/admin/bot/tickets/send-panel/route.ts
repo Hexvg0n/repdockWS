@@ -24,8 +24,10 @@ async function readTicketCategories() {
   if (typeof rawCategories === "string") {
     return rawCategories
       .split(",")
-      .map((category: string) => category.trim())
-      .filter(Boolean)
+      .flatMap((category: string) => {
+        const label = category.trim();
+        return label ? [label] : [];
+      })
       .map((category: string) => ({
         label: category,
         value: category.toLowerCase().replace(/\s+/g, "-"),
@@ -65,6 +67,7 @@ export async function POST(request: Request) {
 
     const response = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
       method: "POST",
+      cache: "no-store",
       headers: {
         Authorization: `Bot ${token}`,
         "Content-Type": "application/json",

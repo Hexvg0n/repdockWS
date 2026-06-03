@@ -8,46 +8,46 @@ interface TextToolbarProps {
 export default function TextToolbar({ onInsert }: TextToolbarProps) {
     return (
         <div className="text-toolbar">
-            <button className="toolbar-btn" onClick={() => onInsert('**tekst**', 2)} title="Pogrubienie">
+            <button type="button" className="toolbar-btn" onClick={() => onInsert('**tekst**', 2)} title="Pogrubienie">
                 <Bold size={16} />
             </button>
-            <button className="toolbar-btn" onClick={() => onInsert('*tekst*', 1)} title="Kursywa">
+            <button type="button" className="toolbar-btn" onClick={() => onInsert('*tekst*', 1)} title="Kursywa">
                 <Italic size={16} />
             </button>
-            <button className="toolbar-btn" onClick={() => onInsert('__tekst__', 2)} title="Podkreślenie">
+            <button type="button" className="toolbar-btn" onClick={() => onInsert('__tekst__', 2)} title="Podkreślenie">
                 <Underline size={16} />
             </button>
-            <button className="toolbar-btn" onClick={() => onInsert('~~tekst~~', 2)} title="Przekreślenie">
+            <button type="button" className="toolbar-btn" onClick={() => onInsert('~~tekst~~', 2)} title="Przekreślenie">
                 <span style={{ textDecoration: 'line-through' }}>S</span>
             </button>
 
             <div className="toolbar-divider" />
 
-            <button className="toolbar-btn" onClick={() => onInsert('`kod`', 1)} title="Kod liniowy">
+            <button type="button" className="toolbar-btn" onClick={() => onInsert('`kod`', 1)} title="Kod liniowy">
                 <Code size={16} />
             </button>
-            <button className="toolbar-btn" onClick={() => onInsert('\n```\nblok kodu\n```', 4)} title="Blok kodu">
+            <button type="button" className="toolbar-btn" onClick={() => onInsert('\n```\nblok kodu\n```', 4)} title="Blok kodu">
                 <Code size={16} strokeWidth={2.5} />
             </button>
-            <button className="toolbar-btn" onClick={() => onInsert('> ', 0)} title="Cytat">
+            <button type="button" className="toolbar-btn" onClick={() => onInsert('> ', 0)} title="Cytat">
                 <Quote size={16} />
             </button>
 
             <div className="toolbar-divider" />
 
-            <button className="toolbar-btn" onClick={() => onInsert('\n- ', 0)} title="Lista punktowana">
+            <button type="button" className="toolbar-btn" onClick={() => onInsert('\n- ', 0)} title="Lista punktowana">
                 <List size={16} />
             </button>
-            <button className="toolbar-btn" onClick={() => onInsert('[Tytuł](https://)', 1)} title="Link">
+            <button type="button" className="toolbar-btn" onClick={() => onInsert('[Tytuł](https://)', 1)} title="Link">
                 <LinkIcon size={16} />
             </button>
 
             <div className="toolbar-divider" />
 
-            <button className="toolbar-btn" onClick={() => onInsert('<@ID_UZYTKOWNIKA>', 2)} title="Oznaczenie Użytkownika">
+            <button type="button" className="toolbar-btn" onClick={() => onInsert('<@ID_UZYTKOWNIKA>', 2)} title="Oznaczenie Użytkownika">
                 <AtSign size={16} />
             </button>
-            <button className="toolbar-btn" onClick={() => onInsert('<#ID_KANALU>', 2)} title="Oznaczenie Kanału">
+            <button type="button" className="toolbar-btn" onClick={() => onInsert('<#ID_KANALU>', 2)} title="Oznaczenie Kanału">
                 <Hash size={16} />
             </button>
         </div>

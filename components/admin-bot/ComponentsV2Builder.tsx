@@ -12,9 +12,11 @@ import {
     ComponentsV2ContainerChild,
     ComponentsV2File,
     ComponentsV2MediaGallery,
+    ComponentsV2MediaGalleryItem,
     ComponentsV2Section,
     ComponentsV2SelectMenu,
     ComponentsV2Separator,
+    ComponentsV2StringSelectOption,
     ComponentsV2TextDisplay,
     ComponentsV2Thumbnail,
     ComponentsV2TopLevel
@@ -28,20 +30,108 @@ interface Channel {
 type ComponentList = Array<ComponentsV2TopLevel | ComponentsV2ContainerChild>;
 type AttachmentMap = Record<string, File>;
 
+let clientKeyCounter = 0;
+
+function createClientKey(prefix: string) {
+    clientKeyCounter += 1;
+    return `${prefix}_${Date.now().toString(36)}_${clientKeyCounter}`;
+}
+
+function withFreshClientKey<T extends object>(value: T, prefix: string): T & { _clientKey: string } {
+    return { ...value, _clientKey: createClientKey(prefix) };
+}
+
+function withClientKey<T extends object & { _clientKey?: string }>(value: T, key: string): T & { _clientKey: string } {
+    if (value._clientKey) return value as T & { _clientKey: string };
+    return { ...value, _clientKey: key };
+}
+
+function hydrateSelectOptionKeys(options: ComponentsV2StringSelectOption[] | undefined, path: string) {
+    return options?.map((option, index) => withClientKey(option, `${path}_option_${index}`));
+}
+
+function hydrateActionComponentKeys(component: ComponentsV2Button | ComponentsV2SelectMenu, path: string) {
+    if (component.type === 2) return withClientKey(component, path);
+    return {
+        ...withClientKey(component, path),
+        options: hydrateSelectOptionKeys(component.options, path)
+    };
+}
+
+function hydrateComponentKeys<T extends ComponentsV2TopLevel | ComponentsV2ContainerChild>(component: T, path: string): T {
+    const keyed = withClientKey(component, path);
+
+    if (keyed.type === 17) {
+        return {
+            ...keyed,
+            components: keyed.components.map((child, index) => hydrateComponentKeys(child, `${path}_child_${index}`))
+        } as T;
+    }
+
+    if (keyed.type === 1) {
+        return {
+            ...keyed,
+            components: keyed.components.map((child, index) => hydrateActionComponentKeys(child, `${path}_action_${index}`))
+        } as T;
+    }
+
+    if (keyed.type === 9) {
+        return {
+            ...keyed,
+            accessory: keyed.accessory.type === 2
+                ? hydrateActionComponentKeys(keyed.accessory, `${path}_accessory`)
+                : withClientKey(keyed.accessory, `${path}_thumbnail`),
+            components: keyed.components.map((text, index) => withClientKey(text, `${path}_text_${index}`))
+        } as T;
+    }
+
+    if (keyed.type === 12) {
+        return {
+            ...keyed,
+            items: keyed.items.map((item, index) => withClientKey(item, `${path}_media_${index}`))
+        } as T;
+    }
+
+    return keyed;
+}
+
+function hydrateComponentList<T extends ComponentsV2TopLevel | ComponentsV2ContainerChild>(components: T[], path: string): T[] {
+    return components.map((component, index) => hydrateComponentKeys(component, `${path}_${index}`));
+}
+
+function stripClientKeys<T>(value: T): T {
+    if (Array.isArray(value)) {
+        return value.map(stripClientKeys) as T;
+    }
+
+    if (value && typeof value === 'object') {
+        return Object.fromEntries(
+            Object.entries(value)
+                .filter(([key]) => key !== '_clientKey')
+                .map(([key, item]) => [key, stripClientKeys(item)])
+        ) as T;
+    }
+
+    return value;
+}
+
 const DEFAULT_COMPONENTS: ComponentsV2TopLevel[] = [
     {
         type: 17,
+        _clientKey: 'default_container',
         accent_color: 0x87ccab,
         components: [
-            { type: 10, content: '# <:mapp:1460396801260523726> x TRACKING!' },
-            { type: 14, divider: true, spacing: 1 },
+            { type: 10, _clientKey: 'default_heading', content: '# <:mapp:1460396801260523726> x TRACKING!' },
+            { type: 14, _clientKey: 'default_separator', divider: true, spacing: 1 },
             {
                 type: 9,
+                _clientKey: 'default_section',
                 components: [
-                    { type: 10, content: '> <:602327arrow:1460390014620930129> Uzyj komendy `/tracking` lub kliknij przycisk ponizej, aby sprawdzic status swojej paczki!' }
+                    { type: 10, _clientKey: 'default_section_text', content: '> <:602327arrow:1460390014620930129> Uzyj komendy `/tracking` lub kliknij przycisk ponizej, aby sprawdzic status swojej paczki!' }
                 ],
                 accessory: {
                     type: 2,
+                    _clientKey: 'default_tracking_button',
                     style: 2,
                     label: 'Sprawdz paczke',
                     custom_id: 'tracking_check_package',
@@ -72,7 +162,7 @@ function makeButton(style: ComponentsV2ButtonStyle = 2): ComponentsV2Button {
     else if (style === 6) button.sku_id = '';
     else button.custom_id = `action_${Date.now()}`;
 
-    return button;
+    return withFreshClientKey(button, 'button');
 }
 
 function makeSelect(type: ComponentsV2SelectMenu['type'] = 3): ComponentsV2SelectMenu {
@@ -86,30 +176,31 @@ function makeSelect(type: ComponentsV2SelectMenu['type'] = 3): ComponentsV2Selec
 
     if (type === 3) {
         select.options = [
-            { label: 'Opcja 1', value: 'option_1', description: 'Pierwsza opcja' },
-            { label: 'Opcja 2', value: 'option_2', description: 'Druga opcja' }
+            withFreshClientKey({ label: 'Opcja 1', value: 'option_1', description: 'Pierwsza opcja' }, 'select_option'),
+            withFreshClientKey({ label: 'Opcja 2', value: 'option_2', description: 'Druga opcja' }, 'select_option')
         ];
     }
 
-    return select;
+    return withFreshClientKey(select, 'select');
 }
 
 function makeText(): ComponentsV2TextDisplay {
-    return { type: 10, content: '## Nowy blok tekstu' };
+    return withFreshClientKey({ type: 10, content: '## Nowy blok tekstu' }, 'text');
 }
 
 function makeSeparator(): ComponentsV2Separator {
-    return { type: 14, divider: true, spacing: 1 as const };
+    return withFreshClientKey({ type: 14, divider: true, spacing: 1 as const }, 'separator');
 }
 
 function makeThumbnail(): ComponentsV2Thumbnail {
-    return { type: 11, media: { url: 'https://placehold.co/128x128/png' }, description: 'Thumbnail' };
+    return withFreshClientKey({ type: 11, media: { url: 'https://placehold.co/128x128/png' }, description: 'Thumbnail' }, 'thumbnail');
 }
 
 function makeSection(accessory: 'button' | 'thumbnail' = 'button'): ComponentsV2Section {
     return {
         type: 9,
-        components: [{ type: 10, content: '> Opis akcji po lewej stronie.' }],
+        _clientKey: createClientKey('section'),
+        components: [withFreshClientKey({ type: 10, content: '> Opis akcji po lewej stronie.' }, 'section_text')],
         accessory: accessory === 'button' ? makeButton(2) : makeThumbnail()
     };
 }
@@ -117,19 +208,21 @@ function makeSection(accessory: 'button' | 'thumbnail' = 'button'): ComponentsV2
 function makeGallery(): ComponentsV2MediaGallery {
     return {
         type: 12,
+        _clientKey: createClientKey('gallery'),
         items: [
-            { media: { url: 'https://placehold.co/640x360/png' }, description: 'Media item' }
+            withFreshClientKey({ media: { url: 'https://placehold.co/640x360/png' }, description: 'Media item' }, 'gallery_item')
         ]
     };
 }
 
 function makeFile(): ComponentsV2File {
-    return { type: 13, file: { url: 'attachment://plik.pdf' } };
+    return withFreshClientKey({ type: 13, file: { url: 'attachment://plik.pdf' } }, 'file');
 }
 
 function makeActionRow(mode: 'buttons' | 'select' = 'buttons'): ComponentsV2ActionRow {
     return {
         type: 1,
+        _clientKey: createClientKey('action_row'),
         components: mode === 'buttons' ? [makeButton(2)] : [makeSelect(3)]
     };
 }
@@ -137,9 +230,18 @@ function makeActionRow(mode: 'buttons' | 'select' = 'buttons'): ComponentsV2Acti
 function makeContainer(): ComponentsV2Container {
     return {
         type: 17,
+        _clientKey: createClientKey('container'),
         accent_color: 0x22d3ee,
         components: [makeText(), makeSeparator(), makeSection('button')]
     };
+}
+
+function makeSelectOption(value: string): ComponentsV2StringSelectOption {
+    return withFreshClientKey({ label: 'Opcja', value }, 'select_option');
+}
+
+function makeGalleryItem(): ComponentsV2MediaGalleryItem {
+    return withFreshClientKey({ media: { url: 'https://placehold.co/640x360/png' } }, 'gallery_item');
 }
 
 function labelForComponent(component: ComponentsV2TopLevel | ComponentsV2ContainerChild) {
@@ -220,7 +322,7 @@ function normalizeImportedPayload(raw: any): ComponentsV2TopLevel[] {
         throw new Error('JSON musi zawierac tablice components');
     }
 
-    return components;
+    return hydrateComponentList(components, 'imported') as ComponentsV2TopLevel[];
 }
 
 function validateComponents(components: ComponentsV2TopLevel[], attachmentNames: Set<string>) {
@@ -280,15 +382,15 @@ function validateComponents(components: ComponentsV2TopLevel[], attachmentNames:
 function AddButtons({ onAdd, allowContainer }: { onAdd: (component: ComponentsV2TopLevel | ComponentsV2ContainerChild) => void; allowContainer: boolean }) {
     return (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-            {allowContainer && <button className="btn btn-outline btn-sm" onClick={() => onAdd(makeContainer())}><Plus size={14} /> Container</button>}
-            <button className="btn btn-outline btn-sm" onClick={() => onAdd(makeText())}><Plus size={14} /> Text</button>
-            <button className="btn btn-outline btn-sm" onClick={() => onAdd(makeSeparator())}><Plus size={14} /> Separator</button>
-            <button className="btn btn-outline btn-sm" onClick={() => onAdd(makeSection('button'))}><Plus size={14} /> Section Button</button>
-            <button className="btn btn-outline btn-sm" onClick={() => onAdd(makeSection('thumbnail'))}><Plus size={14} /> Section Thumbnail</button>
-            <button className="btn btn-outline btn-sm" onClick={() => onAdd(makeGallery())}><Plus size={14} /> Gallery</button>
-            <button className="btn btn-outline btn-sm" onClick={() => onAdd(makeFile())}><Plus size={14} /> File</button>
-            <button className="btn btn-outline btn-sm" onClick={() => onAdd(makeActionRow('buttons'))}><Plus size={14} /> Button Row</button>
-            <button className="btn btn-outline btn-sm" onClick={() => onAdd(makeActionRow('select'))}><Plus size={14} /> Select Row</button>
+            {allowContainer && <button type="button" className="btn btn-outline btn-sm" onClick={() => onAdd(makeContainer())}><Plus size={14} /> Container</button>}
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => onAdd(makeText())}><Plus size={14} /> Text</button>
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => onAdd(makeSeparator())}><Plus size={14} /> Separator</button>
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => onAdd(makeSection('button'))}><Plus size={14} /> Section Button</button>
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => onAdd(makeSection('thumbnail'))}><Plus size={14} /> Section Thumbnail</button>
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => onAdd(makeGallery())}><Plus size={14} /> Gallery</button>
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => onAdd(makeFile())}><Plus size={14} /> File</button>
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => onAdd(makeActionRow('buttons'))}><Plus size={14} /> Button Row</button>
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => onAdd(makeActionRow('select'))}><Plus size={14} /> Select Row</button>
         </div>
     );
 }
@@ -428,10 +530,10 @@ function SelectEditor({ select, onChange }: { select: ComponentsV2SelectMenu; on
                 <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                         <label className="form-label" style={{ margin: 0 }}>Opcje string select</label>
-                        <button className="btn btn-outline btn-sm" onClick={() => onChange({ ...select, options: [...options, { label: 'Opcja', value: `option_${options.length + 1}` }] })}>Dodaj opcje</button>
+                        <button type="button" className="btn btn-outline btn-sm" onClick={() => onChange({ ...select, options: [...options, makeSelectOption(`option_${options.length + 1}`)] })}>Dodaj opcje</button>
                     </div>
                     {options.map((option, optionIndex) => (
-                        <div className="v2-editor-subblock" key={optionIndex}>
+                        <div className="v2-editor-subblock" key={option._clientKey || option.value}>
                             <input className="form-input" value={option.label} placeholder="Label" onChange={(e) => {
                                 const next = [...options];
                                 next[optionIndex] = { ...option, label: e.target.value };
@@ -469,7 +571,7 @@ function SelectEditor({ select, onChange }: { select: ComponentsV2SelectMenu; on
                                 }} />
                                 Domyslna opcja
                             </label>
-                            <button className="btn-icon-danger" onClick={() => onChange({ ...select, options: options.filter((_, index) => index !== optionIndex) })}><Trash2 size={16} /></button>
+                            <button type="button" className="btn-icon-danger" onClick={() => onChange({ ...select, options: options.filter((_, index) => index !== optionIndex) })}><Trash2 size={16} /></button>
                         </div>
                     ))}
                 </div>
@@ -491,28 +593,28 @@ function SectionEditor({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <label className="form-label" style={{ margin: 0 }}>Teksty sekcji</label>
-                <button
+                <button type="button"
                     className="btn btn-outline btn-sm"
-                    onClick={() => onChange({ ...section, components: [...section.components, { type: 10 as const, content: '> Kolejny tekst' }].slice(0, 3) })}
+                    onClick={() => onChange({ ...section, components: [...section.components, withFreshClientKey({ type: 10 as const, content: '> Kolejny tekst' }, 'section_text')].slice(0, 3) })}
                 >
                     Dodaj tekst
                 </button>
             </div>
 
             {section.components.map((text, index) => (
-                <div className="v2-editor-subblock" key={index}>
+                <div className="v2-editor-subblock" key={text._clientKey || text.content}>
                     <textarea className="form-textarea" value={text.content} onChange={(e) => {
                         const next = [...section.components];
                         next[index] = { ...text, content: e.target.value };
                         onChange({ ...section, components: next });
                     }} />
-                    <button className="btn-icon-danger" onClick={() => onChange({ ...section, components: section.components.filter((_, textIndex) => textIndex !== index) })}><Trash2 size={16} /></button>
+                    <button type="button" className="btn-icon-danger" onClick={() => onChange({ ...section, components: section.components.filter((_, textIndex) => textIndex !== index) })}><Trash2 size={16} /></button>
                 </div>
             ))}
 
             <div className="flex-row">
-                <button className={`btn ${section.accessory.type === 2 ? 'btn-primary' : 'btn-outline'}`} onClick={() => onChange({ ...section, accessory: makeButton(2) })}>Button accessory</button>
-                <button className={`btn ${section.accessory.type === 11 ? 'btn-primary' : 'btn-outline'}`} onClick={() => onChange({ ...section, accessory: makeThumbnail() })}>Thumbnail accessory</button>
+                <button type="button" className={`btn ${section.accessory.type === 2 ? 'btn-primary' : 'btn-outline'}`} onClick={() => onChange({ ...section, accessory: makeButton(2) })}>Button accessory</button>
+                <button type="button" className={`btn ${section.accessory.type === 11 ? 'btn-primary' : 'btn-outline'}`} onClick={() => onChange({ ...section, accessory: makeThumbnail() })}>Thumbnail accessory</button>
             </div>
 
             {section.accessory.type === 2
@@ -533,9 +635,9 @@ function MediaGalleryEditor({
 }) {
     return (
         <div>
-            <button className="btn btn-outline btn-sm" onClick={() => onChange({ ...gallery, items: [...gallery.items, { media: { url: 'https://placehold.co/640x360/png' } }].slice(0, 10) })}>Dodaj media</button>
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => onChange({ ...gallery, items: [...gallery.items, makeGalleryItem()].slice(0, 10) })}>Dodaj media</button>
             {gallery.items.map((item, index) => (
-                <div className="v2-editor-subblock" key={index}>
+                <div className="v2-editor-subblock" key={item._clientKey || item.media.url}>
                     <input className="form-input" value={item.media.url} placeholder="Media URL albo attachment://image.png" onChange={(e) => {
                         const next = [...gallery.items];
                         next[index] = { ...item, media: { url: e.target.value } };
@@ -559,7 +661,7 @@ function MediaGalleryEditor({
                         }} />
                         Spoiler
                     </label>
-                    <button className="btn-icon-danger" onClick={() => onChange({ ...gallery, items: gallery.items.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 size={16} /></button>
+                    <button type="button" className="btn-icon-danger" onClick={() => onChange({ ...gallery, items: gallery.items.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 size={16} /></button>
                 </div>
             ))}
         </div>
@@ -572,21 +674,21 @@ function ActionRowEditor({ row, onChange }: { row: ComponentsV2ActionRow; onChan
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div className="flex-row">
-                <button className={`btn ${!hasSelect ? 'btn-primary' : 'btn-outline'}`} onClick={() => onChange(makeActionRow('buttons'))}>Buttons row</button>
-                <button className={`btn ${hasSelect ? 'btn-primary' : 'btn-outline'}`} onClick={() => onChange(makeActionRow('select'))}>Select row</button>
+                <button type="button" className={`btn ${!hasSelect ? 'btn-primary' : 'btn-outline'}`} onClick={() => onChange(makeActionRow('buttons'))}>Buttons row</button>
+                <button type="button" className={`btn ${hasSelect ? 'btn-primary' : 'btn-outline'}`} onClick={() => onChange(makeActionRow('select'))}>Select row</button>
             </div>
 
             {!hasSelect && (
                 <>
-                    <button className="btn btn-outline btn-sm" onClick={() => onChange({ ...row, components: [...row.components, makeButton(2)].slice(0, 5) })}>Dodaj przycisk</button>
+                    <button type="button" className="btn btn-outline btn-sm" onClick={() => onChange({ ...row, components: [...row.components, makeButton(2)].slice(0, 5) })}>Dodaj przycisk</button>
                     {row.components.map((component, index) => component.type === 2 && (
-                        <div className="v2-editor-subblock" key={index}>
+                        <div className="v2-editor-subblock" key={component._clientKey || component.custom_id || component.url || component.label}>
                             <ButtonEditor button={component} onChange={(button) => {
                                 const next = [...row.components];
                                 next[index] = button;
                                 onChange({ ...row, components: next });
                             }} />
-                            <button className="btn-icon-danger" onClick={() => onChange({ ...row, components: row.components.filter((_, componentIndex) => componentIndex !== index) })}><Trash2 size={16} /></button>
+                            <button type="button" className="btn-icon-danger" onClick={() => onChange({ ...row, components: row.components.filter((_, componentIndex) => componentIndex !== index) })}><Trash2 size={16} /></button>
                         </div>
                     ))}
                 </>
@@ -614,7 +716,7 @@ function ComponentEditor({
         <div className="v2-editor-block">
             <div className="v2-editor-block-header">
                 <strong>{labelForComponent(component)}</strong>
-                <button className="btn-icon-danger" onClick={onRemove}><Trash2 size={16} /></button>
+                <button type="button" className="btn-icon-danger" onClick={onRemove}><Trash2 size={16} /></button>
             </div>
 
             {component.type === 17 && (
@@ -685,7 +787,7 @@ function ComponentListEditor({
             <AddButtons onAdd={(component) => onChange([...components, component])} allowContainer={allowContainer} />
             {components.map((component, index) => (
                 <ComponentEditor
-                    key={index}
+                    key={component._clientKey || `${component.type}_${JSON.stringify(stripClientKeys(component))}`}
                     component={component}
                     onChange={(next) => onChange(components.map((item, itemIndex) => itemIndex === index ? next : item))}
                     onRemove={() => onChange(components.filter((_, itemIndex) => itemIndex !== index))}
@@ -716,7 +818,7 @@ export default function ComponentsV2Builder() {
         }
     }, [advancedJson, components, useAdvancedJson]);
 
-    const exportedJson = useMemo(() => JSON.stringify({ flags: 32768, components: payloadComponents }, null, 2), [payloadComponents]);
+    const exportedJson = useMemo(() => JSON.stringify({ flags: 32768, components: stripClientKeys(payloadComponents) }, null, 2), [payloadComponents]);
     const attachmentNames = useMemo(() => new Set(Object.keys(attachments)), [attachments]);
     const warnings = useMemo(() => validateComponents(payloadComponents as ComponentsV2TopLevel[], attachmentNames), [payloadComponents, attachmentNames]);
 
@@ -745,7 +847,7 @@ export default function ComponentsV2Builder() {
         try {
             const imported = normalizeImportedPayload(JSON.parse(jsonInput));
             setComponents(imported);
-            setAdvancedJson(JSON.stringify({ flags: 32768, components: imported }, null, 2));
+            setAdvancedJson(JSON.stringify({ flags: 32768, components: stripClientKeys(imported) }, null, 2));
             setStatusMessage('JSON zaimportowany.');
         } catch (error: any) {
             setStatusMessage(`Blad importu: ${error.message}`);
@@ -758,12 +860,12 @@ export default function ComponentsV2Builder() {
             return;
         }
 
-        let componentsToSend = payloadComponents;
+        let componentsToSend = stripClientKeys(payloadComponents);
         let rawPayload: unknown = null;
         let payloadForAttachments: unknown = componentsToSend;
         if (useAdvancedJson) {
             try {
-                rawPayload = JSON.parse(advancedJson);
+                rawPayload = stripClientKeys(JSON.parse(advancedJson));
                 componentsToSend = normalizeImportedPayload(rawPayload);
                 payloadForAttachments = rawPayload;
             } catch (error: any) {
@@ -792,13 +894,13 @@ export default function ComponentsV2Builder() {
                 if (useAdvancedJson) {
                     formData.append('payload', JSON.stringify(rawPayload));
                 } else {
-                    formData.append('components', JSON.stringify(componentsToSend));
+                    formData.append('components', JSON.stringify(stripClientKeys(componentsToSend)));
                 }
                 filesToSend.forEach((file) => formData.append('files', file, file.name));
                 request.body = formData;
             } else {
                 request.headers = { 'Content-Type': 'application/json' };
-                request.body = JSON.stringify(useAdvancedJson ? { channelId, payload: rawPayload } : { channelId, components: componentsToSend });
+                request.body = JSON.stringify(useAdvancedJson ? { channelId, payload: rawPayload } : { channelId, components: stripClientKeys(componentsToSend) });
             }
 
             const res = await fetch('/api/admin/bot/components-v2/send', {
@@ -827,7 +929,7 @@ export default function ComponentsV2Builder() {
                                 <option value="" disabled>Wybierz kanal...</option>
                                 {channels.map((channel) => <option value={channel.id} key={channel.id}>#{channel.name}</option>)}
                             </select>
-                            <button className="btn btn-secondary" onClick={fetchChannels}>Odswiez</button>
+                            <button type="button" className="btn btn-secondary" onClick={fetchChannels}>Odswiez</button>
                         </div>
                     </div>
                     {warnings.length > 0 && (
@@ -846,11 +948,11 @@ export default function ComponentsV2Builder() {
                     <h2 className="section-title">Szablony V2</h2>
                     <TemplateControls
                         kind="components-v2"
-                        currentPayload={{ flags: 32768, components: payloadComponents }}
+                        currentPayload={{ flags: 32768, components: stripClientKeys(payloadComponents) }}
                         onLoad={(payload: any) => {
                             const loaded = normalizeImportedPayload(payload);
                             setComponents(loaded);
-                            setAdvancedJson(JSON.stringify({ flags: 32768, components: loaded }, null, 2));
+                            setAdvancedJson(JSON.stringify({ flags: 32768, components: stripClientKeys(loaded) }, null, 2));
                         }}
                     />
                 </div>
@@ -892,13 +994,13 @@ export default function ComponentsV2Builder() {
                         onChange={(e) => setJsonInput(e.target.value)}
                     />
                     <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                        <button className="btn btn-secondary" onClick={importJson}><Upload size={16} /> Import</button>
-                        <button className="btn btn-secondary" onClick={() => setJsonInput(exportedJson)}><Copy size={16} /> Export</button>
+                        <button type="button" className="btn btn-secondary" onClick={importJson}><Upload size={16} /> Import</button>
+                        <button type="button" className="btn btn-secondary" onClick={() => setJsonInput(exportedJson)}><Copy size={16} /> Export</button>
                     </div>
                 </div>
 
                 <div className="action-bar sticky-bottom">
-                    <button className="btn btn-primary btn-block" onClick={sendPanel} disabled={isSending}>
+                    <button type="button" className="btn btn-primary btn-block" onClick={sendPanel} disabled={isSending}>
                         <Send size={18} style={{ marginRight: 8 }} /> {isSending ? 'Wysylanie...' : 'Wyslij Components V2'}
                     </button>
                     {statusMessage && (

@@ -1,7 +1,20 @@
+import SmartImage from "@/components/SmartImage";
 import React from 'react';
 
 interface MarkdownProps {
     children: string;
+}
+
+function hashKey(value: string) {
+    let hash = 0;
+    for (let offset = 0; offset < value.length; offset++) {
+        hash = (hash * 31 + value.charCodeAt(offset)) >>> 0;
+    }
+    return hash.toString(36);
+}
+
+function markdownKey(prefix: string, match: string, offset: number) {
+    return `${prefix}-${hashKey(`${offset}:${match}`)}`;
 }
 
 export default function Markdown({ children }: MarkdownProps) {
@@ -32,35 +45,29 @@ export default function Markdown({ children }: MarkdownProps) {
 
     let elements: (string | React.JSX.Element)[] = [children];
 
-    const process = (regex: RegExp, wrapper: (match: string, i: number) => React.JSX.Element | string) => {
+    const process = (regex: RegExp, wrapper: (match: string, offset: number) => React.JSX.Element | string) => {
         const newElements: (string | React.JSX.Element)[] = [];
         elements.forEach(el => {
             if (typeof el === 'string') {
-                const parts = el.split(regex);
-                // Regex with capturing group keeps separators in split (if configured right) 
-                // but JS split doesn't always behave nicely with capturing groups for this.
-
-                // Better approach: matchAll or exec loop
-                const lastIndex = 0;
-                let match;
-                // We need to clone regex to ensure state doesn't mess up if global
-                const re = new RegExp(regex);
-
                 // Using split with capturing group: 
                 // "a **b** c".split(/(\*\*.*?\*\*)/) -> ["a ", "**b**", " c"]
 
                 const splitParts = el.split(regex);
+                const testRegex = new RegExp(regex.source, regex.flags.replace('g', ''));
+                let searchFrom = 0;
 
                 for (let i = 0; i < splitParts.length; i++) {
                     const part = splitParts[i];
+                    const offset = part ? el.indexOf(part, searchFrom) : searchFrom;
+                    if (offset >= 0) searchFrom = offset + part.length;
                     // Logic to detect if this part matches the pattern or is surrounding text
                     // If regex has capturing group, odd indices are matches (usually)
 
-                    if (regex.test(part) || (i % 2 !== 0 && splitParts.length > 1)) {
+                    if (testRegex.test(part) || (i % 2 !== 0 && splitParts.length > 1)) {
                         // It's a match/capture
                         // We need to strip markers for content? 
                         // Wrapper should handle it.
-                        newElements.push(wrapper(part, i));
+                        newElements.push(wrapper(part, offset));
                     } else {
                         if (part) newElements.push(part);
                     }
@@ -75,41 +82,41 @@ export default function Markdown({ children }: MarkdownProps) {
 
     // Code Blocks ```...```
     // Note: split regex must capture the *entire* match to preserve it in the array for processing
-    process(/```([\s\S]*?)```/g, (match, i) => {
+    process(/```([\s\S]*?)```/g, (match, offset) => {
         // match includes ```...```, we need to strip
         const content = match.slice(3, -3);
-        return <pre key={`codeblock-${i}`} className="discord-pre"><code>{content}</code></pre>;
+        return <pre key={markdownKey('codeblock', match, offset)} className="discord-pre"><code>{content}</code></pre>;
     });
 
     // Inline Code `...`
-    process(/(`[^`]+`)/g, (match, i) => {
+    process(/(`[^`]+`)/g, (match, offset) => {
         const content = match.slice(1, -1);
-        return <code key={`code-${i}`} className="discord-code">{content}</code>;
+        return <code key={markdownKey('code', match, offset)} className="discord-code">{content}</code>;
     });
 
     // Spoiler ||...||
-    process(/(\|\|.*?\|\|)/g, (match, i) => {
+    process(/(\|\|.*?\|\|)/g, (match, offset) => {
         const content = match.slice(2, -2);
-        return <span key={`spoiler-${i}`} className="discord-spoiler" title="Spoiler">{content}</span>;
+        return <span key={markdownKey('spoiler', match, offset)} className="discord-spoiler" title="Spoiler">{content}</span>;
     });
 
     // Bold **...**
-    process(/(\*\*.*?\*\*)/g, (match, i) => {
-        return <strong key={`bold-${i}`}>{match.slice(2, -2)}</strong>;
+    process(/(\*\*.*?\*\*)/g, (match, offset) => {
+        return <strong key={markdownKey('bold', match, offset)}>{match.slice(2, -2)}</strong>;
     });
 
     // Underline __...__
-    process(/(__.*?__)/g, (match, i) => {
-        return <u key={`u-${i}`}>{match.slice(2, -2)}</u>;
+    process(/(__.*?__)/g, (match, offset) => {
+        return <u key={markdownKey('u', match, offset)}>{match.slice(2, -2)}</u>;
     });
 
     // Strikethrough ~~...~~
-    process(/(~~.*?~~)/g, (match, i) => {
-        return <s key={`s-${i}`}>{match.slice(2, -2)}</s>;
+    process(/(~~.*?~~)/g, (match, offset) => {
+        return <s key={markdownKey('s', match, offset)}>{match.slice(2, -2)}</s>;
     });
 
     // Custom Emoji <:name:id> or <a:name:id>
-    process(/<(a?):(\w+):(\d+)>/g, (match, i) => {
+    process(/<(a?):(\w+):(\d+)>/g, (match, offset) => {
         // match: <a:name:id>
         // regex match array from exec/string.match: [full, a?, name, id]
         // But here we might just get the string match if using previous logic. 
@@ -122,8 +129,8 @@ export default function Markdown({ children }: MarkdownProps) {
             const ext = animated ? 'gif' : 'png';
             const url = `https://cdn.discordapp.com/emojis/${id}.${ext}`;
             return (
-                <img
-                    key={`emoji-${i}`}
+                <SmartImage
+                    key={markdownKey('emoji', match, offset)}
                     src={url}
                     alt={`:${name}:`}
                     className="discord-emoji"
@@ -135,26 +142,25 @@ export default function Markdown({ children }: MarkdownProps) {
     });
 
     // User Mention <@id> or <@!id>
-    process(/<@!?(\d+)>/g, (match, i) => {
-        return <span key={`user-${i}`} className="discord-mention">@User</span>;
+    process(/<@!?(\d+)>/g, (match, offset) => {
+        return <span key={markdownKey('user', match, offset)} className="discord-mention">@User</span>;
     });
 
     // Channel Mention <#id>
-    process(/<#(\d+)>/g, (match, i) => {
-        return <span key={`channel-${i}`} className="discord-mention">#channel</span>;
+    process(/<#(\d+)>/g, (match, offset) => {
+        return <span key={markdownKey('channel', match, offset)} className="discord-mention">#channel</span>;
     });
 
     // Role Mention <@&id>
-    process(/<@&(\d+)>/g, (match, i) => {
-        return <span key={`role-${i}`} className="discord-mention">@Role</span>;
+    process(/<@&(\d+)>/g, (match, offset) => {
+        return <span key={markdownKey('role', match, offset)} className="discord-mention">@Role</span>;
     });
 
     // Italic *...* (Simple version, ignores _ for now to avoid complexity)
-    process(/(\*.*?\*)/g, (match, i) => {
-        return <em key={`em-${i}`}>{match.slice(1, -1)}</em>;
+    process(/(\*.*?\*)/g, (match, offset) => {
+        return <em key={markdownKey('em', match, offset)}>{match.slice(1, -1)}</em>;
     });
 
     // Render array
     return <>{elements}</>;
 }
-

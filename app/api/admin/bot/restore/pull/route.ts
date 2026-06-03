@@ -92,7 +92,10 @@ function normalizeRestoreSettings(value: Partial<RestoreSettings> | undefined): 
 
   return {
     blacklistUserIds: Array.isArray(source.blacklistUserIds)
-      ? source.blacklistUserIds.map(String).map((id) => id.trim()).filter(Boolean).slice(0, 500)
+      ? source.blacklistUserIds.flatMap((id) => {
+          const trimmedId = String(id).trim();
+          return trimmedId ? [trimmedId] : [];
+        }).slice(0, 500)
       : [],
     leftServerMinDays: clampNumber(source.leftServerMinDays, 0, 365, DEFAULT_RESTORE_SETTINGS.leftServerMinDays),
     maxBatchSize: clampNumber(source.maxBatchSize, 1, 1000, DEFAULT_RESTORE_SETTINGS.maxBatchSize),
@@ -142,6 +145,7 @@ async function refreshAccessToken(user: RestoreUser) {
 
   const response = await fetch("https://discord.com/api/v10/oauth2/token", {
     method: "POST",
+    cache: "no-store",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       client_id: clientId,
@@ -173,6 +177,7 @@ async function refreshAccessToken(user: RestoreUser) {
 async function addGuildMember(token: string, guildId: string, user: RestoreUser) {
   const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${user.id}`, {
     method: "PUT",
+    cache: "no-store",
     headers: {
       Authorization: `Bot ${token}`,
       "Content-Type": "application/json",
@@ -193,6 +198,7 @@ async function addVerifyRole(token: string, guildId: string, userId: string, rol
 
   const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${userId}/roles/${roleId}`, {
     method: "PUT",
+    cache: "no-store",
     headers: {
       Authorization: `Bot ${token}`,
       "X-Audit-Log-Reason": encodeURIComponent("RepDock restore pull role sync"),
@@ -219,6 +225,7 @@ async function sendWebhookLog(webhookUrl: string, entry: RestoreLogEntry) {
   try {
     await fetch(webhookUrl, {
       method: "POST",
+      cache: "no-store",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         embeds: [
@@ -230,7 +237,7 @@ async function sendWebhookLog(webhookUrl: string, entry: RestoreLogEntry) {
               entry.userId ? { name: "User ID", value: entry.userId, inline: true } : null,
               entry.username ? { name: "User", value: entry.username, inline: true } : null,
               { name: "Status", value: entry.status, inline: true },
-            ].filter(Boolean),
+            ].flatMap((field) => field ? [field] : []),
             timestamp: entry.createdAt,
           },
         ],

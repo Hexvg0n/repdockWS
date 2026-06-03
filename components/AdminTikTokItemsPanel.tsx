@@ -1,5 +1,6 @@
 "use client";
 
+import SmartImage from "@/components/SmartImage";
 import {
   IconArrowLeft,
   IconBrandTiktok,
@@ -364,7 +365,7 @@ function TikTokItemFormPanel({
       <aside className="sticky top-6 h-fit overflow-hidden rounded-[28px] border border-white/10 bg-[#0b0c12] shadow-2xl shadow-black/30">
         <div className="aspect-[9/16] bg-white/[0.04]">
           {form.coverImage || selectedProducts[0]?.image ? (
-            <img src={getWebpImageUrl(form.coverImage || selectedProducts[0]?.image || "")} alt="" className="h-full w-full object-cover" />
+            <SmartImage src={getWebpImageUrl(form.coverImage || selectedProducts[0]?.image || "")} alt="" className="h-full w-full object-cover" />
           ) : (
             <div className="grid h-full place-items-center text-slate-600">
               <IconPhoto className="size-10" />
@@ -432,7 +433,7 @@ function ProductPicker({
         <div className="grid gap-2">
           {selectedProducts.map((product) => (
             <div key={product.id} className="grid grid-cols-[56px_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-white/10 bg-black/25 p-2">
-              <img src={getWebpImageUrl(product.image)} alt="" className="size-14 rounded-xl object-cover" />
+              <SmartImage src={getWebpImageUrl(product.image)} alt="" className="size-14 rounded-xl object-cover" />
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-white">{product.name}</p>
                 <p className="truncate text-xs text-slate-500">{product.metadata.brand} / {product.metadata.category}</p>
@@ -473,7 +474,7 @@ function ProductPicker({
                       : "border-white/10 bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.06]"
                   }`}
                 >
-                  <img src={getWebpImageUrl(product.image)} alt="" className="size-[60px] rounded-xl object-cover" />
+                  <SmartImage src={getWebpImageUrl(product.image)} alt="" className="size-[60px] rounded-xl object-cover" />
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold text-white">{product.name}</span>
                     <span className="mt-1 block truncate text-xs text-slate-500">
@@ -521,7 +522,7 @@ function TikTokItemsList({
           <article key={item.id} className="grid gap-4 rounded-3xl border border-white/10 bg-black/30 p-3 md:grid-cols-[70px_1fr_auto]">
             <div className="aspect-[9/16] overflow-hidden rounded-2xl bg-white/[0.04]">
               {item.coverImage || item.products[0]?.image ? (
-                <img src={getWebpImageUrl(item.coverImage || item.products[0]?.image || "")} alt="" className="h-full w-full object-cover" />
+                <SmartImage src={getWebpImageUrl(item.coverImage || item.products[0]?.image || "")} alt="" className="h-full w-full object-cover" />
               ) : (
                 <div className="grid h-full place-items-center text-slate-600">
                   <IconBrandTiktok className="size-7" />

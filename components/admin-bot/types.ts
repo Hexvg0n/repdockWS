@@ -42,13 +42,17 @@ export interface EmbedButton {
 
 export type ComponentsV2ButtonStyle = 1 | 2 | 3 | 4 | 5 | 6;
 
+export interface ComponentsV2DraftMeta {
+    _clientKey?: string;
+}
+
 export interface ComponentsV2Emoji {
     id?: string;
     name: string;
     animated?: boolean;
 }
 
-export interface ComponentsV2Button {
+export interface ComponentsV2Button extends ComponentsV2DraftMeta {
     type: 2;
     style: ComponentsV2ButtonStyle;
     label: string;
@@ -59,48 +63,48 @@ export interface ComponentsV2Button {
     emoji?: ComponentsV2Emoji;
 }
 
-export interface ComponentsV2TextDisplay {
+export interface ComponentsV2TextDisplay extends ComponentsV2DraftMeta {
     type: 10;
     content: string;
 }
 
-export interface ComponentsV2Separator {
+export interface ComponentsV2Separator extends ComponentsV2DraftMeta {
     type: 14;
     divider: boolean;
     spacing: 1 | 2;
 }
 
-export interface ComponentsV2Thumbnail {
+export interface ComponentsV2Thumbnail extends ComponentsV2DraftMeta {
     type: 11;
     media: { url: string };
     description?: string | null;
     spoiler?: boolean;
 }
 
-export interface ComponentsV2Section {
+export interface ComponentsV2Section extends ComponentsV2DraftMeta {
     type: 9;
     components: ComponentsV2TextDisplay[];
     accessory: ComponentsV2Button | ComponentsV2Thumbnail;
 }
 
-export interface ComponentsV2MediaGalleryItem {
+export interface ComponentsV2MediaGalleryItem extends ComponentsV2DraftMeta {
     media: { url: string };
     description?: string | null;
     spoiler?: boolean;
 }
 
-export interface ComponentsV2MediaGallery {
+export interface ComponentsV2MediaGallery extends ComponentsV2DraftMeta {
     type: 12;
     items: ComponentsV2MediaGalleryItem[];
 }
 
-export interface ComponentsV2File {
+export interface ComponentsV2File extends ComponentsV2DraftMeta {
     type: 13;
     file: { url: string };
     spoiler?: boolean;
 }
 
-export interface ComponentsV2StringSelectOption {
+export interface ComponentsV2StringSelectOption extends ComponentsV2DraftMeta {
     label: string;
     value: string;
     description?: string;
@@ -108,7 +112,7 @@ export interface ComponentsV2StringSelectOption {
     default?: boolean;
 }
 
-export interface ComponentsV2SelectMenu {
+export interface ComponentsV2SelectMenu extends ComponentsV2DraftMeta {
     type: 3 | 5 | 6 | 7 | 8;
     custom_id: string;
     placeholder?: string;
@@ -119,7 +123,7 @@ export interface ComponentsV2SelectMenu {
     channel_types?: number[];
 }
 
-export interface ComponentsV2ActionRow {
+export interface ComponentsV2ActionRow extends ComponentsV2DraftMeta {
     type: 1;
     components: Array<ComponentsV2Button | ComponentsV2SelectMenu>;
 }
@@ -132,7 +136,7 @@ export type ComponentsV2ContainerChild =
     | ComponentsV2Separator
     | ComponentsV2Section;
 
-export interface ComponentsV2Container {
+export interface ComponentsV2Container extends ComponentsV2DraftMeta {
     type: 17;
     accent_color?: number;
     spoiler?: boolean;

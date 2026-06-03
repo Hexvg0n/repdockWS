@@ -26,8 +26,8 @@ const TOOLS_PANEL_COMPONENTS = [
                     type: 2,
                     style: 2,
                     label: 'Konwertuj link',
-                    custom_id: 'tools_open_link'
-                }
+                    custom_id: 'ConverterButton'
+                },
             },
             {
                 type: 14,
@@ -46,8 +46,8 @@ const TOOLS_PANEL_COMPONENTS = [
                     type: 2,
                     style: 2,
                     label: 'Sprawdz QC',
-                    custom_id: 'tools_open_qc'
-                }
+                    custom_id: 'QCButton'
+                },
             },
             {
                 type: 14,
@@ -70,7 +70,7 @@ const TOOLS_PANEL_COMPONENTS = [
                         id: '1460396801260523726',
                         name: 'mapp'
                     },
-                    custom_id: 'tools_open_tracking'
+                    custom_id: 'TrackingButton'
                 }
             }
         ]

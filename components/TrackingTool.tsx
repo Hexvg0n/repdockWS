@@ -336,7 +336,7 @@ export function TrackingTool() {
               <div className="mt-6 grid gap-3">
                 {result.details.length > 0 ? (
                   result.details.map((event, index) => (
-                    <TimelineEvent copy={copy} event={event} first={index === 0} key={`${event.date}-${event.status}-${index}`} />
+                    <TimelineEvent copy={copy} event={event} first={index === 0} key={`${event.date}-${event.status}-${event.location}-${event.icon}`} />
                   ))
                 ) : (
                   <div className="rounded-3xl border border-white/10 bg-black/20 p-8 text-center text-sm text-slate-500">

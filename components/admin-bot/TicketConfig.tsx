@@ -1,3 +1,4 @@
+import SmartImage from "@/components/SmartImage";
 import React, { useEffect, useState } from 'react';
 import EmbedForm from './EmbedForm';
 import EmbedPreview from './EmbedPreview';
@@ -62,8 +63,10 @@ function normalizeCategories(rawCats: unknown): TicketCategory[] {
     if (typeof rawCats === 'string') {
         return rawCats
             .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean)
+            .flatMap((s) => {
+                const label = s.trim();
+                return label ? [label] : [];
+            })
             .map((label, index) => ({
                 id: `${Date.now()}-${index}`,
                 label,
@@ -132,7 +135,7 @@ function TicketBottomGraphic({
             </div>
             {imageUrl ? (
                 <div style={{ overflow: 'hidden', borderRadius: '8px', border: '1px solid var(--background-tertiary)', background: 'var(--background-tertiary)' }}>
-                    <img
+                    <SmartImage
                         alt="Podglad grafiki ticketow"
                         src={imageUrl}
                         style={{ display: 'block', width: '100%', maxHeight: '180px', objectFit: 'cover' }}
@@ -256,7 +259,7 @@ export default function TicketConfig() {
             <div className="panel scroll-styled">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h2 className="section-title" style={{ margin: 0 }}>System Ticketow</h2>
-                    <button className="btn btn-success" onClick={handleSaveConfig} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <button type="button" className="btn btn-success" onClick={handleSaveConfig} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                         <Save size={16} /> Zapisz Konfiguracje
                     </button>
                 </div>
@@ -300,7 +303,7 @@ export default function TicketConfig() {
                                         onChange={(e) => setNewCat({ ...newCat, description: e.target.value })}
                                     />
                                 </div>
-                                <button className="btn btn-primary" onClick={addCategory}>Dodaj</button>
+                                <button type="button" className="btn btn-primary" onClick={addCategory}>Dodaj</button>
                             </div>
                         </div>
 
@@ -312,7 +315,7 @@ export default function TicketConfig() {
                                         <div style={{ fontWeight: 'bold' }}>{cat.label}</div>
                                         <div className="text-small text-muted">{cat.description}</div>
                                     </div>
-                                    <button className="btn-icon-danger" onClick={() => removeCategory(cat.id)}>
+                                    <button type="button" className="btn-icon-danger" onClick={() => removeCategory(cat.id)}>
                                         <Trash2 size={16} />
                                     </button>
                                 </div>
@@ -360,13 +363,13 @@ export default function TicketConfig() {
                 <div className="divider"></div>
 
                 <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-                    <button
+                    <button type="button"
                         className={`btn ${activeTab === 'panel' ? 'btn-primary' : 'btn-outline'}`}
                         onClick={() => setActiveTab('panel')}
                     >
                         Wyglad Panelu
                     </button>
-                    <button
+                    <button type="button"
                         className={`btn ${activeTab === 'welcome' ? 'btn-primary' : 'btn-outline'}`}
                         onClick={() => setActiveTab('welcome')}
                     >
@@ -387,7 +390,7 @@ export default function TicketConfig() {
                                 Edytujesz wyglad panelu, ktory bedzie stale widoczny dla uzytkownikow.
                                 Przycisk &quot;Stworz Ticket&quot; zostanie dodany automatycznie pod tym embedem.
                             </p>
-                            <button className="btn btn-sm btn-secondary" onClick={handleSendPanel} style={{ marginTop: '10px' }}>
+                            <button type="button" className="btn btn-sm btn-secondary" onClick={handleSendPanel} style={{ marginTop: '10px' }}>
                                 <Send size={14} style={{ marginRight: '5px' }} /> Wyslij Panel na Kanal
                             </button>
                         </div>
@@ -459,7 +462,7 @@ export default function TicketConfig() {
                                         <span>▼</span>
                                     </div>
                                 ) : (
-                                    <button className="discord-btn" style={{ background: '#4f545c', color: 'white' }}>🎫 Stworz Ticket</button>
+                                    <button type="button" className="discord-btn" style={{ background: '#4f545c', color: 'white' }}>🎫 Stworz Ticket</button>
                                 )}
                             </div>
                         )}
@@ -469,4 +472,3 @@ export default function TicketConfig() {
         </div>
     );
 }
-

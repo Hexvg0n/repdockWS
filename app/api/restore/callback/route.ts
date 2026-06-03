@@ -126,7 +126,10 @@ function normalizeRestoreSettings(value: Partial<RestoreSettings> | undefined): 
 
   return {
     blacklistUserIds: Array.isArray(source.blacklistUserIds)
-      ? source.blacklistUserIds.map(String).map((id) => id.trim()).filter(Boolean).slice(0, 500)
+      ? source.blacklistUserIds.flatMap((id) => {
+          const trimmedId = String(id).trim();
+          return trimmedId ? [trimmedId] : [];
+        }).slice(0, 500)
       : [],
     leftServerMinDays: clampNumber(source.leftServerMinDays, 0, 365, DEFAULT_RESTORE_SETTINGS.leftServerMinDays),
     maxBatchSize: clampNumber(source.maxBatchSize, 1, 1000, DEFAULT_RESTORE_SETTINGS.maxBatchSize),
@@ -161,6 +164,7 @@ async function sendWebhookLog(webhookUrl: string, entry: RestoreLogEntry) {
   try {
     await fetch(webhookUrl, {
       method: "POST",
+      cache: "no-store",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         embeds: [
@@ -172,7 +176,7 @@ async function sendWebhookLog(webhookUrl: string, entry: RestoreLogEntry) {
               entry.userId ? { name: "User ID", value: entry.userId, inline: true } : null,
               entry.username ? { name: "User", value: entry.username, inline: true } : null,
               { name: "Status", value: entry.status, inline: true },
-            ].filter(Boolean),
+            ].flatMap((field) => field ? [field] : []),
             timestamp: entry.createdAt,
           },
         ],
@@ -203,6 +207,44 @@ function renderHtml(title: string, body: string, status = 200) {
       status,
       headers: { "Content-Type": "text/html; charset=utf-8" },
     },
+  );
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function renderRestorePostBridge(request: NextRequest, code: string, state: string) {
+  const action = escapeHtml(request.nextUrl.pathname);
+  const escapedCode = escapeHtml(code);
+  const escapedState = escapeHtml(state);
+
+  return new NextResponse(
+    `<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RepDock Restore</title>
+  </head>
+  <body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#0b0d13;color:#fff;font-family:Arial,sans-serif">
+    <main style="max-width:420px;padding:32px;text-align:center">
+      <h1 style="margin:0 0 12px;font-size:24px">Konczymy weryfikacje</h1>
+      <p style="margin:0 0 20px;color:#a3a3ad;line-height:1.6">Przekazujemy autoryzacje bezpieczna metoda POST.</p>
+      <form method="post" action="${action}">
+        <input type="hidden" name="code" value="${escapedCode}" />
+        <input type="hidden" name="state" value="${escapedState}" />
+        <button type="submit" style="border:0;border-radius:14px;background:#fff;color:#000;padding:12px 18px;font-weight:700">Kontynuuj</button>
+      </form>
+      <script>document.forms[0]?.requestSubmit();</script>
+    </main>
+  </body>
+</html>`,
+    { headers: { "Content-Type": "text/html; charset=utf-8" } },
   );
 }
 
@@ -417,6 +459,7 @@ async function assignVerificationRole(guildId: string, userId: string) {
     `https://discord.com/api/v10/guilds/${guildId}/members/${userId}/roles/${roleId}`,
     {
       method: "PUT",
+      cache: "no-store",
       headers: {
         Authorization: `Bot ${botToken}`,
         "X-Audit-Log-Reason": encodeURIComponent("RepDock OAuth verification"),
@@ -485,9 +528,7 @@ async function consumeRestoreState(state: string) {
   );
 }
 
-export async function GET(request: NextRequest) {
-  const code = request.nextUrl.searchParams.get("code");
-  const state = request.nextUrl.searchParams.get("state");
+async function handleRestoreCallback(request: NextRequest, code: string | null, state: string | null) {
   const clientId = process.env.DISCORD_CLIENT_ID;
   const clientSecret = process.env.DISCORD_CLIENT_SECRET;
 
@@ -507,6 +548,7 @@ export async function GET(request: NextRequest) {
 
   const tokenResponse = await fetch("https://discord.com/api/v10/oauth2/token", {
     method: "POST",
+    cache: "no-store",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       client_id: clientId,
@@ -527,6 +569,7 @@ export async function GET(request: NextRequest) {
 
   const token = (await tokenResponse.json()) as DiscordTokenResponse;
   const userResponse = await fetch("https://discord.com/api/v10/users/@me", {
+    cache: "no-store",
     headers: { Authorization: `${token.token_type} ${token.access_token}` },
   });
 
@@ -614,5 +657,28 @@ export async function GET(request: NextRequest) {
   return renderHtml(
     "Restore zapisany",
     "Dziekujemy. Twoja zgoda restore zostala zapisana. Mozesz zamknac te strone.",
+  );
+}
+
+export async function GET(request: NextRequest) {
+  const code = request.nextUrl.searchParams.get("code");
+  const state = request.nextUrl.searchParams.get("state");
+
+  if (!code || !state) {
+    return renderHtml("Restore nieudany", "Brakuje kodu autoryzacji lub parametru state.", 400);
+  }
+
+  return renderRestorePostBridge(request, code, state);
+}
+
+export async function POST(request: NextRequest) {
+  const formData = await request.formData();
+  const code = formData.get("code");
+  const state = formData.get("state");
+
+  return handleRestoreCallback(
+    request,
+    typeof code === "string" ? code : null,
+    typeof state === "string" ? state : null,
   );
 }

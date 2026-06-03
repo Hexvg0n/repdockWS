@@ -1,5 +1,6 @@
 "use client";
 
+import SmartImage from "@/components/SmartImage";
 import {
   IconAlertCircle,
   IconArrowRight,
@@ -62,6 +63,17 @@ type QCResponseMeta = {
     usfans: QCSourceMeta;
   };
 };
+
+const qcLoadingSkeletonKeys = [
+  "qc-loading-1",
+  "qc-loading-2",
+  "qc-loading-3",
+  "qc-loading-4",
+  "qc-loading-5",
+  "qc-loading-6",
+  "qc-loading-7",
+  "qc-loading-8",
+];
 
 type QCResponse = {
   data?: QCImage[];
@@ -502,7 +514,7 @@ function QCGroupCard({
       <button type="button" onClick={onOpen} className="block w-full text-left">
         <div className="relative aspect-[4/5] overflow-hidden bg-zinc-950">
           {cover ? (
-            <img
+            <SmartImage
               src={cover.photoUrl}
               alt={`${group.source} ${copy.labels.group}`}
               className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
@@ -510,7 +522,7 @@ function QCGroupCard({
             />
           ) : null}
           {third ? (
-            <img
+            <SmartImage
               src={third.photoUrl}
               alt=""
               className="absolute bottom-8 right-12 h-20 w-16 -rotate-6 rounded-xl border border-white/15 object-cover opacity-80 shadow-2xl shadow-black/40"
@@ -518,7 +530,7 @@ function QCGroupCard({
             />
           ) : null}
           {second ? (
-            <img
+            <SmartImage
               src={second.photoUrl}
               alt=""
               className="absolute bottom-4 right-4 h-24 w-20 rotate-3 rounded-2xl border border-white/15 object-cover shadow-2xl shadow-black/50"
@@ -581,9 +593,9 @@ function QCEmptyState({ copy }: { copy: QCCopy }) {
 function QCLoadingState() {
   return (
     <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {Array.from({ length: 8 }).map((_, index) => (
+      {qcLoadingSkeletonKeys.map((skeletonKey) => (
         <div
-          key={index}
+          key={skeletonKey}
           className="h-[360px] animate-pulse rounded-[28px] border border-white/10 bg-white/[0.035]"
         />
       ))}
@@ -659,7 +671,7 @@ function QCGroupViewer({
               )}
               aria-label={zoomed ? copy.labels.zoomOut : copy.labels.zoomIn}
             >
-              <img
+              <SmartImage
                 src={image.photoUrl}
                 alt={`${image.source} QC preview`}
                 className={cn(
@@ -700,7 +712,7 @@ function QCGroupViewer({
           <div className="grid max-h-[58vh] grid-cols-3 gap-2 overflow-y-auto pr-1 lg:grid-cols-2">
             {group.images.map((groupImage, index) => (
               <button
-                key={`${groupImage.photoUrl}-${index}`}
+                key={groupImage.photoUrl}
                 type="button"
                 onClick={() => onSelect(index)}
                 className={cn(
@@ -710,7 +722,7 @@ function QCGroupViewer({
                     : "border-white/10 opacity-70 hover:opacity-100",
                 )}
               >
-                <img src={groupImage.photoUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                <SmartImage src={groupImage.photoUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
               </button>
             ))}
           </div>

@@ -1,4 +1,5 @@
 "use client";
+import SmartImage from "@/components/SmartImage";
 import {
   Navbar,
   NavBody,
@@ -475,7 +476,7 @@ function FavoritesPreviewButton({
                   onClick={onNavigate}
                   className="grid grid-cols-[54px_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-2 transition hover:border-blue-300/30 hover:bg-blue-500/10"
                 >
-                  <img src={getWebpImageUrl(product.image)} alt="" className="size-14 rounded-xl object-cover" />
+                  <SmartImage src={getWebpImageUrl(product.image)} alt="" className="size-14 rounded-xl object-cover" />
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold text-white">{product.name}</span>
                     <span className="mt-1 block truncate text-xs text-slate-500">
@@ -624,7 +625,7 @@ function AuthControl({
           mobile ? "w-full justify-center px-4 py-2" : "p-1 pr-3"
         }`}
       >
-        <img
+        <SmartImage
           src={user.avatarUrl}
           alt=""
           className="size-8 rounded-full object-cover ring-1 ring-white/15"
@@ -652,7 +653,7 @@ function AuthControl({
               onClick={onNavigate}
               className="flex items-center gap-2 rounded-xl px-3 py-2 text-blue-200 transition hover:bg-blue-500/15 hover:text-white"
             >
-              <img
+              <SmartImage
                 src="/moderatoricon.png"
                 alt=""
                 className="size-6 shrink-0 object-contain"
@@ -919,7 +920,7 @@ function SettingsOption({
             } text-[11px] font-black text-white shadow-inner`}
           >
             {iconSrc ? (
-              <img src={iconSrc} alt="" className="size-full object-cover" />
+              <SmartImage src={iconSrc} alt="" className="size-full object-cover" />
             ) : (
               icon
             )}
@@ -955,7 +956,7 @@ function DesktopNav({
       <NavLink href="/w2c">{navItems[0]?.name ?? "W2C"}</NavLink>
       <NavLink href="/outfits">{navItems[1]?.name ?? "Outfits"}</NavLink>
       <div className="group pointer-events-auto relative">
-        <button className="relative flex items-center gap-1 rounded-full px-4 py-2 text-neutral-300 transition hover:bg-neutral-800 hover:text-white">
+        <button type="button" className="relative flex items-center gap-1 rounded-full px-4 py-2 text-neutral-300 transition hover:bg-neutral-800 hover:text-white">
           {toolsLabel}
           <IconChevronDown
             className="size-4 transition group-hover:rotate-180"

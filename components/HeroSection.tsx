@@ -1,5 +1,6 @@
 "use client";
 
+import SmartImage from "@/components/SmartImage";
 import styles from "./HeroSection.module.css";
 import type { CSSProperties } from "react";
 import { BentoSection } from "./BentoSection";
@@ -14,6 +15,11 @@ type Logo = {
   height: number;
   displayWidth: string;
   displayHeight?: string;
+};
+
+type MarqueeLogo = Logo & {
+  hidden: boolean;
+  marqueeKey: string;
 };
 
 const logos: Logo[] = [
@@ -91,7 +97,18 @@ const rays: CssVariables[] = [
   { "--ray-width": "20px", "--ray-opacity": "0.18", "--ray-rotation": "6deg" },
 ];
 
-const duplicatedLogos = [...logos, ...logos];
+const duplicatedLogos: MarqueeLogo[] = [
+  ...logos.map((logo) => ({
+    ...logo,
+    hidden: false,
+    marqueeKey: `${logo.src.trim()}-primary`,
+  })),
+  ...logos.map((logo) => ({
+    ...logo,
+    hidden: true,
+    marqueeKey: `${logo.src.trim()}-duplicate`,
+  })),
+];
 
 const heroCopy = {
   PL: {
@@ -147,7 +164,7 @@ function HeroBackground() {
       <div className={styles.topFade} />
 
       <div className={styles.grid}>
-        <img
+        <SmartImage
           src="https://framerusercontent.com/images/eVPQSYBoVqwchmpN78sjyYtovY.svg?width=513&height=272"
           srcSet="
             https://framerusercontent.com/images/eVPQSYBoVqwchmpN78sjyYtovY.svg?scale-down-to=512&width=513&height=272 512w,
@@ -179,17 +196,17 @@ function LogoSlider({ label }: { label: string }) {
     <section className={styles.logoSlider} aria-label={label}>
       <div className={styles.logoMarquee}>
         <ul className={styles.logoTrack}>
-          {duplicatedLogos.map((logo, index) => (
+          {duplicatedLogos.map((logo) => (
             <li
               className={styles.brandLogo}
               style={{
                 "--logo-width": logo.displayWidth,
                 "--logo-height": logo.displayHeight,
               } as CssVariables}
-              aria-hidden={index >= logos.length}
-              key={`${logo.src}-${index}`}
+              aria-hidden={logo.hidden}
+              key={logo.marqueeKey}
             >
-              <img
+              <SmartImage
                 src={logo.src}
                 width={logo.width}
                 height={logo.height}

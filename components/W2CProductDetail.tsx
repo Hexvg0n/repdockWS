@@ -1,5 +1,6 @@
 "use client";
 
+import SmartImage from "@/components/SmartImage";
 import {
   IconCameraSearch,
   IconCheck,
@@ -227,7 +228,7 @@ export function W2CProductDetail({
       globalThis.removeEventListener("storage", loadSettings);
       globalThis.removeEventListener("repdock-settings-updated", loadSettings);
     };
-  }, [product.id]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -362,7 +363,7 @@ export function W2CProductDetail({
     <main className="relative min-h-screen overflow-hidden bg-black px-4 pb-24 pt-28 text-white sm:px-6 lg:px-8">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[520px] bg-[radial-gradient(70%_45%_at_50%_0%,rgba(41,52,255,0.34),transparent_70%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[430px] overflow-hidden opacity-45 [mask-image:linear-gradient(to_bottom,black,transparent_88%)]">
-        <img
+        <SmartImage
           src="https://framerusercontent.com/images/eVPQSYBoVqwchmpN78sjyYtovY.svg?width=513&height=272"
           width="513"
           height="272"
@@ -386,7 +387,7 @@ export function W2CProductDetail({
           <div className="order-2 grid min-w-0 gap-5 lg:order-1">
             <section className="rounded-[32px] border border-white/10 bg-[#0d0e14] p-3 shadow-2xl shadow-black/30">
               <div className="grid min-h-[560px] place-items-center overflow-hidden rounded-[24px] bg-zinc-900">
-                <img
+                <SmartImage
                   src={getWebpImageUrl(selectedImage)}
                   alt={productName}
                   className="max-h-[620px] w-full object-contain p-4"
@@ -411,7 +412,7 @@ export function W2CProductDetail({
                         : "border-white/10 hover:border-white/25",
                     )}
                   >
-                    <img src={getWebpImageUrl(image)} alt="" className="h-full w-full object-cover" />
+                    <SmartImage src={getWebpImageUrl(image)} alt="" className="h-full w-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -496,7 +497,7 @@ export function W2CProductDetail({
                 onClick={recordBuy}
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-white px-4 text-sm font-black text-black transition hover:bg-blue-100"
               >
-                <img src={agentLogos[agent]} alt="" className="size-5 rounded-md object-contain" />
+                <SmartImage src={agentLogos[agent]} alt="" className="size-5 rounded-md object-contain" />
                 {copy.buyNowWith} {agent}
               </a>
               <div className="grid grid-cols-2 gap-3">
@@ -657,7 +658,7 @@ function QuickQCPanel({
 
                 return (
                   <button
-                    key={`${image.photoUrl}-${index}`}
+                    key={image.photoUrl}
                     type="button"
                     onClick={() => {
                       if (target) {
@@ -666,7 +667,7 @@ function QuickQCPanel({
                     }}
                     className="group relative aspect-square overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035] transition hover:border-blue-300/40 hover:shadow-[0_0_26px_rgba(41,52,255,0.18)]"
                   >
-                    <img
+                    <SmartImage
                       src={image.photoUrl}
                       alt={`${image.source} QC`}
                       loading="lazy"
@@ -784,7 +785,7 @@ function QuickQCViewer({
               onClick={onToggleZoom}
               className={cn("grid h-full min-h-[420px] w-full place-items-center", zoomed ? "cursor-zoom-out" : "cursor-zoom-in")}
             >
-              <img
+              <SmartImage
                 src={image.photoUrl}
                 alt={`${image.source} QC`}
                 className={cn(
@@ -825,7 +826,7 @@ function QuickQCViewer({
           <div className="grid max-h-[58vh] grid-cols-3 gap-2 overflow-y-auto pr-1 lg:grid-cols-2">
             {group.images.map((groupImage, index) => (
               <button
-                key={`${groupImage.photoUrl}-${index}`}
+                key={groupImage.photoUrl}
                 type="button"
                 onClick={() => onSelect(index)}
                 className={cn(
@@ -835,7 +836,7 @@ function QuickQCViewer({
                     : "border-white/10 opacity-70 hover:opacity-100",
                 )}
               >
-                <img src={groupImage.photoUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                <SmartImage src={groupImage.photoUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
               </button>
             ))}
           </div>
@@ -915,7 +916,7 @@ function VariantPicker({
                   )}
                 >
                   {valueImage ? (
-                    <img src={valueImage} alt="" className="size-8 rounded-xl object-cover" />
+                    <SmartImage src={valueImage} alt="" className="size-8 rounded-xl object-cover" />
                   ) : null}
                   <span>{value.valueNameTrans || value.valueName}</span>
                   {active ? <IconCheck className="size-4 text-blue-100" /> : null}
@@ -958,7 +959,7 @@ function ProductDetailImages({
       <div className="grid w-full gap-4">
         {images.map((image) => (
           <div key={image} className="overflow-hidden rounded-[24px] border border-white/10 bg-[#0d0e14] shadow-2xl shadow-black/20">
-            <img src={image} alt="" loading="lazy" className="w-full object-contain" />
+            <SmartImage src={image} alt="" loading="lazy" className="w-full object-contain" />
           </div>
         ))}
       </div>

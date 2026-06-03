@@ -1,5 +1,6 @@
 "use client";
 
+import SmartImage from "@/components/SmartImage";
 import {
   IconArrowRight,
   IconBrandTiktok,
@@ -547,7 +548,7 @@ function TikTokItemCard({
     >
       <div className="relative aspect-[9/16] overflow-hidden bg-white/[0.04]">
         {cover ? (
-          <img
+          <SmartImage
             src={getWebpImageUrl(cover)}
             alt=""
             className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
@@ -579,7 +580,7 @@ function TikTokItemCard({
       <div className="grid gap-3 p-4">
         <div className="flex -space-x-2">
           {item.products.slice(0, 4).map((product) => (
-            <img
+            <SmartImage
               key={product.productId}
               src={getWebpImageUrl(product.image)}
               alt=""
@@ -631,7 +632,7 @@ function TikTokItemModal({
 
         <div className="relative grid min-h-[62vh] place-items-center overflow-hidden bg-black md:min-h-[720px]">
           {cover ? (
-            <img src={getWebpImageUrl(cover)} alt="" className="h-full min-h-[62vh] w-full object-cover md:max-h-[92vh]" />
+            <SmartImage src={getWebpImageUrl(cover)} alt="" className="h-full min-h-[62vh] w-full object-cover md:max-h-[92vh]" />
           ) : (
             <IconBrandTiktok className="size-16 text-slate-700" />
           )}
@@ -677,7 +678,7 @@ function TikTokItemModal({
                   className="group grid grid-cols-[74px_minmax(0,1fr)_auto] items-center gap-3 rounded-3xl border border-white/10 bg-white/[0.035] p-3 transition hover:border-blue-300/30 hover:bg-blue-500/10"
                 >
                   <div className="aspect-square overflow-hidden rounded-2xl bg-white/[0.04]">
-                    <img src={getWebpImageUrl(product.image)} alt="" className="h-full w-full object-cover" />
+                    <SmartImage src={getWebpImageUrl(product.image)} alt="" className="h-full w-full object-cover" />
                   </div>
                   <div className="min-w-0">
                     <h3 className="line-clamp-2 text-sm font-semibold text-white">{product.name}</h3>
@@ -802,7 +803,7 @@ function SubmitTikTokItemModal({
           <div className="sticky top-5">
             <div className="aspect-[9/16] overflow-hidden rounded-[28px] bg-white/[0.04]">
               {form.coverImage || selectedProducts[0]?.image ? (
-                <img
+                <SmartImage
                   src={getWebpImageUrl(form.coverImage || selectedProducts[0]?.image || "")}
                   alt=""
                   className="h-full w-full object-cover"
@@ -883,7 +884,7 @@ function ProductPicker({
         <div className="grid gap-2">
           {selectedProducts.map((product) => (
             <div key={product.id} className="grid grid-cols-[56px_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-2">
-              <img src={getWebpImageUrl(product.image)} alt="" className="size-14 rounded-xl object-cover" />
+              <SmartImage src={getWebpImageUrl(product.image)} alt="" className="size-14 rounded-xl object-cover" />
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-white">{product.name}</p>
                 <p className="truncate text-xs text-slate-500">{product.metadata.brand} / {product.metadata.category}</p>
@@ -931,7 +932,7 @@ function ProductPicker({
                     : "border-white/10 bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.06]",
                 )}
               >
-                <img src={getWebpImageUrl(product.image)} alt="" className="size-[60px] rounded-xl object-cover" />
+                <SmartImage src={getWebpImageUrl(product.image)} alt="" className="size-[60px] rounded-xl object-cover" />
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-semibold text-white">{product.name}</span>
                   <span className="mt-1 block truncate text-xs text-slate-500">
@@ -1022,7 +1023,7 @@ function AuthorAvatar({
 
   if (item.createdByAvatarUrl) {
     return (
-      <img
+      <SmartImage
         src={item.createdByAvatarUrl}
         alt=""
         className={cn(dimensions, "shrink-0 border border-white/10 bg-white/[0.04] object-cover")}

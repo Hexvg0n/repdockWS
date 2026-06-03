@@ -120,7 +120,10 @@ async function getRestoreStats() {
     const location = user.analytics?.location;
     return Boolean(location?.country || location?.countryName || location?.city || location?.region);
   }).length;
-  const uniqueIpHashes = new Set(users.map((user) => user.analytics?.ipHash).filter(Boolean)).size;
+  const uniqueIpHashes = new Set(users.flatMap((user) => {
+    const ipHash = user.analytics?.ipHash;
+    return ipHash ? [ipHash] : [];
+  })).size;
 
   return {
     analytics: {
@@ -209,7 +212,7 @@ function topEntries(values: Record<string, number>, limit = 6) {
 
 function formatCity(location?: RestoreUserAnalytics["location"]) {
   if (!location?.city && !location?.region) return "Unknown";
-  return [location.city, location.region, location.country || location.countryName].filter(Boolean).join(", ");
+  return [location.city, location.region, location.country || location.countryName].flatMap((part) => part ? [part] : []).join(", ");
 }
 
 function normalizeRestoreSettings(value: Partial<RestoreSettings> | undefined): RestoreSettings {
@@ -217,7 +220,10 @@ function normalizeRestoreSettings(value: Partial<RestoreSettings> | undefined): 
 
   return {
     blacklistUserIds: Array.isArray(source.blacklistUserIds)
-      ? source.blacklistUserIds.map(String).map((id) => id.trim()).filter(Boolean).slice(0, 500)
+      ? source.blacklistUserIds.flatMap((id) => {
+          const trimmedId = String(id).trim();
+          return trimmedId ? [trimmedId] : [];
+        }).slice(0, 500)
       : [],
     leftServerMinDays: clampNumber(source.leftServerMinDays, 0, 365, DEFAULT_RESTORE_SETTINGS.leftServerMinDays),
     maxBatchSize: clampNumber(source.maxBatchSize, 1, 1000, DEFAULT_RESTORE_SETTINGS.maxBatchSize),

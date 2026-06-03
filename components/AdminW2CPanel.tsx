@@ -1,5 +1,6 @@
 "use client";
 
+import SmartImage from "@/components/SmartImage";
 import {
   IconCategory,
   IconBrandTiktok,
@@ -475,7 +476,7 @@ export function AdminW2CPanel() {
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[520px] bg-[radial-gradient(70%_45%_at_50%_0%,rgba(41,52,255,0.34),transparent_70%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[430px] overflow-hidden opacity-40 [mask-image:linear-gradient(to_bottom,black,transparent_88%)]">
-        <img
+        <SmartImage
           src="https://framerusercontent.com/images/eVPQSYBoVqwchmpN78sjyYtovY.svg?width=513&height=272"
           width="513"
           height="272"
@@ -840,7 +841,7 @@ function ProductList({
             className="grid gap-4 rounded-3xl border border-white/10 bg-black/30 p-3 md:grid-cols-[86px_1fr_auto]"
           >
             <div className="aspect-square overflow-hidden rounded-2xl bg-white/[0.04]">
-              <img src={product.image} alt="" className="h-full w-full object-cover" />
+              <SmartImage src={product.image} alt="" className="h-full w-full object-cover" />
             </div>
             <div className="min-w-0 self-center">
               <h3 className="truncate text-base font-semibold text-white">{product.name}</h3>
@@ -1427,7 +1428,7 @@ function ProductPreview({ form }: { form: ProductForm }) {
     <aside className="sticky top-6 h-fit rounded-[28px] border border-white/10 bg-[#0b0c12] p-4 shadow-2xl shadow-black/30">
       <div className="relative aspect-[1/1.08] overflow-hidden rounded-[22px] bg-white/[0.04]">
         {form.image ? (
-          <img src={form.image} alt="" className="h-full w-full object-cover" />
+          <SmartImage src={form.image} alt="" className="h-full w-full object-cover" />
         ) : (
           <div className="grid h-full place-items-center text-slate-600">
             <IconPhoto className="size-12" />

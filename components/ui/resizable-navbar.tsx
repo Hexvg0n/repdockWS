@@ -1,4 +1,5 @@
 "use client";
+import SmartImage from "@/components/SmartImage";
 import { cn } from "@/lib/utils";
 import { IconMenu2, IconX } from "@tabler/icons-react";
 import {
@@ -123,7 +124,7 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
           onMouseEnter={() => setHovered(idx)}
           onClick={onItemClick}
           className="relative px-4 py-2 text-neutral-300"
-          key={`link-${idx}`}
+          key={item.link || item.name}
           href={item.link}
         >
           {hovered === idx && (
@@ -229,7 +230,7 @@ export const NavbarLogo = () => {
       href="/"
       className="relative z-20 mr-4 flex items-center space-x-2 px-2 py-1 text-sm font-normal text-white"
     >
-      <img
+      <SmartImage
         src="/RepDock-25.png"
         alt="logo"
         width={30}

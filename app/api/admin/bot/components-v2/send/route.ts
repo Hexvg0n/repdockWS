@@ -135,6 +135,7 @@ export async function POST(request: Request) {
 
     const response = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
       method: "POST",
+      cache: "no-store",
       headers,
       body,
     });

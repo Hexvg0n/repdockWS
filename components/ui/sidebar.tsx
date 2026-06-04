@@ -86,21 +86,29 @@ export const DesktopSidebar = ({
   ...props
 }: React.ComponentProps<typeof motion.div>) => {
   const { animate, open, setOpen } = useSidebar();
+  const sidebarWidth = animate ? (open ? 280 : 76) : 280;
 
   return (
     <motion.div
       animate={{
-        width: animate ? (open ? "280px" : "76px") : "280px",
+        width: sidebarWidth,
       }}
-      className={cn(
-        "sticky top-0 hidden h-screen min-h-screen shrink-0 flex-col border-r border-white/10 bg-[#090a10]/95 px-3 py-4 md:flex",
-        className,
-      )}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-      {...props}
+      className="hidden shrink-0 md:block"
     >
-      {children}
+      <motion.div
+        animate={{
+          width: sidebarWidth,
+        }}
+        className={cn(
+          "fixed inset-y-0 left-0 z-40 hidden h-screen shrink-0 flex-col border-r border-white/10 bg-[#090a10]/95 px-3 py-4 md:flex",
+          className,
+        )}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        {...props}
+      >
+        {children}
+      </motion.div>
     </motion.div>
   );
 };
@@ -200,23 +208,27 @@ export const AdminLogo = ({ compact }: { compact: boolean }) => {
     <a
       href="/"
       className={cn(
-        "relative z-20 flex items-center overflow-hidden rounded-2xl py-1 text-sm font-normal text-white",
-        compact ? "translate-x-1 justify-center gap-0 px-2" : "gap-3 px-2",
+        "relative z-20 flex h-10 min-w-0 items-center overflow-hidden rounded-2xl text-sm font-normal text-white",
+        compact ? "ml-1 size-10 flex-none justify-center p-0" : "w-full justify-start gap-3 px-1",
       )}
     >
       {/* <div className="h-6 w-7 shrink-0 rounded-tl-xl rounded-tr-sm rounded-br-xl rounded-bl-sm bg-white shadow-[0_0_24px_rgba(41,52,255,0.32)]" /> */}
-      <SmartImage
-        src="/RepDock-25.png"
-        alt="logo"
-        width={28}
-        height={28}
-        className="size-7 shrink-0 object-contain"
-      />
+      <span className="grid size-8 flex-none place-items-center">
+        <SmartImage
+          src="/RepDock-25.png"
+          alt="logo"
+          width={28}
+          height={28}
+          sizes="28px"
+          className="size-7 object-contain"
+          style={{ height: 28, width: 28 }}
+        />
+      </span>
       <motion.span
         animate={{ maxWidth: compact ? 0 : 180, opacity: compact ? 0 : 1 }}
         initial={false}
         transition={{ duration: 0.16, ease: "easeOut" }}
-        className="overflow-hidden whitespace-pre font-semibold text-white"
+        className="min-w-0 flex-none overflow-hidden whitespace-nowrap font-semibold text-white"
       >
         RepDock Admin
       </motion.span>

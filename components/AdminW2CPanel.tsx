@@ -102,6 +102,18 @@ export function AdminW2CPanel() {
   }, []);
 
   const categoryOptions = useMemo(() => categories.map((category) => category.name), [categories]);
+  const brandOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          products.flatMap((product) => {
+            const brand = product.metadata.brand.trim();
+            return brand ? [brand] : [];
+          }),
+        ),
+      ).sort((left, right) => left.localeCompare(right)),
+    [products],
+  );
 
   const readyToSave = useMemo(
     () =>
@@ -493,6 +505,7 @@ export function AdminW2CPanel() {
           <section className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
             {activeTab === "products" ? (
               <ProductsPage
+                brandOptions={brandOptions}
                 categories={categoryOptions}
                 deletingId={deletingId}
                 editingProductId={editingProductId}
@@ -544,6 +557,7 @@ export function AdminW2CPanel() {
 }
 
 function ProductsPage({
+  brandOptions,
   categories,
   deletingId,
   editingProductId,
@@ -567,6 +581,7 @@ function ProductsPage({
   onSave,
   onUpdateField,
 }: Readonly<{
+  brandOptions: string[];
   categories: string[];
   deletingId: string | null;
   editingProductId: string | null;
@@ -619,6 +634,7 @@ function ProductsPage({
       {mode === "form" ? (
         <div className="grid gap-6 lg:grid-cols-[1fr_390px]">
           <ProductFormPanel
+            brandOptions={brandOptions}
             categories={categories}
             editing={Boolean(editingProductId)}
             form={form}
@@ -650,6 +666,7 @@ function ProductsPage({
 }
 
 function ProductFormPanel({
+  brandOptions,
   categories,
   editing,
   form,
@@ -665,6 +682,7 @@ function ProductFormPanel({
   onSave,
   onUpdateField,
 }: Readonly<{
+  brandOptions: string[];
   categories: string[];
   editing: boolean;
   form: ProductForm;
@@ -770,6 +788,7 @@ function ProductFormPanel({
             value={form.brand}
             onChange={(value) => onUpdateField("brand", value)}
             placeholder="Nike, Supreme, Stussy..."
+            suggestions={brandOptions}
           />
           <SelectInput
             label="Category"
@@ -1377,14 +1396,19 @@ function TextInput({
   label,
   onChange,
   placeholder,
+  suggestions,
   value,
 }: {
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   label: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  suggestions?: string[];
   value: string;
 }) {
+  const suggestionOptions = suggestions ?? [];
+  const listId = suggestionOptions.length ? `w2c-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-suggestions` : undefined;
+
   return (
     <label className="grid gap-2 text-sm">
       <span className="font-medium text-slate-300">{label}</span>
@@ -1392,9 +1416,17 @@ function TextInput({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         inputMode={inputMode}
+        list={listId}
         placeholder={placeholder}
         className="h-11 min-w-0 rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-white outline-none transition placeholder:text-slate-600 focus:border-blue-400/60 focus:bg-white/[0.07]"
       />
+      {listId ? (
+        <datalist id={listId}>
+          {suggestionOptions.map((suggestion) => (
+            <option key={suggestion} value={suggestion} />
+          ))}
+        </datalist>
+      ) : null}
     </label>
   );
 }

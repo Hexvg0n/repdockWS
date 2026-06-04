@@ -107,6 +107,8 @@ const w2cCopy = {
       reset: "Resetuj",
       seasonDescription: "Użyj tagów sezonu dodanych w panelu admina.",
       seasonTitle: "Sezon",
+      showLess: "Pokaz mniej",
+      showMore: "Pokaz wiecej",
       sortDescription: "Zmień kolejność produktów.",
       sortLabels: {
         newest: "Najnowsze",
@@ -164,6 +166,8 @@ const w2cCopy = {
       reset: "Reset",
       seasonDescription: "Use season tags added in the admin panel.",
       seasonTitle: "Season",
+      showLess: "Show less",
+      showMore: "Show more",
       sortDescription: "Change how products are ordered.",
       sortLabels: {
         newest: "Newest",
@@ -599,7 +603,7 @@ export function W2CCatalog() {
               </Button>
             </div>
 
-            <div className="flex gap-2 overflow-x-auto pb-1">
+            <div className="flex flex-wrap justify-center gap-2 pb-1">
               {categories.map((category) => (
                 <button
                   key={category}
@@ -608,7 +612,7 @@ export function W2CCatalog() {
                     setFilters((current) => ({ ...current, category }))
                   }
                   className={cn(
-                    "relative shrink-0 overflow-hidden rounded-full border px-4 py-2 text-sm font-semibold transition",
+                    "relative overflow-hidden rounded-full border px-4 py-2 text-sm font-semibold transition",
                     filters.category === category
                       ? "border-blue-400/50 bg-gradient-to-b from-blue-500/25 to-blue-700/15 text-white shadow-[0_8px_24px_rgba(41,52,255,0.22)]"
                       : "border-white/10 bg-white/[0.03] text-slate-300 hover:border-white/20 hover:bg-white/[0.07] hover:text-white",
@@ -902,9 +906,12 @@ function FilterPanel({
             title={copy.filter.brandTitle}
           >
             <FilterOptionGrid
+              collapsedLimit={8}
               iconForOption={() => <IconBuildingStore className="size-4" />}
               labels={copy.filter.optionLabels}
               options={brands}
+              showLessLabel={copy.filter.showLess}
+              showMoreLabel={copy.filter.showMore}
               value={filters.brand}
               onChange={(brand) => onChange((current) => ({ ...current, brand }))}
             />
@@ -1007,23 +1014,38 @@ function FilterSection({
 }
 
 function FilterOptionGrid({
+  collapsedLimit,
   iconForOption,
   labels = {},
   options,
+  showLessLabel,
+  showMoreLabel,
   value,
   onChange,
 }: Readonly<{
+  collapsedLimit?: number;
   iconForOption?: (option: string) => React.ReactNode;
   labels?: Record<string, string>;
   options: string[];
+  showLessLabel?: string;
+  showMoreLabel?: string;
   value: string;
   onChange: (value: string) => void;
 }>) {
+  const [expanded, setExpanded] = useState(false);
   const visibleOptions = options.length ? options : ["All"];
+  const limit = collapsedLimit ?? visibleOptions.length;
+  const canCollapse = visibleOptions.length > limit;
+  const baseOptions = canCollapse && !expanded ? visibleOptions.slice(0, limit) : visibleOptions;
+  const optionsToRender =
+    canCollapse && !expanded && value !== "All" && !baseOptions.includes(value)
+      ? [...baseOptions, value]
+      : baseOptions;
+  const hiddenCount = Math.max(visibleOptions.length - optionsToRender.length, 0);
 
   return (
     <div className="grid grid-cols-2 gap-2">
-      {visibleOptions.map((option) => (
+      {optionsToRender.map((option) => (
         <button
           key={option}
           type="button"
@@ -1055,6 +1077,24 @@ function FilterOptionGrid({
           </span>
         </button>
       ))}
+      {canCollapse ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((current) => !current)}
+          className="relative min-h-12 overflow-hidden rounded-2xl border border-dashed border-white/15 bg-white/[0.025] px-3 py-2 text-left text-sm font-semibold text-slate-300 transition hover:border-blue-300/35 hover:bg-blue-500/10 hover:text-white"
+        >
+          <span className="flex items-center gap-2.5">
+            <span className="grid size-7 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-400">
+              <IconFilter className="size-4" />
+            </span>
+            <span>
+              {expanded
+                ? showLessLabel ?? "Show less"
+                : `${showMoreLabel ?? "Show more"}${hiddenCount > 0 ? ` (${hiddenCount})` : ""}`}
+            </span>
+          </span>
+        </button>
+      ) : null}
     </div>
   );
 }

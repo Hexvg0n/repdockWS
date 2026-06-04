@@ -43,6 +43,7 @@ type ACBuyQCItem = {
   createTime?: unknown;
   addTime?: unknown;
   skuId?: unknown;
+  skuCode?: unknown;
   skuName?: unknown;
 };
 
@@ -214,7 +215,48 @@ const errorResult = (error: unknown): SourceResult => ({
   },
 });
 
-async function fetchACBuyQC(productData: ProductData): Promise<SourceResult> {
+function mapACBuyImages(rawItems: unknown[]): QCImage[] {
+  return rawItems.flatMap((item): QCImage[] => {
+    if (!isObject(item)) return [];
+
+    const typed = item as ACBuyQCItem;
+    const photoUrl = normalizeImageUrl(typed.photoUrl ?? typed.url ?? typed.imgUrl);
+    if (!photoUrl) return [];
+
+    return [{
+      photoUrl,
+      createTime: asString(typed.createTime ?? typed.addTime),
+      skuId: asString(typed.skuCode ?? typed.skuId ?? typed.skuName) ?? "Inne",
+      source: "ACBuy",
+    }];
+  });
+}
+
+async function fetchACBuyPublicPhotosQC(productData: ProductData): Promise<SourceResult> {
+  try {
+    const targetUrl = new URL("https://www.acbuy.com/prefix-api/store-product/product/api/item/Photos");
+    targetUrl.searchParams.set("goodsId", `${productData.platformCode}${productData.itemId}`);
+
+    const data = await fetchJson<{ code?: unknown; data?: unknown; success?: unknown }>(targetUrl, {
+      headers: {
+        Accept: "*/*",
+        "Cache-Control": "no-cache",
+        "User-Agent": "PostmanRuntime/7.45.0",
+      },
+    });
+
+    if (data.code !== 200 && data.success !== true) {
+      return errorResult(new UpstreamError("ACBuy photos API returned unsuccessful response"));
+    }
+
+    return okResult(mapACBuyImages(Array.isArray(data.data) ? data.data : []));
+  } catch (error) {
+    console.error("ACBuy public photos fetch failed:", error);
+    return errorResult(error);
+  }
+}
+
+async function fetchACBuyOpenApiQC(productData: ProductData): Promise<SourceResult> {
   const appId = process.env.ACBUY_APP_ID;
   const secretKey = process.env.ACBUY_SECRET_KEY;
 
@@ -244,26 +286,26 @@ async function fetchACBuyQC(productData: ProductData): Promise<SourceResult> {
     });
 
     const rawItems = Array.isArray(data.data) ? data.data : [];
-    const images = rawItems.flatMap((item): QCImage[] => {
-      if (!isObject(item)) return [];
-
-      const typed = item as ACBuyQCItem;
-      const photoUrl = normalizeImageUrl(typed.photoUrl ?? typed.url ?? typed.imgUrl);
-      if (!photoUrl) return [];
-
-      return [{
-        photoUrl,
-        createTime: asString(typed.createTime ?? typed.addTime),
-        skuId: asString(typed.skuId ?? typed.skuName) ?? "Inne",
-        source: "ACBuy",
-      }];
-    });
-
-    return okResult(images);
+    return okResult(mapACBuyImages(rawItems));
   } catch (error) {
-    console.error("ACBuy QC fetch failed:", error);
+    console.error("ACBuy openapi QC fetch failed:", error);
     return errorResult(error);
   }
+}
+
+async function fetchACBuyQC(productData: ProductData): Promise<SourceResult> {
+  const publicPhotos = await fetchACBuyPublicPhotosQC(productData);
+
+  if (publicPhotos.meta.ok || publicPhotos.images.length > 0) {
+    return publicPhotos;
+  }
+
+  const fallback = await fetchACBuyOpenApiQC(productData);
+  if (fallback.meta.skipped) {
+    return publicPhotos;
+  }
+
+  return fallback;
 }
 
 async function fetchUSFansQC(productData: ProductData): Promise<SourceResult> {

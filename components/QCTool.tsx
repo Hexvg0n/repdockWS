@@ -89,9 +89,9 @@ const sourceLabels: Record<SourceName, string> = {
 };
 
 const sourceAccent: Record<SourceName, string> = {
-  ACBuy: "from-emerald-300 to-teal-500",
-  CNFans: "from-violet-300 to-indigo-500",
-  USFans: "from-sky-300 to-blue-500",
+  ACBuy: "from-emerald-600 to-teal-700",
+  CNFans: "from-red-700 to-indigo-800 ",
+  USFans: "from-orange-500 to-orange-600",
 };
 
 const qcCopy = {
@@ -392,7 +392,7 @@ export function QCTool() {
   );
 }
 
-function ProductMetaCard({ copy, meta }: { copy: QCCopy; meta: QCResponseMeta }) {
+function ProductMetaCard({ copy, meta }: Readonly<{ copy: QCCopy; meta: QCResponseMeta }>) {
   return (
     <section className="grid gap-4 rounded-[32px] border border-white/10 bg-white/[0.035] p-5 shadow-2xl shadow-black/25 backdrop-blur-xl lg:grid-cols-[minmax(0,1fr)_auto]">
       <div className="min-w-0">
@@ -612,7 +612,7 @@ function QCGroupViewer({
   onSelect,
   onToggleZoom,
   zoomed,
-}: {
+}: Readonly<{
   copy: QCCopy;
   group: QCGroup;
   image: QCImage;
@@ -621,7 +621,7 @@ function QCGroupViewer({
   onSelect: (imageIndex: number) => void;
   onToggleZoom: () => void;
   zoomed: boolean;
-}) {
+}>) {
   const previousIndex = imageIndex === 0 ? group.images.length - 1 : imageIndex - 1;
   const nextIndex = imageIndex === group.images.length - 1 ? 0 : imageIndex + 1;
 

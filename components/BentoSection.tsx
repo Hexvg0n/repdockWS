@@ -107,14 +107,22 @@ const itemMeta = [
 ];
 
 const agentIcons = {
-  DHL: "/agents/DHL_logo.jpg",
   KAKOBUY: "/agents/kako_icon.png",
   BBDBUY: "/agents/BBDBUY_icon.png",
   USFANS: "/agents/usfans_icon.png",
   OOPBUY: "/agents/oop_icon.png",
   ACBUY: "/agents/acb_icon.png",
-  WEIDIAN: "/agents/weidian_logo.png"
+  WEIDIAN: "/agents/weidian_logo.png",
 } as const;
+
+const courierIcons = [
+  { label: "InPost", src: "/couriers/inpost.png" },
+  { label: "DPD", src: "/couriers/dpd.png" },
+  { label: "DHL", src: "/couriers/DHL.png" },
+  { label: "FedEx", src: "/couriers/fedex.png" },
+  { label: "UPS", src: "/couriers/ups.png" },
+  { label: "Poczta Polska", src: "/couriers/poczta_polska.png" },
+] as const;
 
 export function BentoSection() {
   const copy = useLanguageCopy(bentoCopy);
@@ -135,7 +143,9 @@ export function BentoSection() {
                 <h3 className={styles.cardTitle}>{text.title}</h3>
               </div>
 
-              <p className={styles.description}>{text.description}</p>
+              <p className={`${styles.description} ${item.visual === "workflow" ? styles.descriptionWide : ""}`}>
+                {text.description}
+              </p>
               <CardVisual type={item.visual} copy={copy.visual} />
             </article>
           );
@@ -244,12 +254,9 @@ function CardVisual({
 
   return (
     <div className={styles.trackingVisual} aria-hidden="true">
-      <span>{copy.warehouse}</span>
-      <span>{copy.qcPhotos}</span>
-      <span>{copy.international}</span>
-      <span>{copy.delivery}</span>
-      <AgentBadge color="blue" label="WEIDIAN" src={agentIcons.WEIDIAN} />
-      <AgentBadge color="pink" label="DHL" src={agentIcons.DHL} />
+      {courierIcons.map((courier) => (
+        <CourierTile key={courier.label} label={courier.label} src={courier.src} />
+      ))}
     </div>
   );
 }
@@ -274,5 +281,27 @@ function AgentBadge({
       )}
       <strong>{label}</strong>
     </span>
+  );
+}
+
+function CourierTile({
+  label,
+  src,
+}: Readonly<{
+  label: string;
+  src: string;
+}>) {
+  return (
+    <div className={styles.courierTile}>
+      <SmartImage
+        className={styles.courierImage}
+        src={src}
+        alt=""
+        width={180}
+        height={72}
+        sizes="130px"
+      />
+      <strong>{label}</strong>
+    </div>
   );
 }

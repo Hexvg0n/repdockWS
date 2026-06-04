@@ -117,7 +117,7 @@
 
 .cardSide {
   grid-column: span 4;
-  min-height: 345px;
+  min-height: 430px;
 }
 
 .cardHeader {
@@ -160,6 +160,11 @@
   line-height: 1.55;
 }
 
+.descriptionWide {
+  max-width: none;
+  white-space: nowrap;
+}
+
 .converterVisual,
 .workflowVisual,
 .calculatorVisual,
@@ -186,10 +191,10 @@
 }
 
 .trackingVisual {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  max-width: 300px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  height: 244px;
 }
 
 .badgeTop,
@@ -505,6 +510,44 @@
   font-size: 13px;
 }
 
+.courierTile {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  align-items: center;
+  gap: 2px;
+  overflow: hidden;
+  border: 1px solid rgba(230, 236, 255, 0.09);
+  border-radius: 12px;
+  padding: 2px;
+  color: #f5f7ff;
+  background: rgba(13, 15, 25, 0.94);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 18px 34px rgba(0, 0, 0, 0.28);
+}
+
+.courierTile strong {
+  overflow: hidden;
+  flex: 1 1 auto;
+  max-width: 100%;
+  color: rgba(245, 247, 255, 0.88);
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: 0;
+  text-wrap: balance;
+  white-space: normal;
+}
+
+.courierImage {
+  display: block;
+  height: 72px;
+  flex: 0 0 58px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.28));
+}
+
 @keyframes bentoSectionAppear {
   from {
     opacity: 0.001;
@@ -597,6 +640,10 @@
     font-size: 14px;
   }
 
+  .descriptionWide {
+    white-space: normal;
+  }
+
   .converterVisual,
   .workflowVisual,
   .calculatorVisual,
@@ -628,7 +675,7 @@
   }
 
   .trackingVisual {
-    max-width: none;
+    height: auto;
   }
 
   .badgeTop {
@@ -700,5 +747,19 @@
 
   .trackingVisual .agentBadge {
     min-width: 0;
+  }
+
+  .courierTile {
+    min-height: 92px;
+  }
+
+  .courierTile strong {
+    font-size: 14px;
+  }
+
+  .courierImage {
+    width: 58px;
+    height: 42px;
+    flex-basis: 58px;
   }
 }

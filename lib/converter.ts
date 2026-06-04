@@ -224,6 +224,8 @@ const getHostname = (inputUrl: string): string | null => {
 const hostMatches = (hostname: string, allowedHost: string): boolean =>
   hostname === allowedHost || hostname.endsWith(`.${allowedHost}`);
 
+const escapeRegex = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+
 export function getConverterAgents() {
   return Object.entries(middlemen).map(([key, { name }]) => ({ key, name }));
 }
@@ -395,6 +397,32 @@ const convertMiddlemanToOriginal = (url: string): string | null => {
     if (parsed.platformCode && middleman.reverseMapping) {
       const platform = middleman.reverseMapping[parsed.platformCode];
       if (platform) return buildOriginalUrl(platform, parsed.itemID);
+
+      const adjacentMatch = parseAdjacentReverseMapping(url, middleman.reverseMapping);
+      if (adjacentMatch) return buildOriginalUrl(adjacentMatch.platform, adjacentMatch.itemID);
+    }
+  }
+
+  return null;
+};
+
+const parseAdjacentReverseMapping = (
+  url: string,
+  reverseMapping: Record<string, PlatformName>,
+): { itemID: string; platform: PlatformName } | null => {
+  const decodedUrl = safeDecodeURIComponent(url);
+  const codes = Object.keys(reverseMapping).sort((first, second) => second.length - first.length);
+
+  for (const code of codes) {
+    const pattern = new RegExp(`${escapeRegex(code)}(?<itemID>\\d{4,})`, "i");
+    const match = pattern.exec(decodedUrl);
+    const itemID = match?.groups?.itemID;
+
+    if (itemID) {
+      return {
+        itemID,
+        platform: reverseMapping[code],
+      };
     }
   }
 

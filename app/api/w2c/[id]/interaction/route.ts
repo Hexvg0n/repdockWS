@@ -1,8 +1,10 @@
 import { randomUUID } from "node:crypto";
 
+import type { Collection } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
 
 import { getMongoClient } from "@/lib/mongodb";
+import { getDayKey, getWeekKey } from "@/lib/w2c-interaction-periods";
 import { buildW2CProductFilter } from "@/lib/w2c-products";
 import { ensureW2CIndexes } from "@/lib/w2c-indexes";
 import type { W2CProduct } from "@/types/w2c";
@@ -89,16 +91,21 @@ export async function POST(
     { upsert: true },
   );
 
-  const increments: Record<string, 1> = {};
+  const increments = {
+    allTimeViews: 0,
+    purchases: 0,
+    todayViews: 0,
+    weekViews: 0,
+  };
 
   if (body.type === "buy") {
     if (inserted.upsertedCount > 0) {
-      increments["metadata.purchases"] = 1;
+      increments.purchases = 1;
     }
   } else if (inserted.upsertedCount > 0) {
-    increments["metadata.clicks.allTime"] = 1;
-    increments["metadata.clicks.today"] = 1;
-    increments["metadata.clicks.week"] = 1;
+    increments.allTimeViews = 1;
+    increments.todayViews = 1;
+    increments.weekViews = 1;
   } else {
     const [dayUpdate, weekUpdate] = await Promise.all([
       interactions.updateOne(
@@ -112,25 +119,107 @@ export async function POST(
     ]);
 
     if (dayUpdate.modifiedCount > 0) {
-      increments["metadata.clicks.today"] = 1;
+      increments.todayViews = 1;
     }
 
     if (weekUpdate.modifiedCount > 0) {
-      increments["metadata.clicks.week"] = 1;
+      increments.weekViews = 1;
     }
   }
 
-  if (Object.keys(increments).length > 0) {
-    await products.updateOne(buildW2CProductFilter(id), { $inc: increments });
+  if (hasAnyIncrement(increments)) {
+    await updateProductInteractionCounters(products, id, dayKey, weekKey, increments);
   }
+
+  const responseIncrements = buildResponseIncrements(increments);
 
   return buildInteractionResponse({
     counted:
-      increments["metadata.clicks.allTime"] === 1 ||
-      increments["metadata.purchases"] === 1,
-    increments,
+      increments.allTimeViews === 1 ||
+      increments.purchases === 1,
+    increments: responseIncrements,
     newAnonymousId,
   });
+}
+
+function hasAnyIncrement(increments: InteractionIncrements) {
+  return Object.values(increments).some((increment) => increment > 0);
+}
+
+type InteractionIncrements = {
+  allTimeViews: number;
+  purchases: number;
+  todayViews: number;
+  weekViews: number;
+};
+
+async function updateProductInteractionCounters(
+  products: Collection<W2CProduct>,
+  id: string,
+  dayKey: string,
+  weekKey: string,
+  increments: InteractionIncrements,
+) {
+  await products.updateOne(buildW2CProductFilter(id), [
+    {
+      $set: {
+        "metadata.clicks.allTime": {
+          $add: [{ $ifNull: ["$metadata.clicks.allTime", 0] }, increments.allTimeViews],
+        },
+        "metadata.clicks.today": {
+          $add: [
+            {
+              $cond: [
+                { $eq: ["$metadata.clicks.todayKey", dayKey] },
+                { $ifNull: ["$metadata.clicks.today", 0] },
+                0,
+              ],
+            },
+            increments.todayViews,
+          ],
+        },
+        "metadata.clicks.todayKey": dayKey,
+        "metadata.clicks.week": {
+          $add: [
+            {
+              $cond: [
+                { $eq: ["$metadata.clicks.weekKey", weekKey] },
+                { $ifNull: ["$metadata.clicks.week", 0] },
+                0,
+              ],
+            },
+            increments.weekViews,
+          ],
+        },
+        "metadata.clicks.weekKey": weekKey,
+        "metadata.purchases": {
+          $add: [{ $ifNull: ["$metadata.purchases", 0] }, increments.purchases],
+        },
+      },
+    },
+  ]);
+}
+
+function buildResponseIncrements(increments: InteractionIncrements) {
+  const responseIncrements: Record<string, number> = {};
+
+  if (increments.allTimeViews) {
+    responseIncrements["metadata.clicks.allTime"] = increments.allTimeViews;
+  }
+
+  if (increments.todayViews) {
+    responseIncrements["metadata.clicks.today"] = increments.todayViews;
+  }
+
+  if (increments.weekViews) {
+    responseIncrements["metadata.clicks.week"] = increments.weekViews;
+  }
+
+  if (increments.purchases) {
+    responseIncrements["metadata.purchases"] = increments.purchases;
+  }
+
+  return responseIncrements;
 }
 
 function getAnonymousId(request: NextRequest) {
@@ -186,18 +275,4 @@ function isRateLimited(key: string) {
 
   current.count += 1;
   return current.count > rateLimitMaxRequests;
-}
-
-function getDayKey(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function getWeekKey(date: Date) {
-  const utcDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-  const day = utcDate.getUTCDay() || 7;
-  utcDate.setUTCDate(utcDate.getUTCDate() + 4 - day);
-  const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1));
-  const week = Math.ceil(((utcDate.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-
-  return `${utcDate.getUTCFullYear()}-${String(week).padStart(2, "0")}`;
 }

@@ -9,7 +9,25 @@ export function ensureW2CIndexes(db: Db) {
 
   indexesPromise = Promise.all([
     db.collection("w2c_products").createIndex({ "metadata.gender": 1, "metadata.category": 1 }),
-    db.collection("w2c_products").createIndex({ "metadata.gender": 1, "metadata.clicks.week": -1 }),
+    db.collection("w2c_products").createIndex({
+      "metadata.gender": 1,
+      "metadata.clicks.week": -1,
+      "metadata.purchases": -1,
+      "metadata.clicks.allTime": -1,
+      rating: -1,
+      "metadata.addedAt": -1,
+      _id: -1,
+    }),
+    db.collection("w2c_products").createIndex({ "metadata.gender": 1, "metadata.addedAt": -1, _id: -1 }),
+    db.collection("w2c_products").createIndex({ "metadata.gender": 1, priceCny: 1, "metadata.addedAt": -1, _id: -1 }),
+    db.collection("w2c_products").createIndex({ "metadata.gender": 1, priceCny: -1, "metadata.addedAt": -1, _id: -1 }),
+    db.collection("w2c_products").createIndex({
+      "metadata.gender": 1,
+      rating: -1,
+      "metadata.clicks.allTime": -1,
+      "metadata.addedAt": -1,
+      _id: -1,
+    }),
     db.collection("w2c_products").createIndex({ name: "text", "metadata.brand": "text", "metadata.category": "text" }),
     db.collection("w2c_categories").createIndex({ slug: 1 }, { unique: true }),
     db.collection("w2c_categories").createIndex({ name: 1 }),

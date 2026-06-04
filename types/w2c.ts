@@ -25,7 +25,9 @@ export type W2CProduct = {
     addedBy: string;
     clicks: {
       today: number;
+      todayKey?: string;
       week: number;
+      weekKey?: string;
       allTime: number;
     };
     purchases: number;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Filter, Sort } from "mongodb";
 
 import { getMongoClient } from "@/lib/mongodb";
+import { getWeekKey } from "@/lib/w2c-interaction-periods";
 import { ensureW2CIndexes } from "@/lib/w2c-indexes";
 import { normalizeW2CProduct } from "@/lib/w2c-products";
 import type { W2CCategory, W2CGender, W2CProduct, W2CProductsResponse } from "@/types/w2c";
@@ -28,9 +29,44 @@ export async function GET(request: NextRequest) {
     const categoriesCollection = db.collection<W2CCategory>("w2c_categories");
     const mongoFilter = buildMongoFilter(filters);
     const sort = buildMongoSort(filters.sort);
+    const productsPromise =
+      filters.sort === "popular"
+        ? collection
+            .aggregate<W2CProduct>([
+              { $match: mongoFilter },
+              {
+                $addFields: {
+                  "__sort.weekClicks": {
+                    $cond: [
+                      { $eq: ["$metadata.clicks.weekKey", getWeekKey(new Date())] },
+                      { $ifNull: ["$metadata.clicks.week", 0] },
+                      0,
+                    ],
+                  },
+                  "__sort.purchases": { $ifNull: ["$metadata.purchases", 0] },
+                  "__sort.allTimeClicks": { $ifNull: ["$metadata.clicks.allTime", 0] },
+                  "__sort.rating": { $ifNull: ["$rating", 0] },
+                },
+              },
+              {
+                $sort: {
+                  "__sort.weekClicks": -1,
+                  "__sort.purchases": -1,
+                  "__sort.allTimeClicks": -1,
+                  "__sort.rating": -1,
+                  "metadata.addedAt": -1,
+                  _id: -1,
+                },
+              },
+              { $skip: cursor },
+              { $limit: pageSize },
+              { $project: { __sort: 0 } },
+            ])
+            .toArray()
+        : collection.find(mongoFilter).sort(sort).skip(cursor).limit(pageSize).toArray();
 
     const [products, total, productCategories, savedCategories, brands, seasons] = await Promise.all([
-      collection.find(mongoFilter).sort(sort).skip(cursor).limit(pageSize).toArray(),
+      productsPromise,
       collection.countDocuments(mongoFilter),
       collection.distinct("metadata.category"),
       categoriesCollection.find({}).sort({ name: 1 }).toArray(),
@@ -77,8 +113,22 @@ function readFilters(params: URLSearchParams): QueryFilters {
     season: params.get("season") ?? "All",
     minPrice: readNumber(params.get("minPrice")),
     maxPrice: readNumber(params.get("maxPrice")),
-    sort: params.get("sort") ?? "popular",
+    sort: readSort(params.get("sort")),
   };
+}
+
+function readSort(value: string | null) {
+  if (
+    value === "newest" ||
+    value === "price-low" ||
+    value === "price-high" ||
+    value === "rating" ||
+    value === "popular"
+  ) {
+    return value;
+  }
+
+  return "newest";
 }
 
 function readNumber(value: string | null) {
@@ -137,22 +187,22 @@ function buildMongoFilter(filters: QueryFilters): Filter<W2CProduct> {
 
 function buildMongoSort(sort: string): Sort {
   if (sort === "newest") {
-    return { "metadata.addedAt": -1 };
+    return { "metadata.addedAt": -1, _id: -1 };
   }
 
   if (sort === "price-low") {
-    return { priceCny: 1 };
+    return { priceCny: 1, "metadata.addedAt": -1, _id: -1 };
   }
 
   if (sort === "price-high") {
-    return { priceCny: -1 };
+    return { priceCny: -1, "metadata.addedAt": -1, _id: -1 };
   }
 
   if (sort === "rating") {
-    return { rating: -1 };
+    return { rating: -1, "metadata.clicks.allTime": -1, "metadata.addedAt": -1, _id: -1 };
   }
 
-  return { "metadata.clicks.week": -1 };
+  return { "metadata.addedAt": -1, _id: -1 };
 }
 
 function emptyProductsResponse(): W2CProductsResponse {

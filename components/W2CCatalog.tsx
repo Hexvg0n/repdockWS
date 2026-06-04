@@ -84,7 +84,7 @@ const defaultFilters: Filters = {
   season: "All",
   minPrice: "",
   maxPrice: "",
-  sort: "popular",
+  sort: "newest",
 };
 
 const w2cCopy = {
@@ -425,7 +425,7 @@ export function W2CCatalog() {
         filters.season !== "All",
         filters.minPrice,
         filters.maxPrice,
-        filters.sort !== "popular",
+        filters.sort !== "newest",
       ].filter(Boolean).length,
     [filters],
   );
@@ -941,7 +941,7 @@ function FilterPanel({
             <FilterOptionGrid
               iconForOption={getSortOptionIcon}
               labels={copy.filter.sortLabels}
-              options={["popular", "newest", "rating", "price-low", "price-high"]}
+              options={["newest", "popular", "rating", "price-low", "price-high"]}
               value={filters.sort}
               onChange={(sort) => onChange((current) => ({ ...current, sort }))}
             />

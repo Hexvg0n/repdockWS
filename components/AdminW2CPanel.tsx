@@ -718,7 +718,7 @@ function ProductFormPanel({
             label="Product link"
             value={form.link}
             onChange={(value) => onUpdateField("link", value)}
-            placeholder="Raw or agent link: ACBuy, USFans, Kakobuy..."
+            placeholder="Raw link or any converter agent link"
           />
           <Button onClick={onLookup} disabled={lookupLoading} className="self-end rounded-2xl">
             {lookupLoading ? <IconLoader2 className="size-4 animate-spin" /> : <IconRefresh className="size-4" />}

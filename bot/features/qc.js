@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const {
     ActionRowBuilder,
     ButtonBuilder,
@@ -9,6 +10,30 @@ const {
     TextInputStyle
 } = require('discord.js');
 const { postSiteJson } = require('../utils/siteApi');
+
+const qcSessions = new Map();
+const QC_SESSION_TTL_MS = 10 * 60 * 1000;
+
+function cleanupQcSessions() {
+    const now = Date.now();
+    for (const [id, session] of qcSessions.entries()) {
+        if (session.expiresAt <= now) {
+            qcSessions.delete(id);
+        }
+    }
+}
+
+function createQcSession(userId, result) {
+    cleanupQcSessions();
+    const id = crypto.randomBytes(8).toString('hex');
+    qcSessions.set(id, {
+        createdAt: Date.now(),
+        expiresAt: Date.now() + QC_SESSION_TTL_MS,
+        result,
+        userId
+    });
+    return id;
+}
 
 async function fetchQC(inputUrl) {
     try {
@@ -33,69 +58,98 @@ async function fetchQC(inputUrl) {
     }
 }
 
-function buildSourceLine(name, meta) {
-    if (!meta) return `${name}: brak danych`;
-    if (meta.skipped) return `${name}: pominieto (${meta.error})`;
-    if (!meta.ok) return `${name}: blad${meta.status ? ` ${meta.status}` : ''}`;
-    return `${name}: ${meta.count}`;
+function buildSourceSummary(sources = {}) {
+    return [
+        sources.acbuy?.ok ? `ACBuy ${sources.acbuy.count}` : null,
+        sources.usfans?.ok ? `USFans ${sources.usfans.count}` : null,
+        sources.cnfans?.ok ? `CNFans ${sources.cnfans.count}` : null
+    ].filter(Boolean).join(' / ') || 'Brak danych o zrodlach';
 }
 
-function buildQcResponse(result) {
+function buildQcResponse(result, sessionId, index = 0) {
     const images = result.data;
     const product = result.meta?.product || {};
     const sources = result.meta?.sources || {};
-    const shownImages = images.slice(0, 9);
-    const sourceLines = [
-        buildSourceLine('ACBuy', sources.acbuy),
-        buildSourceLine('USFans', sources.usfans),
-        buildSourceLine('CNFans', sources.cnfans)
-    ].join('\n');
+    const safeIndex = Math.max(0, Math.min(index, images.length - 1));
+    const image = images[safeIndex];
+    const productLabel = product.platform && product.itemId
+        ? `${String(product.platform).toUpperCase()} ${product.itemId}`
+        : 'Produkt rozpoznany przez API strony';
 
-    const summary = new EmbedBuilder()
-        .setTitle('QC znalezione')
+    const embed = new EmbedBuilder()
+        .setTitle(`${image.source}${image.skuId ? ` - ${image.skuId}` : ''}`)
         .setColor('#22d3ee')
         .setDescription([
-            product.platform && product.itemId
-                ? `Produkt: **${String(product.platform).toUpperCase()} ${product.itemId}**`
-                : 'Produkt: **rozpoznany przez API strony**',
-            `Znaleziono zdjec: **${images.length}**`,
-            '',
-            sourceLines
-        ].join('\n'));
+            productLabel,
+            `Zdjecie ${safeIndex + 1} z ${images.length}`,
+            buildSourceSummary(sources)
+        ].join('\n'))
+        .setImage(image.photoUrl)
+        .setFooter({ text: 'Uzyj przyciskow, zeby przewijac QC.' });
 
     if (product.originalUrl) {
-        summary.setURL(product.originalUrl);
+        embed.setURL(product.originalUrl);
     }
 
-    const embeds = [summary];
+    const controls = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId(`qc_prev:${sessionId}:${safeIndex}`)
+            .setLabel('Poprzednie')
+            .setStyle(ButtonStyle.Secondary)
+            .setDisabled(images.length <= 1),
+        new ButtonBuilder()
+            .setCustomId(`qc_next:${sessionId}:${safeIndex}`)
+            .setLabel('Nastepne')
+            .setStyle(ButtonStyle.Secondary)
+            .setDisabled(images.length <= 1),
+        new ButtonBuilder()
+            .setLabel('Otworz zdjecie')
+            .setStyle(ButtonStyle.Link)
+            .setURL(image.photoUrl)
+    );
 
-    for (const image of shownImages) {
-        embeds.push(
+    return { embeds: [embed], components: [controls] };
+}
+
+function buildLoadingResponse() {
+    return {
+        embeds: [
             new EmbedBuilder()
+                .setTitle('Szukam QC')
                 .setColor('#22d3ee')
-                .setTitle(`${image.source}${image.skuId ? ` - ${image.skuId}` : ''}`)
-                .setURL(image.photoUrl)
-                .setImage(image.photoUrl)
-        );
-    }
-
-    const rows = [];
-    const firstLinks = images.slice(0, 5);
-    if (firstLinks.length > 0) {
-        rows.push(
-            new ActionRowBuilder().addComponents(
-                firstLinks.map((image, index) => new ButtonBuilder()
-                    .setLabel(`${image.source} ${index + 1}`)
-                    .setStyle(ButtonStyle.Link)
-                    .setURL(image.photoUrl))
-            )
-        );
-    }
-
-    return { embeds, components: rows };
+                .setDescription('Pobieram zdjecia z API RepDock. Discord moze chwilowo pokazac puste miejsce, dopoki zaladuje obrazek.')
+        ],
+        components: []
+    };
 }
 
 async function handleQcInteraction(interaction) {
+    if (interaction.customId?.startsWith('qc_prev:') || interaction.customId?.startsWith('qc_next:')) {
+        const [action, sessionId, rawIndex] = interaction.customId.split(':');
+        const session = qcSessions.get(sessionId);
+
+        if (!session || session.expiresAt <= Date.now()) {
+            qcSessions.delete(sessionId);
+            await interaction.reply({ content: 'Ta sesja QC wygasla. Wyszukaj QC ponownie.', flags: MessageFlags.Ephemeral });
+            return true;
+        }
+
+        if (session.userId !== interaction.user.id) {
+            await interaction.reply({ content: 'To nie jest Twoja sesja QC.', flags: MessageFlags.Ephemeral });
+            return true;
+        }
+
+        const currentIndex = Number(rawIndex);
+        const count = session.result.data.length;
+        const nextIndex = action === 'qc_prev'
+            ? (Number.isFinite(currentIndex) ? currentIndex - 1 + count : count - 1) % count
+            : (Number.isFinite(currentIndex) ? currentIndex + 1 : 1) % count;
+
+        session.expiresAt = Date.now() + QC_SESSION_TTL_MS;
+        await interaction.update(buildQcResponse(session.result, sessionId, nextIndex));
+        return true;
+    }
+
     if (interaction.customId === 'tools_open_qc' || interaction.customId === 'QCButton') {
         const modal = new ModalBuilder()
             .setCustomId('tools_qc_modal')
@@ -117,13 +171,15 @@ async function handleQcInteraction(interaction) {
 
     const url = interaction.fields.getTextInputValue('qc_url_input');
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    await interaction.editReply(buildLoadingResponse());
 
     const result = await fetchQC(url);
     if (!result.ok) {
         return interaction.editReply({ content: `Nie udalo sie pobrac QC: ${result.error}` });
     }
 
-    const response = buildQcResponse(result);
+    const sessionId = createQcSession(interaction.user.id, result);
+    const response = buildQcResponse(result, sessionId, 0);
     await interaction.editReply(response);
     return true;
 }

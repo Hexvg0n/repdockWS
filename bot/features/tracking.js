@@ -1,7 +1,4 @@
 const {
-    ActionRowBuilder,
-    ButtonBuilder,
-    ButtonStyle,
     EmbedBuilder,
     MessageFlags,
     ModalBuilder,
@@ -28,40 +25,36 @@ async function fetchTracking(trackingNumber, language = 'pl') {
 }
 
 function buildTrackingResponse(data) {
-    const recentEvents = Array.isArray(data.details) ? data.details.slice(0, 8) : [];
+    const recentEvents = Array.isArray(data.details) ? data.details.slice(0, 6) : [];
+    const details = [
+        `Numer: ${data.trackingNumber || 'N/A'}`,
+        `Kraj: ${data.country || 'N/A'}`,
+        `Reference: ${data.referenceNo || 'N/A'}`,
+        `Odbiorca: ${data.consigneeName || 'N/A'}`
+    ].join('\n');
     const embed = new EmbedBuilder()
-        .setTitle('Tracking paczki')
+        .setTitle('Status paczki')
         .setColor('#22d3ee')
-        .setDescription([
-            `Numer: **${data.trackingNumber || 'N/A'}**`,
-            `Kraj: **${data.country || 'N/A'}**`,
-            `Ostatni status: **${data.lastStatus || 'N/A'}**`
-        ].join('\n'))
+        .setDescription(data.lastStatus || 'N/A')
         .addFields(
-            { name: 'Reference No.', value: data.referenceNo || 'N/A', inline: true },
-            { name: 'Data', value: data.date || 'N/A', inline: true },
-            { name: 'Odbiorca', value: data.consigneeName || 'N/A', inline: true }
-        )
-        .setFooter({ text: `Zrodlo: ${data.source || 'RepDock API'}` })
-        .setTimestamp();
+            { name: 'Dane przesylki', value: details.slice(0, 1024), inline: false }
+        );
 
     for (const event of recentEvents) {
+        const name = String(event.status || 'Status').slice(0, 256);
+        const value = [
+            event.location ? `Miejsce: ${event.location}` : null,
+            event.date ? `Data: ${event.date}` : null
+        ].filter(Boolean).join('\n') || 'Brak dodatkowych danych';
+
         embed.addFields({
-            name: event.date || 'Brak daty',
-            value: [`**${event.location || 'N/A'}**`, event.status || 'N/A'].join('\n').slice(0, 1024)
+            name,
+            value: value.slice(0, 1024),
+            inline: false
         });
     }
 
-    const components = data.source ? [
-        new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setLabel('Otworz tracking')
-                .setStyle(ButtonStyle.Link)
-                .setURL(data.source)
-        )
-    ] : [];
-
-    return { embeds: [embed], components };
+    return { embeds: [embed], components: [] };
 }
 
 async function handleTrackingInteraction(interaction) {

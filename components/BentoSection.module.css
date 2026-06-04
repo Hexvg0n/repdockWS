@@ -209,13 +209,13 @@
 }
 
 .badgeMiddle {
-  top: 52px;
-  left: 100px;
+  top: 58px;
+  left: 108px;
 }
 
 .badgeBottom {
-  top: 104px;
-  left: 168px;
+  top: 116px;
+  left: 178px;
 }
 
 .agentBadge {
@@ -267,6 +267,24 @@
   border-radius: inherit;
   object-fit: contain;
   padding: 2px;
+}
+
+.converterVisual .agentBadge {
+  min-width: 178px;
+  height: 70px;
+  gap: 12px;
+  padding: 0 18px;
+}
+
+.converterVisual .agentLogoBox {
+  width: 38px;
+  height: 38px;
+  flex-basis: 38px;
+  border-radius: 12px;
+}
+
+.converterVisual .agentBadge strong {
+  font-size: 16px;
 }
 
 .blue .agentIcon {
@@ -669,7 +687,7 @@
   }
 
   .converterVisual {
-    height: 160px;
+    height: 188px;
   }
 
   .workflowVisual {
@@ -695,11 +713,11 @@
   }
 
   .badgeMiddle {
-    left: clamp(0px, 14%, calc(100% - 145px));
+    left: clamp(0px, 12%, calc(100% - 160px));
   }
 
   .badgeBottom {
-    left: clamp(0px, 28%, calc(100% - 145px));
+    left: clamp(0px, 24%, calc(100% - 160px));
   }
 
   .agentBadge {
@@ -707,6 +725,22 @@
     min-width: 145px;
     height: 54px;
     padding: 0 12px;
+  }
+
+  .converterVisual .agentBadge {
+    min-width: 160px;
+    height: 60px;
+    padding: 0 14px;
+  }
+
+  .converterVisual .agentLogoBox {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+  }
+
+  .converterVisual .agentBadge strong {
+    font-size: 14px;
   }
 
   .previewPanel {

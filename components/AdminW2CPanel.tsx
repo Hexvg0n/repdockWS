@@ -27,7 +27,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AdminSelect } from "@/components/ui/admin-select";
 import { AdminLogo, Sidebar, SidebarBody, SidebarLink, useSidebar } from "@/components/ui/sidebar";
-import type { W2CProduct } from "@/types/w2c";
+import type { W2CGender, W2CProduct } from "@/types/w2c";
 
 type LookupResult = {
   originalUrl: string;
@@ -48,7 +48,7 @@ type Category = {
 type ProductForm = {
   brand: string;
   category: string;
-  gender: "men" | "women";
+  gender: W2CGender;
   image: string;
   link: string;
   name: string;
@@ -800,7 +800,7 @@ function ProductFormPanel({
           <SelectInput
             label="Gender"
             value={form.gender}
-            options={["men", "women"]}
+            options={["men", "neutral", "women"]}
             onChange={(value) => onUpdateField("gender", value as ProductForm["gender"])}
           />
           <SelectInput

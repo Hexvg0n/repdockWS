@@ -32,7 +32,9 @@ export function parseW2CProductBody(
     strings[field] = value.trim();
   }
 
-  if (strings.gender !== "men" && strings.gender !== "women") {
+  const gender = readW2CGender(strings.gender);
+
+  if (!gender) {
     return { error: "Invalid gender" };
   }
 
@@ -56,7 +58,7 @@ export function parseW2CProductBody(
     data: {
       brand: strings.brand,
       category: strings.category,
-      gender: strings.gender,
+      gender,
       image: strings.image,
       link: strings.link,
       name: strings.name,
@@ -66,6 +68,14 @@ export function parseW2CProductBody(
       weight,
     },
   };
+}
+
+function readW2CGender(value: string): W2CGender | null {
+  if (value === "men" || value === "neutral" || value === "women") {
+    return value;
+  }
+
+  return null;
 }
 
 export async function ensureW2CCategoryExists(

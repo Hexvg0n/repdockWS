@@ -1,4 +1,4 @@
-export type W2CGender = "men" | "women";
+export type W2CGender = "men" | "neutral" | "women";
 
 export type W2CCategory = {
   id: string;

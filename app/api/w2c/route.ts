@@ -142,7 +142,7 @@ function readNumber(value: string | null) {
 
 function buildMongoFilter(filters: QueryFilters): Filter<W2CProduct> {
   const mongoFilter: Filter<W2CProduct> = {
-    "metadata.gender": filters.gender,
+    "metadata.gender": { $in: [filters.gender, "neutral"] },
   };
 
   if (filters.search) {

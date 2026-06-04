@@ -25,6 +25,7 @@ import {
 } from "@tabler/icons-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
 
 import { LoginRequiredDialog } from "@/components/LoginRequiredDialog";
@@ -121,6 +122,7 @@ const w2cCopy = {
     },
     gender: {
       men: "Męskie",
+      neutral: "Unisex",
       women: "Damskie",
     },
     header: {
@@ -180,6 +182,7 @@ const w2cCopy = {
     },
     gender: {
       men: "Men",
+      neutral: "Unisex",
       women: "Women",
     },
     header: {
@@ -226,6 +229,7 @@ export function W2CCatalog() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [favoriteLoginOpen, setFavoriteLoginOpen] = useState(false);
   const [favoriteStatus, setFavoriteStatus] = useState("");
+  const [openingProductName, setOpeningProductName] = useState<string | null>(null);
   const [currency, setCurrency] = useState<(typeof currencies)[number]>("CNY");
   const [currencyRates, setCurrencyRates] = useState(fallbackCurrencyRates);
   const [agent, setAgent] = useState<(typeof agents)[number]>("BBDBUY");
@@ -416,6 +420,18 @@ export function W2CCatalog() {
     observer.observe(target);
     return () => observer.disconnect();
   }, [fetchProducts, loading, nextCursor]);
+
+  useEffect(() => {
+    if (!openingProductName) {
+      return;
+    }
+
+    const timeout = globalThis.setTimeout(() => {
+      setOpeningProductName(null);
+    }, 30000);
+
+    return () => globalThis.clearTimeout(timeout);
+  }, [openingProductName]);
 
   const activeFilterCount = useMemo(
     () =>
@@ -649,6 +665,7 @@ export function W2CCatalog() {
               copy={copy}
               numberLocale={numberLocale}
               rates={currencyRates}
+              onOpenProduct={() => setOpeningProductName(product.name)}
               onRecordBuy={() => recordInteraction(product.id, "buy")}
               onToggleFavorite={() => toggleFavorite(product.id)}
             />
@@ -687,6 +704,9 @@ export function W2CCatalog() {
         closeLabel={copy.labels.favoriteLoginClose}
         onClose={() => setFavoriteLoginOpen(false)}
       />
+      {openingProductName ? (
+        <ProductNavigationOverlay language={language} productName={openingProductName} />
+      ) : null}
     </main>
   );
 }
@@ -699,6 +719,7 @@ function ProductCard({
   numberLocale,
   product,
   rates,
+  onOpenProduct,
   onRecordBuy,
   onToggleFavorite,
 }: Readonly<{
@@ -709,22 +730,40 @@ function ProductCard({
   numberLocale: string;
   product: W2CProduct;
   rates: Record<(typeof currencies)[number], number>;
+  onOpenProduct: () => void;
   onRecordBuy: () => void;
   onToggleFavorite: () => void;
 }>) {
   const link = product.links[agent] ?? product.links.original;
+  const productHref = `/w2c/${encodeURIComponent(product.id)}`;
   const imageUrl = getWebpImageUrl(product.image);
   const isFresh =
     Date.now() - Date.parse(product.metadata.addedAt) < 1000 * 60 * 60 * 24 * 7;
+
+  const handleProductOpen = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    flushSync(onOpenProduct);
+  };
 
   return (
     <article
       className="group relative flex h-full w-full flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#0d0e14] shadow-2xl shadow-black/20 transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_90px_rgba(41,52,255,0.18)]"
     >
       <Link
-        href={`/w2c/${encodeURIComponent(product.id)}`}
+        href={productHref}
         aria-label={`${copy.product.open}: ${product.name}`}
         className="absolute inset-0 z-10"
+        onClick={handleProductOpen}
       />
       {/* Image area — white rounded bg */}
       <div className="relative m-3 mb-0 overflow-hidden rounded-2xl bg-zinc-900">
@@ -801,6 +840,52 @@ function ProductCard({
         </div>
       </div>
     </article>
+  );
+}
+
+function ProductNavigationOverlay({
+  language,
+  productName,
+}: Readonly<{
+  language: string;
+  productName: string;
+}>) {
+  const title = language === "PL" ? "Ladowanie produktu" : "Loading product";
+  const hint =
+    language === "PL"
+      ? "Pobieramy galerie, warianty i dane agenta."
+      : "Fetching gallery, variants and agent data.";
+
+  return (
+    <div className="fixed inset-0 z-[120] grid place-items-center bg-black/78 p-4 backdrop-blur-md">
+      <div className="relative w-full max-w-md overflow-hidden rounded-[30px] border border-white/10 bg-[#080910] p-6 text-white shadow-[0_24px_90px_rgba(0,0,0,0.72)]">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-[radial-gradient(70%_70%_at_50%_0%,rgba(41,52,255,0.28),transparent_72%)]" />
+        <div className="relative grid gap-5">
+          <div className="flex items-center gap-4">
+            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-blue-500/15 text-blue-100 ring-1 ring-blue-300/20">
+              <IconLoader2 className="size-5 animate-spin" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="font-['Poppins'] text-xl font-medium">{title}</h2>
+              <p className="mt-1 truncate text-sm text-slate-400">{productName}</p>
+            </div>
+          </div>
+
+          <p className="text-sm leading-relaxed text-slate-400">{hint}</p>
+
+          <div className="grid gap-2">
+            <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+              <div className="h-full w-1/2 animate-pulse rounded-full bg-blue-400/70" />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="h-16 animate-pulse rounded-2xl bg-white/[0.055]" />
+              <div className="h-16 animate-pulse rounded-2xl bg-white/[0.045]" />
+              <div className="h-16 animate-pulse rounded-2xl bg-white/[0.035]" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

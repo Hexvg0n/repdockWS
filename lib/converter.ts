@@ -94,7 +94,7 @@ const litbuyCodes: Record<PlatformName, string> = {
 const middlemen: Readonly<Record<string, Middleman>> = {
   bbdbuy: {
     name: "BBDBuy",
-    template: "https://www.bbdbuyeu.com/goods/{{platformCode}}/{{itemID}}?inviteCode=ZqhUMV",
+    template: "https://www.bbdbuyeu.com/goods/{{platformCode}}/{{itemID}}?inviteCode=RepDock",
     platformMapping: bbdbuyCodes,
     requiresDecoding: false,
     aliases: ["bbd"],

@@ -56,6 +56,7 @@ const productDetailCopy = {
     favoriteLoginTitle: "Zaloguj sie, zeby zapisac item",
     gender: {
       men: "Meskie",
+      neutral: "Unisex",
       women: "Damskie",
     },
     gallery: "Galeria",
@@ -103,6 +104,7 @@ const productDetailCopy = {
     favoriteLoginTitle: "Login to save this item",
     gender: {
       men: "Men",
+      neutral: "Unisex",
       women: "Women",
     },
     gallery: "Gallery",

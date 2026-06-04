@@ -108,10 +108,10 @@ const itemMeta = [
 
 const agentIcons = {
   KAKOBUY: "/agents/kako_icon.png",
-  BBDBUY: "/agents/BBDBUY_icon.png",
-  USFANS: "/agents/usfans_icon.png",
+  BBDBUY: "/agents/BBDBUY_icon.png?v=20260604c",
+  USFANS: "/agents/usfans_icon.png?v=20260604c",
   OOPBUY: "/agents/oop_icon.png",
-  ACBUY: "/agents/acb_icon.png",
+  ACBUY: "/agents/acb_icon.png?v=20260604c",
   WEIDIAN: "/agents/weidian_logo.png",
 } as const;
 
@@ -275,7 +275,9 @@ function AgentBadge({
   return (
     <span className={`${styles.agentBadge} ${styles[color]} ${className}`}>
       {src ? (
-        <SmartImage className={styles.agentImage} src={src} alt="" />
+        <span className={styles.agentLogoBox}>
+          <SmartImage className={styles.agentImage} src={src} alt="" fill sizes="32px" />
+        </span>
       ) : (
         <span className={styles.agentIcon} />
       )}
@@ -293,14 +295,9 @@ function CourierTile({
 }>) {
   return (
     <div className={styles.courierTile}>
-      <SmartImage
-        className={styles.courierImage}
-        src={src}
-        alt=""
-        width={180}
-        height={72}
-        sizes="130px"
-      />
+      <span className={styles.courierLogoBox}>
+        <SmartImage className={styles.courierImage} src={src} alt="" fill sizes="58px" />
+      </span>
       <strong>{label}</strong>
     </div>
   );

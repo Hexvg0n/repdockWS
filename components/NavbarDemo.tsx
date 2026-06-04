@@ -177,7 +177,7 @@ const agentMeta: Record<
   { icon: string; accent: string }
 > = {
   BBDBUY: {
-    icon: "/agents/BBDBUY_icon.png",
+    icon: "/agents/BBDBUY_icon.png?v=20260604c",
     accent: "from-transparent to-transparent",
   },
   KAKOBUY: {
@@ -185,11 +185,11 @@ const agentMeta: Record<
     accent: "from-transparent to-transparent",
   },
   USFANS: {
-    icon: "/agents/usfans_icon.png",
+    icon: "/agents/usfans_icon.png?v=20260604c",
     accent: "from-transparent to-transparent",
   },
   ACBUY: {
-    icon: "/agents/acb_icon.png",
+    icon: "/agents/acb_icon.png?v=20260604c",
     accent: "from-transparent to-transparent",
   },
 };
@@ -354,7 +354,7 @@ function FavoritesPreviewButton({
     }
 
     try {
-      const response = await fetch("/api/w2c/favorites");
+      const response = await fetch(promptLogin ? "/api/w2c/favorites" : "/api/w2c/favorites?optional=1");
 
       if (response.status === 401) {
         setOpen(false);
@@ -890,7 +890,7 @@ function SettingsOption({
   onClick: () => void;
 }>) {
   const iconIsImage =
-    typeof icon === "string" && /\.(png|jpe?g|webp|svg)$/i.test(icon);
+    typeof icon === "string" && /\.(png|jpe?g|webp|svg)(?:\?.*)?$/i.test(icon);
   const iconSrc =
     iconIsImage && icon
       ? icon.startsWith("/")
@@ -920,7 +920,7 @@ function SettingsOption({
             } text-[11px] font-black text-white shadow-inner`}
           >
             {iconSrc ? (
-              <SmartImage src={iconSrc} alt="" className="size-full object-cover" />
+              <SmartImage src={iconSrc} alt="" className="size-full object-contain p-1" />
             ) : (
               icon
             )}

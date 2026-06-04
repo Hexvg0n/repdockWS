@@ -34,11 +34,11 @@ type ConversionResult = {
 };
 
 const agentIcons: Record<string, string> = {
-  acbuy: "/agents/acb_icon.png",
+  acbuy: "/agents/acb_icon.png?v=20260604c",
   kakobuy: "/agents/kako_icon.png",
   litbuy: "/agents/litbuy_logo.jpg",
-  bbdbuy: "/agents/BBDBUY_icon.png",
-  usfans: "/agents/usfans_icon.png",
+  bbdbuy: "/agents/BBDBUY_icon.png?v=20260604c",
+  usfans: "/agents/usfans_icon.png?v=20260604c",
 };
 
 const visibleAgentKeys = new Set(["bbdbuy", "kakobuy", "usfans", "acbuy", "litbuy"]);

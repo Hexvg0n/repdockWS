@@ -36,10 +36,10 @@ const agents = ["BBDBUY", "KAKOBUY", "USFANS", "ACBUY"] as const;
 const collapsedVariantLimit = 12;
 
 const agentLogos: Record<(typeof agents)[number], string> = {
-  BBDBUY: "/agents/BBDBUY_icon.png",
+  BBDBUY: "/agents/BBDBUY_icon.png?v=20260604c",
   KAKOBUY: "/agents/kako_icon.png",
-  USFANS: "/agents/usfans_icon.png",
-  ACBUY: "/agents/acb_icon.png",
+  USFANS: "/agents/usfans_icon.png?v=20260604c",
+  ACBUY: "/agents/acb_icon.png?v=20260604c",
 };
 
 const productDetailCopy = {

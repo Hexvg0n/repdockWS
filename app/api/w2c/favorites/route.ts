@@ -18,10 +18,14 @@ type MongoBackedProduct = W2CProduct & {
   _id?: ObjectId;
 };
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const session = await getSession();
 
   if (!session) {
+    if (request.nextUrl.searchParams.get("optional") === "1") {
+      return NextResponse.json({ authenticated: false, productIds: [], products: [] });
+    }
+
     return NextResponse.json({ error: "Login required" }, { status: 401 });
   }
 

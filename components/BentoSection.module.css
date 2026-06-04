@@ -252,14 +252,21 @@
   border-radius: 8px;
 }
 
-.agentImage {
+.agentLogoBox {
+  position: relative;
   display: block;
   width: 32px;
   height: 32px;
   flex: 0 0 32px;
-  border-radius: 8px;
-  object-fit: cover;
+  border-radius: 10px;
+  overflow: hidden;
   background: rgba(255, 255, 255, 0.06);
+}
+
+.agentImage {
+  border-radius: inherit;
+  object-fit: contain;
+  padding: 2px;
 }
 
 .blue .agentIcon {
@@ -500,7 +507,7 @@
   flex-basis: 26px;
 }
 
-.trackingVisual .agentImage {
+.trackingVisual .agentLogoBox {
   width: 26px;
   height: 26px;
   flex-basis: 26px;
@@ -540,10 +547,15 @@
   white-space: normal;
 }
 
-.courierImage {
+.courierLogoBox {
+  position: relative;
   display: block;
+  width: 58px;
   height: 72px;
   flex: 0 0 58px;
+}
+
+.courierImage {
   object-fit: contain;
   filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.28));
 }
@@ -757,8 +769,7 @@
     font-size: 14px;
   }
 
-  .courierImage {
-    width: 58px;
+  .courierLogoBox {
     height: 42px;
     flex-basis: 58px;
   }

@@ -287,6 +287,23 @@ const extractQueryParams = (inputUrl: string): Record<string, string> => {
   }
 };
 
+const parseGoodsPathUrl = (inputUrl: string): { itemID: string; platformCode: string } | null => {
+  const normalized = normalizeUrlInput(inputUrl);
+  if (!normalized) return null;
+
+  try {
+    const url = new URL(normalized);
+    const parts = url.pathname.split("/").filter(Boolean);
+    const goodsIndex = parts.findIndex((part) => part.toLowerCase() === "goods");
+    const platformCode = goodsIndex >= 0 ? parts[goodsIndex + 1] : undefined;
+    const itemID = goodsIndex >= 0 ? parts[goodsIndex + 2]?.match(/\d{4,}/)?.[0] : undefined;
+
+    return platformCode && itemID ? { platformCode, itemID } : null;
+  } catch {
+    return null;
+  }
+};
+
 const parseMiddlemanUrl = (
   urlStr: string,
   middleman: Middleman,
@@ -295,6 +312,9 @@ const parseMiddlemanUrl = (
   platformCode?: string;
   encodedUrl?: string;
 } | null => {
+  const goodsPath = parseGoodsPathUrl(urlStr);
+  if (goodsPath) return goodsPath;
+
   const regex = templateToRegex(middleman.template);
   const match = new RegExp(regex).exec(urlStr);
 
@@ -367,6 +387,32 @@ const identifyPlatform = (url: string): PlatformName | null => {
 const buildOriginalUrl = (platform: PlatformName, itemID: string): string =>
   platforms[platform].urlPattern.replace("{{itemID}}", itemID);
 
+const normalizePlatformCode = (value: string | undefined): PlatformName | null => {
+  const normalized = (value || "").trim().toLowerCase();
+
+  if (["weidian", "wd", "micro"].includes(normalized)) return "weidian";
+  if (["taobao", "tb"].includes(normalized)) return "taobao";
+  if (["tmall", "tm"].includes(normalized)) return "tmall";
+  if (["1688", "al", "ali_1688"].includes(normalized)) return "1688";
+
+  return null;
+};
+
+const readReverseMappedPlatform = (
+  platformCode: string | undefined,
+  reverseMapping?: Record<string, PlatformName>,
+): PlatformName | null => {
+  if (!platformCode) return null;
+
+  const exactMatch = reverseMapping?.[platformCode];
+  if (exactMatch) return exactMatch;
+
+  const normalizedCode = platformCode.trim().toLowerCase();
+  const mappedEntry = Object.entries(reverseMapping || {}).find(([code]) => code.toLowerCase() === normalizedCode);
+
+  return mappedEntry?.[1] || normalizePlatformCode(platformCode);
+};
+
 const matchesMiddleman = (url: string, key: string, middleman: Middleman): boolean => {
   const hostname = getHostname(url);
   if (!hostname) return false;
@@ -394,12 +440,14 @@ const convertMiddlemanToOriginal = (url: string): string | null => {
     const parsed = parseMiddlemanUrl(url, middleman);
     if (!parsed?.itemID) continue;
 
-    if (parsed.platformCode && middleman.reverseMapping) {
-      const platform = middleman.reverseMapping[parsed.platformCode];
+    if (parsed.platformCode) {
+      const platform = readReverseMappedPlatform(parsed.platformCode, middleman.reverseMapping);
       if (platform) return buildOriginalUrl(platform, parsed.itemID);
 
-      const adjacentMatch = parseAdjacentReverseMapping(url, middleman.reverseMapping);
-      if (adjacentMatch) return buildOriginalUrl(adjacentMatch.platform, adjacentMatch.itemID);
+      if (middleman.reverseMapping) {
+        const adjacentMatch = parseAdjacentReverseMapping(url, middleman.reverseMapping);
+        if (adjacentMatch) return buildOriginalUrl(adjacentMatch.platform, adjacentMatch.itemID);
+      }
     }
   }
 

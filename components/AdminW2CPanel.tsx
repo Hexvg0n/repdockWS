@@ -485,7 +485,7 @@ export function AdminW2CPanel() {
   };
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-black text-white">
+    <main className="relative min-h-screen bg-black text-white">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[520px] bg-[radial-gradient(70%_45%_at_50%_0%,rgba(41,52,255,0.34),transparent_70%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[430px] overflow-hidden opacity-40 [mask-image:linear-gradient(to_bottom,black,transparent_88%)]">
         <SmartImage

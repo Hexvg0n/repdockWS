@@ -14,7 +14,7 @@ import { AdminLogo, Sidebar, SidebarBody, SidebarLink, useSidebar } from "@/comp
 
 export function AdminRestorePanel() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-black text-white">
+    <main className="relative min-h-screen bg-black text-white">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[520px] bg-[radial-gradient(70%_45%_at_50%_0%,rgba(41,52,255,0.34),transparent_70%)]" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(230,236,255,0.024)_1px,transparent_1px),linear-gradient(90deg,rgba(230,236,255,0.024)_1px,transparent_1px)] bg-[size:120px_120px] opacity-30 [mask-image:linear-gradient(to_bottom,black,transparent_70%)]" />
 

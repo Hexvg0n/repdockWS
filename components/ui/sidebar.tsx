@@ -205,7 +205,13 @@ export const AdminLogo = ({ compact }: { compact: boolean }) => {
       )}
     >
       {/* <div className="h-6 w-7 shrink-0 rounded-tl-xl rounded-tr-sm rounded-br-xl rounded-bl-sm bg-white shadow-[0_0_24px_rgba(41,52,255,0.32)]" /> */}
-      <SmartImage src="/RepDock-25.png" alt="logo" className="h-6 shrink-0" />
+      <SmartImage
+        src="/RepDock-25.png"
+        alt="logo"
+        width={28}
+        height={28}
+        className="size-7 shrink-0 object-contain"
+      />
       <motion.span
         animate={{ maxWidth: compact ? 0 : 180, opacity: compact ? 0 : 1 }}
         initial={false}

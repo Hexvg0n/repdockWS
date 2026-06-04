@@ -149,7 +149,7 @@ export default function NotFound404({
               <span>{copy.badge}</span>
             </div>
 
-            <h1 className="mt-7 max-w-[21rem] text-balance font-['Poppins'] text-4xl font-medium leading-[1.05] tracking-normal text-white sm:max-w-4xl sm:text-6xl lg:text-7xl">
+            <h1 className="mt-7 max-w-[21rem] text-balance font-poppins text-4xl font-medium leading-[1.05] tracking-normal text-white sm:max-w-4xl sm:text-6xl lg:text-7xl">
               {pageTitle}
             </h1>
             <p className="mt-5 max-w-[21rem] text-base leading-8 text-slate-300 sm:max-w-2xl sm:text-lg">
@@ -218,7 +218,7 @@ export default function NotFound404({
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-200">
                     {copy.panel.code}
                   </p>
-                  <div className="mt-2 font-['Poppins'] text-[88px] font-medium leading-none text-white sm:text-[112px]">
+                  <div className="mt-2 font-poppins text-[88px] font-medium leading-none text-white sm:text-[112px]">
                     404
                   </div>
                   <p className="mt-2 text-sm leading-6 text-slate-400">

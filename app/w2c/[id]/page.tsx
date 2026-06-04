@@ -113,7 +113,7 @@ function W2CProductDetailFallback({ productName }: { productName: string }) {
           <aside className="grid gap-5 rounded-[32px] border border-white/10 bg-[#080910]/92 p-5 shadow-2xl shadow-black/35 backdrop-blur-xl md:p-6">
             <div className="grid gap-3">
               <div className="h-4 w-32 animate-pulse rounded-full bg-blue-400/20" />
-              <h1 className="line-clamp-2 font-['Poppins'] text-3xl font-medium leading-tight text-white">
+              <h1 className="line-clamp-2 font-poppins text-3xl font-medium leading-tight text-white">
                 {productName}
               </h1>
               <div className="h-4 w-full animate-pulse rounded-full bg-white/[0.045]" />

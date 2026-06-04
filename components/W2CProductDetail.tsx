@@ -433,7 +433,7 @@ export function W2CProductDetail({
                   <MetaBadge value={formatGender(product.metadata.gender, copy.gender)} />
                   <MetaBadge value={product.metadata.season} />
                 </div>
-                <h1 className="mt-4 font-['Poppins'] text-3xl font-medium leading-tight text-white">
+                <h1 className="mt-4 font-poppins text-3xl font-medium leading-tight text-white">
                   {productName}
                 </h1>
               </div>
@@ -956,7 +956,7 @@ function ProductDetailImages({
         <span className="grid size-10 place-items-center rounded-2xl bg-blue-500/15 text-blue-100 ring-1 ring-blue-300/20">
           <IconPhoto className="size-5" />
         </span>
-        <h2 className="font-['Poppins'] text-2xl font-medium text-white">{copy.detailImages}</h2>
+        <h2 className="font-poppins text-2xl font-medium text-white">{copy.detailImages}</h2>
       </div>
       <div className="grid w-full gap-4">
         {images.map((image) => (

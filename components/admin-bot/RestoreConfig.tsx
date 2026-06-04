@@ -395,7 +395,7 @@ export default function RestoreConfig() {
                     <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                         <div>
                             <p className="text-sm font-semibold text-blue-200">Admin / Restore</p>
-                            <h2 className="mt-2 font-['Poppins'] text-3xl font-medium text-white md:text-4xl">
+                            <h2 className="mt-2 font-poppins text-3xl font-medium text-white md:text-4xl">
                                 Restore i migracje
                             </h2>
                             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">

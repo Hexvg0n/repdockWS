@@ -221,7 +221,7 @@ export function TrackingTool() {
               <IconSparkles2Filled className="size-4" />
               {copy.header.badge}
             </div>
-            <h1 className="mt-5 font-['Poppins'] text-4xl font-medium tracking-normal md:text-6xl">
+            <h1 className="mt-5 font-poppins text-4xl font-medium tracking-normal md:text-6xl">
               {copy.header.title}
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-400">
@@ -293,7 +293,7 @@ export function TrackingTool() {
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">
                         {copy.labels.trackingNumber}
                       </p>
-                      <h2 className="mt-2 break-all font-['Poppins'] text-2xl font-medium text-white">
+                      <h2 className="mt-2 break-all font-poppins text-2xl font-medium text-white">
                         {result.trackingNumber}
                       </h2>
                     </div>
@@ -324,7 +324,7 @@ export function TrackingTool() {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">{copy.labels.timeline}</p>
-                  <h2 className="mt-2 font-['Poppins'] text-2xl font-medium text-white">
+                  <h2 className="mt-2 font-poppins text-2xl font-medium text-white">
                     {result.details.length} {copy.labels.events}
                   </h2>
                 </div>

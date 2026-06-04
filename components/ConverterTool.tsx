@@ -235,7 +235,7 @@ export function ConverterTool() {
             <IconSparkles2Filled className="size-4" />
             {copy.header.badge}
           </div>
-          <h1 className="mt-5 font-['Poppins'] text-4xl font-medium tracking-normal md:text-6xl">
+          <h1 className="mt-5 font-poppins text-4xl font-medium tracking-normal md:text-6xl">
             {copy.header.title}
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-400">

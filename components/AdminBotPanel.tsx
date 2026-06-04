@@ -94,7 +94,7 @@ export function AdminBotPanel() {
               <header className="flex flex-col gap-4 py-2 md:flex-row md:items-end md:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-blue-300">Admin / Bot</p>
-                  <h1 className="mt-2 font-['Poppins'] text-4xl font-medium md:text-5xl">
+                  <h1 className="mt-2 font-poppins text-4xl font-medium md:text-5xl">
                     Bot panel
                   </h1>
                   <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400 md:text-base">
@@ -313,7 +313,7 @@ function BotPanelStyles() {
   --success: #3ba55c;
   --input-background: #40444b;
   color: var(--text-normal);
-  font-family: "Inter", Arial, sans-serif;
+  font-family: var(--font-inter), Arial, sans-serif;
 }
 .admin-bot-surface * { box-sizing: border-box; }
 .admin-bot-surface *::-webkit-scrollbar { width: 8px; height: 8px; background-color: var(--background-secondary); }

@@ -39,7 +39,7 @@ export function LoginRequiredDialog({
         <div className="grid size-14 place-items-center rounded-3xl bg-red-500/15 text-red-200 ring-1 ring-red-300/20">
           <IconHeart className="size-7" />
         </div>
-        <h2 className="mt-5 font-['Poppins'] text-2xl font-medium text-white">{title}</h2>
+        <h2 className="mt-5 font-poppins text-2xl font-medium text-white">{title}</h2>
         <p className="mt-3 text-sm leading-relaxed text-slate-400">{description}</p>
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">

@@ -86,7 +86,7 @@
 .heroTitle {
   max-width: 720px;
   margin: 0;
-  font-family: "Poppins", Arial, sans-serif;
+  font-family: var(--font-poppins), Arial, sans-serif;
   font-size: 64px;
   font-weight: 500;
   line-height: 1.1;

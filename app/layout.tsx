@@ -1,8 +1,22 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
+import { Inter, Poppins } from "next/font/google";
 import type { ReactNode } from "react";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://repdock.net";
+
+const inter = Inter({
+  subsets: ["latin", "latin-ext"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
+const poppins = Poppins({
+  subsets: ["latin", "latin-ext"],
+  display: "swap",
+  variable: "--font-poppins",
+  weight: ["400", "500", "600", "700"],
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -89,7 +103,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>{children}</body>
+      <body className={`${inter.variable} ${poppins.variable}`}>{children}</body>
     </html>
   );
 }

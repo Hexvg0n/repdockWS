@@ -440,7 +440,7 @@ export function OutfitsGallery() {
               <IconSparkles2Filled className="size-4" />
               {copy.header.badge}
             </div>
-            <h1 className="mt-5 font-['Poppins'] text-4xl font-medium tracking-normal md:text-6xl">
+            <h1 className="mt-5 font-poppins text-4xl font-medium tracking-normal md:text-6xl">
               {copy.header.title}
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-400">
@@ -450,7 +450,7 @@ export function OutfitsGallery() {
 
           <div className="grid gap-4 rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/25 backdrop-blur-xl">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">{copy.header.approved}</p>
-            <p className="mt-2 font-['Poppins'] text-3xl font-medium text-white">{total}</p>
+            <p className="mt-2 font-poppins text-3xl font-medium text-white">{total}</p>
             <p className="mt-1 text-sm text-slate-500">{copy.header.ready}</p>
             {user ? (
               <Button onClick={() => setSubmitOpen(true)} className="h-12 rounded-2xl">
@@ -640,7 +640,7 @@ function SubmitOutfitModal({
         <div className="max-h-[92vh] overflow-y-auto p-5 md:p-6">
           <div className="mb-6">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">{copy.submit.header}</p>
-            <h2 className="mt-2 font-['Poppins'] text-3xl font-medium text-white">{copy.submit.title}</h2>
+            <h2 className="mt-2 font-poppins text-3xl font-medium text-white">{copy.submit.title}</h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-500">
               {copy.submit.intro}
             </p>
@@ -782,7 +782,7 @@ function OutfitPostModal({
         <div className="relative min-h-[62vh] overflow-hidden bg-black md:min-h-[720px]">
           <SmartImage src={outfit.image} alt="" className="h-full min-h-[62vh] w-full object-cover md:max-h-[92vh]" />
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-5 md:hidden">
-            <h2 className="font-['Poppins'] text-2xl font-medium text-white">{outfit.title}</h2>
+            <h2 className="font-poppins text-2xl font-medium text-white">{outfit.title}</h2>
           </div>
         </div>
 
@@ -795,7 +795,7 @@ function OutfitPostModal({
                 <p className="text-xs text-slate-500">{formatDate(outfit.createdAt, dateLocale)}</p>
               </div>
             </div>
-            <h2 className="mt-5 hidden font-['Poppins'] text-3xl font-medium text-white md:block">{outfit.title}</h2>
+            <h2 className="mt-5 hidden font-poppins text-3xl font-medium text-white md:block">{outfit.title}</h2>
             {outfit.description ? (
               <p className="mt-3 text-sm leading-relaxed text-slate-400">{outfit.description}</p>
             ) : null}

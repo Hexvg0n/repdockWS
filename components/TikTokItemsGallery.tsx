@@ -452,7 +452,7 @@ export function TikTokItemsGallery() {
               <IconBrandTiktok className="size-4" />
               {copy.header.badge}
             </div>
-            <h1 className="mt-5 font-['Poppins'] text-4xl font-medium tracking-normal md:text-6xl">
+            <h1 className="mt-5 font-poppins text-4xl font-medium tracking-normal md:text-6xl">
               {copy.header.title}
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-400">
@@ -462,7 +462,7 @@ export function TikTokItemsGallery() {
 
           <div className="grid gap-4 rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/25 backdrop-blur-xl">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">{copy.header.statsLabel}</p>
-            <p className="font-['Poppins'] text-3xl font-medium text-white">{total}</p>
+            <p className="font-poppins text-3xl font-medium text-white">{total}</p>
             <p className="text-sm text-slate-500">{copy.header.ready}</p>
             <div className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/25 px-4 text-sm font-semibold text-slate-400">
               <IconShoppingBag className="size-4" />
@@ -657,7 +657,7 @@ function TikTokItemModal({
                 <p className="text-xs text-slate-500">{formatDate(item.createdAt, dateLocale)}</p>
               </div>
             </div>
-            <h2 className="mt-5 font-['Poppins'] text-3xl font-medium text-white">{item.title}</h2>
+            <h2 className="mt-5 font-poppins text-3xl font-medium text-white">{item.title}</h2>
             {item.description ? (
               <p className="mt-3 text-sm leading-relaxed text-slate-400">{item.description}</p>
             ) : null}
@@ -753,7 +753,7 @@ function SubmitTikTokItemModal({
         <div className="max-h-[92vh] overflow-y-auto p-5 md:p-6">
           <div className="mb-6">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">{copy.submit.header}</p>
-            <h2 className="mt-2 font-['Poppins'] text-3xl font-medium text-white">{copy.submit.title}</h2>
+            <h2 className="mt-2 font-poppins text-3xl font-medium text-white">{copy.submit.title}</h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-500">{copy.submit.intro}</p>
           </div>
 

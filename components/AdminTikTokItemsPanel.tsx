@@ -626,7 +626,7 @@ function PageHeader({
           <IconArrowLeft className="size-4" />
           W2C admin
         </a>
-        <h1 className="font-['Poppins'] text-4xl font-medium tracking-normal md:text-5xl">{title}</h1>
+        <h1 className="font-poppins text-4xl font-medium tracking-normal md:text-5xl">{title}</h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">{description}</p>
       </div>
       {action}

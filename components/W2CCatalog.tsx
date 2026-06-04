@@ -548,7 +548,7 @@ export function W2CCatalog() {
       <section className="relative mx-auto w-full max-w-7xl">
         <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            <h1 className="mt-3 font-['Poppins'] text-4xl font-medium tracking-normal md:text-6xl">
+            <h1 className="mt-3 font-poppins text-4xl font-medium tracking-normal md:text-6xl">
               {copy.header.title}
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-400">
@@ -878,7 +878,7 @@ function ProductNavigationOverlay({
               <IconLoader2 className="size-5 animate-spin" />
             </span>
             <div className="min-w-0">
-              <h2 className="font-['Poppins'] text-xl font-medium">{title}</h2>
+              <h2 className="font-poppins text-xl font-medium">{title}</h2>
               <p className="mt-1 truncate text-sm text-slate-400">{productName}</p>
             </div>
           </div>

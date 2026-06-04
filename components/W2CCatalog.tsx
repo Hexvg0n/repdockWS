@@ -371,6 +371,10 @@ export function W2CCatalog() {
       addOptionalParam(params, "minPrice", filters.minPrice);
       addOptionalParam(params, "maxPrice", filters.maxPrice);
 
+      if (filters.sort !== defaultSort) {
+        params.set("sortMode", "manual");
+      }
+
       try {
         const response = await fetch(`/api/w2c?${params.toString()}`);
         const data = (await response.json()) as W2CProductsResponse;

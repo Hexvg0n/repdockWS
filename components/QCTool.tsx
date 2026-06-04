@@ -90,7 +90,7 @@ const sourceLabels: Record<SourceName, string> = {
 
 const sourceAccent: Record<SourceName, string> = {
   ACBuy: "from-emerald-600 to-teal-700",
-  CNFans: "from-red-700 to-indigo-800 ",
+  CNFans: "from-red-700 to-red-800 ",
   USFans: "from-orange-500 to-orange-600",
 };
 

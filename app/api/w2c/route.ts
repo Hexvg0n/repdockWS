@@ -8,6 +8,7 @@ import { normalizeW2CProduct } from "@/lib/w2c-products";
 import type { W2CCategory, W2CGender, W2CProduct, W2CProductsResponse } from "@/types/w2c";
 
 const pageSize = 16;
+const defaultSort = "newest";
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
@@ -128,7 +129,7 @@ function readSort(value: string | null) {
     return value;
   }
 
-  return "newest";
+  return defaultSort;
 }
 
 function readNumber(value: string | null) {

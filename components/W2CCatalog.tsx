@@ -26,7 +26,7 @@ import {
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { LoginRequiredDialog } from "@/components/LoginRequiredDialog";
 import { Button } from "@/components/ui/button";
@@ -65,6 +65,7 @@ const priceSlider = {
   max: 2000,
   step: 10,
 };
+const defaultSort = "newest";
 
 type Filters = {
   search: string;
@@ -85,7 +86,7 @@ const defaultFilters: Filters = {
   season: "All",
   minPrice: "",
   maxPrice: "",
-  sort: "newest",
+  sort: defaultSort,
 };
 
 const w2cCopy = {
@@ -441,7 +442,7 @@ export function W2CCatalog() {
         filters.season !== "All",
         filters.minPrice,
         filters.maxPrice,
-        filters.sort !== "newest",
+        filters.sort !== defaultSort,
       ].filter(Boolean).length,
     [filters],
   );
@@ -734,6 +735,7 @@ function ProductCard({
   onRecordBuy: () => void;
   onToggleFavorite: () => void;
 }>) {
+  const router = useRouter();
   const link = product.links[agent] ?? product.links.original;
   const productHref = `/w2c/${encodeURIComponent(product.id)}`;
   const imageUrl = getWebpImageUrl(product.image);
@@ -752,14 +754,20 @@ function ProductCard({
       return;
     }
 
+    event.preventDefault();
     flushSync(onOpenProduct);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        router.push(productHref);
+      });
+    });
   };
 
   return (
     <article
       className="group relative flex h-full w-full flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#0d0e14] shadow-2xl shadow-black/20 transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_90px_rgba(41,52,255,0.18)]"
     >
-      <Link
+      <a
         href={productHref}
         aria-label={`${copy.product.open}: ${product.name}`}
         className="absolute inset-0 z-10"

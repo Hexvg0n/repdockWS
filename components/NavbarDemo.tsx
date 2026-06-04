@@ -239,7 +239,7 @@ export function NavbarDemo() {
             toolItems={toolItems}
             toolsLabel={copy.toolsLabel}
           />
-          <div className="relative z-30 flex items-center gap-4">
+          <div className="relative z-30 flex items-center gap-3">
             <FavoritesPreviewButton />
             <SettingsDrawerTrigger />
             <AuthControl />

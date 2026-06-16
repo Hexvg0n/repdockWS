@@ -49,23 +49,23 @@ async function handleLinkConverter(interaction) {
         });
     }
 
-    const bbdbuyLink = converted.convertedLinks.find((link) =>
-        link.key === 'bbdbuy' || String(link.name || '').toLowerCase().includes('bbd')
+    const boonbuyLink = converted.convertedLinks.find((link) =>
+        link.key === 'boonbuy' || String(link.name || '').toLowerCase().includes('boon')
     );
 
-    if (!bbdbuyLink?.url) {
+    if (!boonbuyLink?.url) {
         return interaction.reply({
-            content: 'Nie udalo sie wygenerowac linku BBDBUY dla tego produktu.',
+            content: 'Nie udalo sie wygenerowac linku BoonBuy dla tego produktu.',
             flags: MessageFlags.Ephemeral
         });
     }
 
     const embed = new EmbedBuilder()
-        .setTitle('Link BBDBUY')
+        .setTitle('Link BoonBuy')
         .setColor('#57f287')
         .setDescription([
             `Platforma: ${converted.platform.toUpperCase()}`,
-            `[Otworz produkt w BBDBUY](${bbdbuyLink.url})`
+            `[Otworz produkt w BoonBuy](${boonbuyLink.url})`
         ].join('\n'));
 
     await interaction.reply({
@@ -73,9 +73,9 @@ async function handleLinkConverter(interaction) {
         components: [
             new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
-                        .setLabel('BBDBUY')
+                        .setLabel('BoonBuy')
                         .setStyle(ButtonStyle.Link)
-                        .setURL(bbdbuyLink.url)
+                        .setURL(boonbuyLink.url)
             )
         ],
         flags: MessageFlags.Ephemeral

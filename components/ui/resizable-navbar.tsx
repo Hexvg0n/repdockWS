@@ -235,6 +235,9 @@ export const NavbarLogo = () => {
         alt="logo"
         width={30}
         height={30}
+        fetchPriority="high"
+        loading="eager"
+        unoptimized
       />
       <span className="font-medium text-white">RepDock</span>
     </a>

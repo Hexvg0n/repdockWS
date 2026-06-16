@@ -38,6 +38,16 @@ const domainMapping = {
 };
 
 const middlemen = {
+    boonbuy: {
+        name: 'BoonBuy',
+        template: 'https://boonbuy.com/product/{{platformCode}}/{{itemID}}',
+        templateByPlatform: {
+            '1688': 'https://boonbuy.com/product/{{platformCode}}/{{itemID}}?inviteCode=REPDOCK'
+        },
+        platformMapping: { taobao: '1', tmall: '1', '1688': '0', weidian: 'weidian' },
+        aliases: ['boon'],
+        reverseMapping: { '0': '1688', '1': 'taobao', weidian: 'weidian' }
+    },
     bbdbuy: {
         name: 'BBDBUY',
         template: "www.bbdbuyeu.com/goods/{{platformCode}}/{{itemID}}?inviteCode=ZqhUMV",
@@ -217,15 +227,44 @@ function extractQueryParams(inputUrl) {
     }
 }
 
-function parseMiddlemanUrl(urlStr, middleman) {
-    const match = templateToRegex(middleman.template).exec(urlStr);
+function getMiddlemanTemplates(middleman) {
+    return [
+        middleman.template,
+        ...Object.values(middleman.templateByPlatform || {})
+    ];
+}
 
-    if (match?.groups) {
-        return {
-            itemID: match.groups.itemID,
-            platformCode: match.groups.platformCode,
-            encodedUrl: match.groups.encodedUrl
-        };
+function parseAgentProductPathUrl(inputUrl) {
+    const normalized = normalizeUrlInput(inputUrl);
+    if (!normalized) return null;
+
+    try {
+        const url = new URL(normalized);
+        const parts = url.pathname.split('/').filter(Boolean);
+        const productIndex = parts.findIndex((part) => ['goods', 'product'].includes(part.toLowerCase()));
+        const platformCode = productIndex >= 0 ? parts[productIndex + 1] : undefined;
+        const itemID = productIndex >= 0 ? parts[productIndex + 2]?.match(/\d{4,}/)?.[0] : undefined;
+
+        return platformCode && itemID ? { platformCode, itemID } : null;
+    } catch {
+        return null;
+    }
+}
+
+function parseMiddlemanUrl(urlStr, middleman) {
+    const agentProductPath = parseAgentProductPathUrl(urlStr);
+    if (agentProductPath) return agentProductPath;
+
+    for (const template of getMiddlemanTemplates(middleman)) {
+        const match = templateToRegex(template).exec(urlStr);
+
+        if (match?.groups) {
+            return {
+                itemID: match.groups.itemID,
+                platformCode: match.groups.platformCode,
+                encodedUrl: match.groups.encodedUrl
+            };
+        }
     }
 
     const params = extractQueryParams(urlStr);
@@ -304,9 +343,10 @@ function convertUrlToMiddleman(originalUrl, middlemanKey) {
     if (!extraction?.itemID) return null;
 
     const platformCode = middleman.platformMapping[platform];
-    if (!platformCode && middleman.template.includes('{{platformCode}}')) return null;
+    const template = middleman.templateByPlatform?.[platform] || middleman.template;
+    if (!platformCode && template.includes('{{platformCode}}')) return null;
 
-    return middleman.template
+    return template
         .replaceAll('{{itemID}}', extraction.itemID)
         .replaceAll(/{{platformCode}}/g, platformCode || '')
         .replaceAll(/{{encodedUrl}}/g, encodeURIComponent(originalUrl));

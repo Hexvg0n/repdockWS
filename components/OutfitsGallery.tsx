@@ -27,11 +27,11 @@ import {
 import { cn } from "@/lib/utils";
 import type { Outfit, OutfitItem, OutfitsResponse } from "@/types/outfits";
 
-const agents = ["BBDBUY", "KAKOBUY", "USFANS", "ACBUY"] as const;
+const agents = ["BOONBUY", "KAKOBUY", "USFANS", "ACBUY"] as const;
 const agentKeyMap: Record<(typeof agents)[number], string> = {
   ACBUY: "acbuy",
+  BOONBUY: "boonbuy",
   KAKOBUY: "kakobuy",
-  BBDBUY: "bbdbuy",
   USFANS: "usfans",
 };
 
@@ -191,7 +191,7 @@ export function OutfitsGallery() {
   const [submitSaving, setSubmitSaving] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<{ tone: "error" | "success"; text: string } | null>(null);
   const [currency, setCurrency] = useState<(typeof currencies)[number]>("CNY");
-  const [agent, setAgent] = useState<(typeof agents)[number]>("BBDBUY");
+  const [agent, setAgent] = useState<(typeof agents)[number]>("BOONBUY");
   const [currencyRates, setCurrencyRates] = useState(fallbackCurrencyRates);
   const observerTarget = useRef<HTMLDivElement>(null);
   const requestIdRef = useRef(0);
@@ -207,12 +207,14 @@ export function OutfitsGallery() {
           setCurrency(savedSettings.currency as (typeof currencies)[number]);
         }
 
-        if (agents.includes(savedSettings.agent as (typeof agents)[number])) {
-          setAgent(savedSettings.agent as (typeof agents)[number]);
+        const savedAgent = savedSettings.agent === "BBDBUY" ? "BOONBUY" : savedSettings.agent;
+
+        if (agents.includes(savedAgent as (typeof agents)[number])) {
+          setAgent(savedAgent as (typeof agents)[number]);
         }
       } catch {
         setCurrency("CNY");
-        setAgent("BBDBUY");
+        setAgent("BOONBUY");
       }
     };
 

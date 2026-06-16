@@ -10,6 +10,7 @@ type MongoBackedProduct = W2CProduct & {
 const agentLinkKeys = {
   ACBUY: "acbuy",
   BBDBUY: "bbdbuy",
+  BOONBUY: "boonbuy",
   KAKOBUY: "kakobuy",
   USFANS: "usfans",
 } as const;

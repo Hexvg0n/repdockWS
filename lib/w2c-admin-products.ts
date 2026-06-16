@@ -113,6 +113,7 @@ export function buildW2CProductLinks(
   return {
     original: originalLink,
     ACBUY: byKey.get("acbuy"),
+    BOONBUY: byKey.get("boonbuy"),
     KAKOBUY: byKey.get("kakobuy"),
     BBDBUY: byKey.get("bbdbuy"),
     USFANS: byKey.get("usfans"),

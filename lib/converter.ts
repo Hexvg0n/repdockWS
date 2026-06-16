@@ -9,6 +9,7 @@ interface Platform {
 interface Middleman {
   name: string;
   template: string;
+  templateByPlatform?: Partial<Record<PlatformName, string>>;
   platformMapping: Record<PlatformName, string>;
   requiresDecoding: boolean;
   aliases?: string[];
@@ -84,6 +85,13 @@ const bbdbuyCodes: Record<PlatformName, string> = {
   weidian: "WEIDIAN",
 };
 
+const boonbuyCodes: Record<PlatformName, string> = {
+  taobao: "1",
+  tmall: "1",
+  "1688": "0",
+  weidian: "weidian",
+};
+
 const litbuyCodes: Record<PlatformName, string> = {
   taobao: "1",
   tmall: "1",
@@ -92,6 +100,17 @@ const litbuyCodes: Record<PlatformName, string> = {
 };
 
 const middlemen: Readonly<Record<string, Middleman>> = {
+  boonbuy: {
+    name: "BoonBuy",
+    template: "https://boonbuy.com/product/{{platformCode}}/{{itemID}}",
+    templateByPlatform: {
+      "1688": "https://boonbuy.com/product/{{platformCode}}/{{itemID}}?inviteCode=REPDOCK",
+    },
+    platformMapping: boonbuyCodes,
+    requiresDecoding: false,
+    aliases: ["boon"],
+    reverseMapping: { "0": "1688", "1": "taobao", weidian: "weidian" },
+  },
   bbdbuy: {
     name: "BBDBuy",
     template: "https://www.bbdbuyeu.com/goods/{{platformCode}}/{{itemID}}?inviteCode=RepDock",
@@ -273,6 +292,11 @@ const templateToRegex = (template: string): RegExp => {
   return regex;
 };
 
+const getMiddlemanTemplates = (middleman: Middleman): string[] => [
+  middleman.template,
+  ...Object.values(middleman.templateByPlatform ?? {}),
+];
+
 const extractQueryParams = (inputUrl: string): Record<string, string> => {
   try {
     const url = new RegExp(/^https?:\/\//).exec(inputUrl) ? inputUrl : `https://${inputUrl}`;
@@ -287,16 +311,16 @@ const extractQueryParams = (inputUrl: string): Record<string, string> => {
   }
 };
 
-const parseGoodsPathUrl = (inputUrl: string): { itemID: string; platformCode: string } | null => {
+const parseAgentProductPathUrl = (inputUrl: string): { itemID: string; platformCode: string } | null => {
   const normalized = normalizeUrlInput(inputUrl);
   if (!normalized) return null;
 
   try {
     const url = new URL(normalized);
     const parts = url.pathname.split("/").filter(Boolean);
-    const goodsIndex = parts.findIndex((part) => part.toLowerCase() === "goods");
-    const platformCode = goodsIndex >= 0 ? parts[goodsIndex + 1] : undefined;
-    const itemID = goodsIndex >= 0 ? parts[goodsIndex + 2]?.match(/\d{4,}/)?.[0] : undefined;
+    const productIndex = parts.findIndex((part) => ["goods", "product"].includes(part.toLowerCase()));
+    const platformCode = productIndex >= 0 ? parts[productIndex + 1] : undefined;
+    const itemID = productIndex >= 0 ? parts[productIndex + 2]?.match(/\d{4,}/)?.[0] : undefined;
 
     return platformCode && itemID ? { platformCode, itemID } : null;
   } catch {
@@ -312,18 +336,20 @@ const parseMiddlemanUrl = (
   platformCode?: string;
   encodedUrl?: string;
 } | null => {
-  const goodsPath = parseGoodsPathUrl(urlStr);
-  if (goodsPath) return goodsPath;
+  const agentProductPath = parseAgentProductPathUrl(urlStr);
+  if (agentProductPath) return agentProductPath;
 
-  const regex = templateToRegex(middleman.template);
-  const match = new RegExp(regex).exec(urlStr);
+  for (const template of getMiddlemanTemplates(middleman)) {
+    const regex = templateToRegex(template);
+    const match = new RegExp(regex).exec(urlStr);
 
-  if (match?.groups) {
-    return {
-      itemID: match.groups.itemID,
-      platformCode: match.groups.platformCode,
-      encodedUrl: match.groups.encodedUrl,
-    };
+    if (match?.groups) {
+      return {
+        itemID: match.groups.itemID,
+        platformCode: match.groups.platformCode,
+        encodedUrl: match.groups.encodedUrl,
+      };
+    }
   }
 
   const params = extractQueryParams(urlStr);
@@ -489,12 +515,13 @@ const convertUrlToMiddleman = (originalUrl: string, middlemanKey: string): strin
 
   const { itemID } = extraction;
   const platformCode = middleman.platformMapping[platform];
+  const template = middleman.templateByPlatform?.[platform] ?? middleman.template;
 
-  if (!platformCode && middleman.template.includes("{{platformCode}}")) {
+  if (!platformCode && template.includes("{{platformCode}}")) {
     return null;
   }
 
-  return middleman.template
+  return template
     .replaceAll('{{itemID}}', itemID)
     .replaceAll('{{platformCode}}', platformCode || "")
     .replaceAll('{{encodedUrl}}', encodeURIComponent(originalUrl));

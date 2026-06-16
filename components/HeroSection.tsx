@@ -24,34 +24,33 @@ type MarqueeLogo = Logo & {
 
 const logos: Logo[] = [
   {
-    src: "/agents/BBDBUY.png ",
-    width: 75,
-    height: 17,
+    src: "/agents/boonbuy.png",
+    width: 606,
+    height: 127,
     displayWidth: "125px",
   },
   {
     src: "/agents/Kakobuy.png",
-    width: 75,
-    height: 17,
+    width: 691,
+    height: 167,
     displayWidth: "125px",
   },
   {
     src: "/agents/Usfans.png",
-    width: 75,
-    height: 17,
+    width: 678,
+    height: 144,
     displayWidth: "125px",
   },
   {
     src: "/agents/Acbuy.png",
-    width: 75,
-    height: 17,
-    displayWidth: "82px",
-    displayHeight: "125px",
+    width: 697,
+    height: 239,
+    displayWidth: "125px",
   },
   {
     src: "/agents/Oopbuy.png",
-    width: 75,
-    height: 17,
+    width: 612,
+    height: 149,
     displayWidth: "125px",
   },
 ];
@@ -212,6 +211,7 @@ function LogoSlider({ label }: { label: string }) {
                 height={logo.height}
                 alt=""
                 decoding="async"
+                unoptimized
               />
             </li>
           ))}

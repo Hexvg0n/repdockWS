@@ -1,15 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { getAdminSession } from "@/lib/admin-auth";
 import { lookupW2CProduct } from "@/lib/w2c-product-lookup";
 
 export async function GET(req: Request) {
-  const session = await getAdminSession();
-
-  if (!session) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
-
   const { searchParams } = new URL(req.url);
   const url = searchParams.get("url");
 
@@ -20,9 +13,9 @@ export async function GET(req: Request) {
   try {
     return NextResponse.json(await lookupW2CProduct(url));
   } catch (error) {
-    console.error("Lookup error:", error);
-    return new NextResponse(error instanceof Error ? error.message : "Failed to fetch data", {
-      status: 500,
+    console.error("W2C public lookup error:", error);
+    return new NextResponse(error instanceof Error ? error.message : "Failed to fetch product data", {
+      status: 400,
     });
   }
 }

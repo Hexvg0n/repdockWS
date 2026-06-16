@@ -108,7 +108,7 @@ const itemMeta = [
 
 const agentIcons = {
   KAKOBUY: "/agents/kako_icon.png",
-  BBDBUY: "/agents/BBDBUY_icon.png?v=20260604c",
+  BOONBUY: "/agents/BoonBuy_icon.png",
   USFANS: "/agents/usfans_icon.png?v=20260604c",
   OOPBUY: "/agents/oop_icon.png",
   ACBUY: "/agents/acb_icon.png?v=20260604c",
@@ -168,8 +168,8 @@ function CardVisual({
         <AgentBadge
           className={styles.badgeTop}
           color="blue"
-          label="BBDBUY"
-          src={agentIcons.BBDBUY}
+          label="BoonBuy"
+          src={agentIcons.BOONBUY}
         />
         <AgentBadge
           className={styles.badgeMiddle}
@@ -276,7 +276,7 @@ function AgentBadge({
     <span className={`${styles.agentBadge} ${styles[color]} ${className}`}>
       {src ? (
         <span className={styles.agentLogoBox}>
-          <SmartImage className={styles.agentImage} src={src} alt="" fill sizes="32px" />
+          <SmartImage className={styles.agentImage} src={src} alt="" fill sizes="32px" unoptimized />
         </span>
       ) : (
         <span className={styles.agentIcon} />
@@ -296,7 +296,7 @@ function CourierTile({
   return (
     <div className={styles.courierTile}>
       <span className={styles.courierLogoBox}>
-        <SmartImage className={styles.courierImage} src={src} alt="" fill sizes="58px" />
+        <SmartImage className={styles.courierImage} src={src} alt="" fill sizes="58px" unoptimized />
       </span>
       <strong>{label}</strong>
     </div>

@@ -156,7 +156,7 @@ const navbarCopy = {
 
 const languageOptions = ["PL", "EN"] as const;
 const currencyOptions = ["PLN", "CNY", "USD", "EUR"] as const;
-const agentOptions = ["BBDBUY", "KAKOBUY", "USFANS", "ACBUY"] as const;
+const agentOptions = ["BOONBUY", "KAKOBUY", "USFANS", "ACBUY"] as const;
 
 const languageMeta: Record<
   (typeof languageOptions)[number],
@@ -176,8 +176,8 @@ const agentMeta: Record<
   (typeof agentOptions)[number],
   { icon: string; accent: string }
 > = {
-  BBDBUY: {
-    icon: "/agents/BBDBUY_icon.png?v=20260604c",
+  BOONBUY: {
+    icon: "/agents/BoonBuy_icon.png",
     accent: "from-transparent to-transparent",
   },
   KAKOBUY: {
@@ -700,7 +700,7 @@ function SettingsDrawerTrigger({
     useState<(typeof languageOptions)[number]>("PL");
   const [currency, setCurrency] =
     useState<(typeof currencyOptions)[number]>("PLN");
-  const [agent, setAgent] = useState<(typeof agentOptions)[number]>("BBDBUY");
+  const [agent, setAgent] = useState<(typeof agentOptions)[number]>("BOONBUY");
 
   useEffect(() => {
     const savedSettings = window.localStorage.getItem(settingsStorageKey);
@@ -712,7 +712,7 @@ function SettingsDrawerTrigger({
     try {
       const parsedSettings = JSON.parse(
         savedSettings,
-      ) as Partial<RepdockSettings>;
+      ) as Partial<Omit<RepdockSettings, "agent"> & { agent: string }>;
 
       if (
         parsedSettings.language &&
@@ -728,8 +728,10 @@ function SettingsDrawerTrigger({
         setCurrency(parsedSettings.currency);
       }
 
-      if (parsedSettings.agent && agentOptions.includes(parsedSettings.agent)) {
-        setAgent(parsedSettings.agent);
+      const parsedAgent = parsedSettings.agent === "BBDBUY" ? "BOONBUY" : parsedSettings.agent;
+
+      if (parsedAgent && agentOptions.includes(parsedAgent as (typeof agentOptions)[number])) {
+        setAgent(parsedAgent as (typeof agentOptions)[number]);
       }
     } catch {
       window.localStorage.removeItem(settingsStorageKey);
@@ -824,7 +826,7 @@ function SettingsDrawerTrigger({
                 key={option}
                 onClick={() => setAgent(option)}
               >
-                {option}
+                {option === "BOONBUY" ? "BoonBuy" : option}
               </SettingsOption>
             ))}
           </div>

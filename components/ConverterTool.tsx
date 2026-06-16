@@ -35,18 +35,20 @@ type ConversionResult = {
 
 const agentIcons: Record<string, string> = {
   acbuy: "/agents/acb_icon.png?v=20260604c",
+  boonbuy: "/agents/BoonBuy_icon.png",
   kakobuy: "/agents/kako_icon.png",
   litbuy: "/agents/litbuy_logo.jpg",
   bbdbuy: "/agents/BBDBUY_icon.png?v=20260604c",
   usfans: "/agents/usfans_icon.png?v=20260604c",
 };
 
-const visibleAgentKeys = new Set(["bbdbuy", "kakobuy", "usfans", "acbuy", "litbuy"]);
+const visibleAgentKeys = new Set(["boonbuy", "kakobuy", "usfans", "acbuy", "litbuy"]);
 
 const preferredAgentMap: Record<string, string> = {
   ACBUY: "acbuy",
+  BOONBUY: "boonbuy",
   KAKOBUY: "kakobuy",
-  BBDBUY: "bbdbuy",
+  BBDBUY: "boonbuy",
   USFANS: "usfans",
 };
 
@@ -86,7 +88,7 @@ const converterCopy = {
       preferredBadge: "Preferowany",
       unknown: "Nieznany",
     },
-    inputPlaceholder: "Wklej Taobao, Weidian, 1688, ACBuy, USFans, Kakobuy...",
+    inputPlaceholder: "Wklej Taobao, Weidian, 1688, BoonBuy, ACBuy, USFans...",
   },
   EN: {
     actions: {
@@ -123,7 +125,7 @@ const converterCopy = {
       preferredBadge: "Preferred",
       unknown: "Unknown",
     },
-    inputPlaceholder: "Paste Taobao, Weidian, 1688, ACBuy, USFans, Kakobuy...",
+    inputPlaceholder: "Paste Taobao, Weidian, 1688, BoonBuy, ACBuy, USFans...",
   },
 } as const;
 
@@ -136,7 +138,7 @@ export function ConverterTool() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [preferredAgent, setPreferredAgent] = useState("kakobuy");
+  const [preferredAgent, setPreferredAgent] = useState("boonbuy");
 
   useEffect(() => {
     const loadSettings = () => {
@@ -144,9 +146,9 @@ export function ConverterTool() {
         const savedSettings = JSON.parse(
           globalThis.localStorage.getItem(settingsStorageKey) ?? "{}",
         ) as { agent?: string };
-        setPreferredAgent(preferredAgentMap[savedSettings.agent ?? ""] ?? "kakobuy");
+        setPreferredAgent(preferredAgentMap[savedSettings.agent ?? ""] ?? "boonbuy");
       } catch {
-        setPreferredAgent("kakobuy");
+        setPreferredAgent("boonbuy");
       }
     };
 

@@ -32,14 +32,21 @@ import {
 import { cn } from "@/lib/utils";
 import type { W2CBBDBuyProductDetails, W2CBBDBuySkuProp, W2CProduct } from "@/types/w2c";
 
-const agents = ["BBDBUY", "KAKOBUY", "USFANS", "ACBUY"] as const;
+const agents = ["BOONBUY", "KAKOBUY", "USFANS", "ACBUY"] as const;
 const collapsedVariantLimit = 12;
 
 const agentLogos: Record<(typeof agents)[number], string> = {
-  BBDBUY: "/agents/BBDBUY_icon.png?v=20260604c",
+  BOONBUY: "/agents/BoonBuy_icon.png",
   KAKOBUY: "/agents/kako_icon.png",
   USFANS: "/agents/usfans_icon.png?v=20260604c",
   ACBUY: "/agents/acb_icon.png?v=20260604c",
+};
+
+const agentLabels: Record<(typeof agents)[number], string> = {
+  ACBUY: "ACBuy",
+  BOONBUY: "BoonBuy",
+  KAKOBUY: "Kakobuy",
+  USFANS: "USFans",
 };
 
 const productDetailCopy = {
@@ -60,7 +67,7 @@ const productDetailCopy = {
       women: "Damskie",
     },
     gallery: "Galeria",
-    liveUnavailable: "Live warianty z BBDBuy sa chwilowo niedostepne. Mozesz nadal przejsc do agenta.",
+    liveUnavailable: "Live warianty produktu sa chwilowo niedostepne. Mozesz nadal przejsc do agenta.",
     originalProduct: "Oryginalny produkt",
     price: "Cena",
     quickQc: {
@@ -108,7 +115,7 @@ const productDetailCopy = {
       women: "Women",
     },
     gallery: "Gallery",
-    liveUnavailable: "Live BBDBuy variants are temporarily unavailable. You can still open the agent link.",
+    liveUnavailable: "Live product variants are temporarily unavailable. You can still open the agent link.",
     originalProduct: "Original product",
     price: "Price",
     quickQc: {
@@ -155,7 +162,7 @@ export function W2CProductDetail({
   const numberLocale = language === "PL" ? "pl" : "en";
   const [currency, setCurrency] = useState<(typeof currencies)[number]>("CNY");
   const [rates, setRates] = useState(fallbackCurrencyRates);
-  const [agent, setAgent] = useState<(typeof agents)[number]>("BBDBUY");
+  const [agent, setAgent] = useState<(typeof agents)[number]>("BOONBUY");
   const [favorite, setFavorite] = useState(false);
   const [favoriteLoginOpen, setFavoriteLoginOpen] = useState(false);
   const [favoriteStatus, setFavoriteStatus] = useState("");
@@ -210,13 +217,15 @@ export function W2CProductDetail({
           setCurrency(savedSettings.currency as (typeof currencies)[number]);
         }
 
-        if (agents.includes(savedSettings.agent as (typeof agents)[number])) {
-          setAgent(savedSettings.agent as (typeof agents)[number]);
+        const savedAgent = savedSettings.agent === "BBDBUY" ? "BOONBUY" : savedSettings.agent;
+
+        if (agents.includes(savedAgent as (typeof agents)[number])) {
+          setAgent(savedAgent as (typeof agents)[number]);
         }
 
       } catch {
         setCurrency("CNY");
-        setAgent("BBDBUY");
+        setAgent("BOONBUY");
       }
     };
 
@@ -500,7 +509,7 @@ export function W2CProductDetail({
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-white px-4 text-sm font-black text-black transition hover:bg-blue-100"
               >
                 <SmartImage src={agentLogos[agent]} alt="" className="size-5 rounded-md object-contain" />
-                {copy.buyNowWith} {agent}
+                {copy.buyNowWith} {agentLabels[agent]}
               </a>
               <div className="grid grid-cols-2 gap-3">
                 <a

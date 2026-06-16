@@ -35,7 +35,7 @@ import type {
 } from "@/types/tiktok-items";
 import type { W2CProduct } from "@/types/w2c";
 
-const agents = ["BBDBUY", "KAKOBUY", "USFANS", "ACBUY"] as const;
+const agents = ["BOONBUY", "KAKOBUY", "USFANS", "ACBUY"] as const;
 
 type DiscordUser = {
   avatarUrl: string;
@@ -188,7 +188,7 @@ export function TikTokItemsGallery() {
   const [submitStatus, setSubmitStatus] = useState<{ tone: "error" | "success"; text: string } | null>(null);
   const [user, setUser] = useState<DiscordUser | null>(null);
   const [currency, setCurrency] = useState<(typeof currencies)[number]>("CNY");
-  const [agent, setAgent] = useState<(typeof agents)[number]>("BBDBUY");
+  const [agent, setAgent] = useState<(typeof agents)[number]>("BOONBUY");
   const [currencyRates, setCurrencyRates] = useState(fallbackCurrencyRates);
   const observerTarget = useRef<HTMLDivElement>(null);
   const requestIdRef = useRef(0);
@@ -214,12 +214,14 @@ export function TikTokItemsGallery() {
           setCurrency(savedSettings.currency as (typeof currencies)[number]);
         }
 
-        if (agents.includes(savedSettings.agent as (typeof agents)[number])) {
-          setAgent(savedSettings.agent as (typeof agents)[number]);
+        const savedAgent = savedSettings.agent === "BBDBUY" ? "BOONBUY" : savedSettings.agent;
+
+        if (agents.includes(savedAgent as (typeof agents)[number])) {
+          setAgent(savedAgent as (typeof agents)[number]);
         }
       } catch {
         setCurrency("CNY");
-        setAgent("BBDBUY");
+        setAgent("BOONBUY");
       }
     };
 

@@ -219,6 +219,8 @@ export const AdminLogo = ({ compact }: { compact: boolean }) => {
           alt="logo"
           width={28}
           height={28}
+          fetchPriority="high"
+          loading="eager"
           sizes="28px"
           className="size-7 object-contain"
           style={{ height: 28, width: 28 }}

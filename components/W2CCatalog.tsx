@@ -40,7 +40,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { W2CGender, W2CProduct, W2CProductsResponse } from "@/types/w2c";
 
-const agents = ["BBDBUY", "KAKOBUY", "USFANS", "ACBUY"] as const;
+const agents = ["BOONBUY", "KAKOBUY", "USFANS", "ACBUY"] as const;
 const seasonOptions = ["All", "SS", "FW"];
 const productSkeletonKeys = [
   "product-skeleton-1",
@@ -54,10 +54,17 @@ const productSkeletonKeys = [
 ];
 
 const agentLogos: Record<(typeof agents)[number], string> = {
-  BBDBUY: "/agents/BBDBUY_icon.png?v=20260604c",
+  BOONBUY: "/agents/BoonBuy_icon.png",
   KAKOBUY: "/agents/kako_icon.png",
   USFANS: "/agents/usfans_icon.png?v=20260604c",
   ACBUY: "/agents/acb_icon.png?v=20260604c",
+};
+
+const agentLabels: Record<(typeof agents)[number], string> = {
+  ACBUY: "ACBuy",
+  BOONBUY: "BoonBuy",
+  KAKOBUY: "Kakobuy",
+  USFANS: "USFans",
 };
 
 const priceSlider = {
@@ -233,7 +240,7 @@ export function W2CCatalog() {
   const [openingProductName, setOpeningProductName] = useState<string | null>(null);
   const [currency, setCurrency] = useState<(typeof currencies)[number]>("CNY");
   const [currencyRates, setCurrencyRates] = useState(fallbackCurrencyRates);
-  const [agent, setAgent] = useState<(typeof agents)[number]>("BBDBUY");
+  const [agent, setAgent] = useState<(typeof agents)[number]>("BOONBUY");
   const observerTarget = useRef<HTMLDivElement>(null);
   const requestIdRef = useRef(0);
 
@@ -252,12 +259,14 @@ export function W2CCatalog() {
           setCurrency(savedSettings.currency as (typeof currencies)[number]);
         }
 
-        if (agents.includes(savedSettings.agent as (typeof agents)[number])) {
-          setAgent(savedSettings.agent as (typeof agents)[number]);
+        const savedAgent = savedSettings.agent === "BBDBUY" ? "BOONBUY" : savedSettings.agent;
+
+        if (agents.includes(savedAgent as (typeof agents)[number])) {
+          setAgent(savedAgent as (typeof agents)[number]);
         }
       } catch {
         setCurrency("CNY");
-        setAgent("BBDBUY");
+        setAgent("BOONBUY");
       }
     };
 
@@ -921,7 +930,7 @@ function AgentPill({
         className={cn("shrink-0 object-contain", compact ? "size-5" : "size-6")}
       />
       <span className={compact ? "hidden text-sm sm:inline" : "text-sm"}>
-        {agent}
+        {agentLabels[agent]}
       </span>
     </span>
   );

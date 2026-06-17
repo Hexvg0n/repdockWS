@@ -1,4 +1,5 @@
 export type ShippingAgent = "BBDBUY" | "Boonbuy" | "Kakobuy" | "USfans" | "Litbuy" | "Acbuy" | "Oopbuy";
+type ShippingLineCurrency = "CNY" | "PLN" | "USD";
 
 export type ShippingLine = {
   agent: ShippingAgent;
@@ -41,6 +42,10 @@ export type ShippingCalculationResult = {
 export const shippingAgents: ShippingAgent[] = ["Boonbuy", "Kakobuy", "USfans", "Litbuy", "Acbuy", "Oopbuy"];
 const allShippingAgents: ShippingAgent[] = ["BBDBUY", ...shippingAgents];
 const cnyToUsdRate = 0.14;
+const cnyToPlnRate = 0.52;
+const shippingLineCurrencyByAgent: Partial<Record<ShippingAgent, ShippingLineCurrency>> = {
+  Boonbuy: "PLN",
+};
 
 export type ShippingDiscount =
   | {
@@ -879,13 +884,14 @@ export function calculateBillableWeight(input: ShippingCalculationInput, line: S
 }
 
 export function calculateShippingLinePrice(line: ShippingLine, input: ShippingCalculationInput): ShippingCalculationResult {
+  const pricedLine = normalizeShippingLinePrices(line);
   const billableWeight = calculateBillableWeight(input, line);
   const volumeWeight = calculateVolumeWeight(input, line);
   const continuedUnits =
     billableWeight > line.firstWeight
       ? Math.ceil((billableWeight - line.firstWeight) / line.continuedWeight)
       : 0;
-  const originalPrice = roundMoney(line.firstPrice + continuedUnits * line.continuedPrice + line.fees);
+  const originalPrice = roundMoney(pricedLine.firstPrice + continuedUnits * pricedLine.continuedPrice + pricedLine.fees);
   const discount = getBestShippingDiscount(line.agent, originalPrice);
   const discountAmount = discount?.amount ?? 0;
   const price = roundMoney(Math.max(0, originalPrice - discountAmount));
@@ -895,7 +901,7 @@ export function calculateShippingLinePrice(line: ShippingLine, input: ShippingCa
     continuedUnits,
     discount,
     discountAmount,
-    line,
+    line: pricedLine,
     originalPrice,
     price,
     volumeWeight,
@@ -972,4 +978,31 @@ function calculateDiscountAmount(discount: ShippingDiscount, originalPrice: numb
       : originalPrice * (discount.percent / 100);
 
   return roundMoney(Math.min(originalPrice, Math.max(0, rawAmount)));
+}
+
+function normalizeShippingLinePrices(line: ShippingLine): ShippingLine {
+  const currency = shippingLineCurrencyByAgent[line.agent] ?? "USD";
+
+  if (currency === "USD") {
+    return line;
+  }
+
+  return {
+    ...line,
+    continuedPrice: convertLineAmountToUsd(line.continuedPrice, currency),
+    fees: convertLineAmountToUsd(line.fees, currency),
+    firstPrice: convertLineAmountToUsd(line.firstPrice, currency),
+  };
+}
+
+function convertLineAmountToUsd(value: number, currency: ShippingLineCurrency) {
+  if (currency === "CNY") {
+    return roundMoney(value * cnyToUsdRate);
+  }
+
+  if (currency === "PLN") {
+    return roundMoney(value * (cnyToUsdRate / cnyToPlnRate));
+  }
+
+  return value;
 }

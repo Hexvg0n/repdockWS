@@ -1,6 +1,6 @@
 import { ObjectId, type Collection, type Filter } from "mongodb";
 
-import { normalizeW2CProduct } from "@/lib/w2c-products";
+import { normalizeW2CProduct, normalizeW2CProductLinks } from "@/lib/w2c-products";
 import type { TikTokAttachedProduct, TikTokItemPost, TikTokItemStatus } from "@/types/tiktok-items";
 import type { W2CProduct } from "@/types/w2c";
 
@@ -30,7 +30,10 @@ export function normalizeTikTokItem(item: MongoBackedTikTokItem): TikTokItemPost
     id: String(item.id ?? _id),
     coverImage: plainItem.coverImage || plainItem.products[0]?.image || "",
     createdByAvatarUrl: plainItem.createdByAvatarUrl || "",
-    products: plainItem.products.map((product) => ({ ...product, links: { ...product.links } })),
+    products: plainItem.products.map((product) => ({
+      ...product,
+      links: normalizeW2CProductLinks(product.links),
+    })),
     stats: {
       views: plainItem.stats?.views ?? 0,
     },

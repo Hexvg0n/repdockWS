@@ -19,6 +19,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { convertLink } from "@/lib/converter";
 import { getWebpImageUrl } from "@/lib/cloudinary-image";
 import { currencies, fallbackCurrencyRates, formatPrice, readClientRate } from "@/lib/currency";
 import {
@@ -1011,7 +1012,23 @@ function TextArea({
 }
 
 function getPreferredProductLink(product: TikTokAttachedProduct, preferredAgent: (typeof agents)[number]) {
-  return product.links[preferredAgent] ?? product.links.original;
+  const savedLink = product.links[preferredAgent];
+
+  if (savedLink && savedLink !== product.links.original) {
+    return savedLink;
+  }
+
+  const converterKeyByAgent: Record<(typeof agents)[number], string> = {
+    ACBUY: "acbuy",
+    BOONBUY: "boonbuy",
+    KAKOBUY: "kakobuy",
+    USFANS: "usfans",
+  };
+  const preferredLink = convertLink(product.links.original).convertedLinks.find(
+    (link) => link.key === converterKeyByAgent[preferredAgent],
+  );
+
+  return preferredLink?.url ?? savedLink ?? product.links.original;
 }
 
 function AuthorAvatar({

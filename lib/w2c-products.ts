@@ -40,7 +40,7 @@ export function normalizeW2CProduct(product: MongoBackedProduct): W2CProduct {
   };
 }
 
-function normalizeW2CProductLinks(links: W2CProduct["links"]): W2CProduct["links"] {
+export function normalizeW2CProductLinks(links: W2CProduct["links"]): W2CProduct["links"] {
   const conversion = convertLink(links.original);
   const convertedByKey = new Map(conversion.convertedLinks.map((link) => [link.key, link.url]));
   const normalizedLinks = { ...links };
@@ -48,10 +48,9 @@ function normalizeW2CProductLinks(links: W2CProduct["links"]): W2CProduct["links
   for (const [agent, converterKey] of Object.entries(agentLinkKeys) as Array<
     [keyof typeof agentLinkKeys, (typeof agentLinkKeys)[keyof typeof agentLinkKeys]]
   >) {
-    const currentLink = normalizedLinks[agent];
     const convertedLink = convertedByKey.get(converterKey);
 
-    if (!currentLink || currentLink === links.original) {
+    if (convertedLink) {
       normalizedLinks[agent] = convertedLink;
     }
   }
